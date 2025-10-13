@@ -6,7 +6,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 type Message = { text: string; sender: "user" | "bot" };
 
 const ERROR_TEXT = "Oops, error in generating response! Try Again";
-const genAI = new GoogleGenerativeAI(import.meta.env.local.VITE_GEMINI_API_KEY as string);
+const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY as string);
 
 export default function Chat() {
   const [messages, setMessages] = useState<Message[]>([]);
