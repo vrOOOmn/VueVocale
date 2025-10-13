@@ -1,5 +1,5 @@
 // src/routes/Scanner.tsx
-import React, {useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { IoCamera, IoRepeat, IoWarningOutline } from "react-icons/io5";
 import PhotoPreviewSection from "../components/PhotoPreviewSection";
 import { colors, spacing, borderRadius, typography } from "../theme";
@@ -15,78 +15,82 @@ export default function Scanner() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  async function startStream(requestFacing: Facing = facing) {
-    cleanupStream();
-    setStreamError(null);
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: requestFacing } },
-        audio: false,
-      });
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-      }
-    } catch (err) {
-        let msg = "We need your permission to show the camera";
-        if (err && typeof err === "object" && "name" in err) {
-            switch ((err as DOMException).name) {
-            case "NotFoundError":
-                msg = "No camera found on this device.";
-                break;
-            case "NotReadableError":
-                msg = "The camera is in use by another app.";
-                break;
-            }
-        }
-        setStreamError(msg);
-    }
-  }
-
-  function cleanupStream() {
-    streamRef.current?.getTracks().forEach(t => t.stop());
+  const cleanupStream = useCallback(() => {
+    streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
-  }
+  }, []);
+
+  const handleStreamError = useCallback((err: unknown) => {
+    let msg = "We need your permission to show the camera";
+    if (err && typeof err === "object" && "name" in err) {
+      switch ((err as DOMException).name) {
+        case "NotFoundError":
+          msg = "No camera found on this device.";
+          break;
+        case "NotReadableError":
+          msg = "The camera is in use by another app.";
+          break;
+      }
+    }
+    setStreamError(msg);
+  }, []);
+
+  const startStream = useCallback(
+    async (requestFacing: Facing = facing) => {
+      cleanupStream();
+      setStreamError(null);
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: requestFacing } },
+          audio: false,
+        });
+        streamRef.current = stream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          await videoRef.current.play();
+        }
+      } catch (err) {
+        handleStreamError(err);
+      }
+    },
+    [cleanupStream, facing, handleStreamError]
+  );
 
   useEffect(() => {
-    if (!("mediaDevices" in navigator) || !navigator.mediaDevices.getUserMedia) {
+    if (!navigator.mediaDevices?.getUserMedia) {
       setStreamError("Camera API not supported in this browser.");
       return;
     }
     startStream();
-    return () => cleanupStream();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    return cleanupStream;
+  }, [startStream, cleanupStream]);
 
-  async function toggleCameraFacing() {
-    const next = facing === "environment" ? "user" : "environment";
-    setFacing(next);
-    await startStream(next);
-  }
+  const toggleCameraFacing = async () => {
+    const nextFacing = facing === "environment" ? "user" : "environment";
+    setFacing(nextFacing);
+    await startStream(nextFacing);
+  };
 
-  function handleTakePhoto() {
-    const v = videoRef.current;
-    const c = canvasRef.current;
-    if (!v || !c) return;
+  const handleTakePhoto = () => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    if (!video || !canvas) return;
 
-    c.width = v.videoWidth || 1080;
-    c.height = v.videoHeight || 1440;
-    const ctx = c.getContext("2d");
+    canvas.width = video.videoWidth || 1080;
+    canvas.height = video.videoHeight || 1440;
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    ctx.drawImage(v, 0, 0, c.width, c.height);
-    const dataUrl = c.toDataURL("image/jpeg", 0.95);
-    setPhotoDataUrl(dataUrl);
-    // pause stream to save battery while previewing
-    v.pause();
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    setPhotoDataUrl(canvas.toDataURL("image/jpeg", 0.95));
+    video.pause();
     cleanupStream();
-  }
+  };
 
-  function handleRetakePhoto() {
+  const handleRetakePhoto = () => {
     setPhotoDataUrl(null);
     startStream();
-  }
+  };
 
   if (photoDataUrl) {
     return (
@@ -97,14 +101,11 @@ export default function Scanner() {
     );
   }
 
-  // Permission / error screen
   if (streamError) {
     return (
       <div style={styles.permissionContainer}>
         <IoWarningOutline size={32} color={colors.secondary} />
-        <p style={styles.permissionText}>
-          {streamError}
-        </p>
+        <p style={styles.permissionText}>{streamError}</p>
         <button style={styles.permissionButton} onClick={() => startStream()}>
           Grant Permission
         </button>
@@ -115,19 +116,21 @@ export default function Scanner() {
   return (
     <div style={styles.container}>
       <div style={styles.cameraBox}>
-        <video
-          ref={videoRef}
-          style={styles.video}
-          playsInline
-          muted
-          autoPlay
-        />
+        <video ref={videoRef} style={styles.video} playsInline muted autoPlay />
         <canvas ref={canvasRef} style={{ display: "none" }} />
         <div style={styles.controls}>
-          <button style={styles.roundBtnSecondary} onClick={toggleCameraFacing} aria-label="Switch camera">
+          <button
+            style={styles.roundBtnSecondary}
+            onClick={toggleCameraFacing}
+            aria-label="Switch camera"
+          >
             <IoRepeat size={24} color={colors.textLight} />
           </button>
-          <button style={styles.roundBtnPrimary} onClick={handleTakePhoto} aria-label="Take photo">
+          <button
+            style={styles.roundBtnPrimary}
+            onClick={handleTakePhoto}
+            aria-label="Take photo"
+          >
             <IoCamera size={28} color={colors.textLight} />
           </button>
         </div>
@@ -138,7 +141,7 @@ export default function Scanner() {
 
 const styles = {
   container: {
-    minHeight: "calc(100svh - 73px)", // account for your tab bar height
+    minHeight: "calc(100svh - 73px)",
     background: colors.background,
     padding: spacing.md,
     display: "grid",
