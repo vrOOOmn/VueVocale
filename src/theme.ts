@@ -1,12 +1,12 @@
 export const colors = {
-  primary: "#4A90E2",
-  secondary: "#34495E",
-  background: "#F5F7FA",
-  surface: "#FFFFFF",
-  text: "black",
-  textLight: "#FFFFFF",
-  error: "#E74C3C",
-  border: "#BDC3C7",
+  primary: '#4A90E2',
+  secondary: '#34495E',
+  background: '#F5F7FA',
+  surface: '#FFFFFF',
+  text: 'black',
+  textLight: '#FFFFFF',
+  error: '#E74C3C',
+  border: '#BDC3C7',
 };
 
 export const spacing = {
@@ -25,31 +25,32 @@ export const borderRadius = {
   round: 9999,
 };
 
-const fontFamily = "DM Sans, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif";
+// src/theme.ts
+const family = `DM Sans, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif`;
 
 export const typography = {
   header: {
-    fontFamily,
+    fontFamily: family,
     fontSize: 24,
-    fontWeight: 700,
+    fontWeight: 700 as const, // was 'DMSans-Bold'
     lineHeight: 1.25,
   },
   body: {
-    fontFamily,
+    fontFamily: family,       // was 'DMSans-Regular'
     fontSize: 16,
-    fontWeight: 400,
+    fontWeight: 400 as const,
     lineHeight: 1.5,
   },
   button: {
-    fontFamily,
+    fontFamily: family,       // was 'DMSans-Medium'
     fontSize: 18,
-    fontWeight: 500,
+    fontWeight: 500 as const,
     lineHeight: 1.2,
   },
   message: {
-    fontFamily,
+    fontFamily: family,
     fontSize: 17,
-    fontWeight: 400,
+    fontWeight: 400 as const,
     lineHeight: 1.5,
   },
 } as const;
