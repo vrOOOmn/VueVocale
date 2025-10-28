@@ -16,9 +16,30 @@ export default function Chat() {
   const endRef = useRef<HTMLDivElement | null>(null);
   const textRef = useRef<HTMLTextAreaElement | null>(null);
 
+  // --- Persist chat messages across tab switches ---
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: "smooth" });
+    const saved = localStorage.getItem("chatMessages");
+    if (saved) setMessages(JSON.parse(saved));
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("chatMessages", JSON.stringify(messages));
   }, [messages]);
+  // -------------------------------------------------
+
+  useEffect(() => {
+  if (endRef.current) {
+    endRef.current.scrollIntoView({ behavior: "auto" });
+  }
+  }, []); // scroll to bottom on initial mount
+
+  useEffect(() => {
+    if (endRef.current) {
+      endRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages]); // scroll smoothly when messages update
+
+  useEffect(() => textRef.current?.focus(), []);
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -33,15 +54,11 @@ export default function Chat() {
         You are a friendly, patient French friend for intermediate learners (B1). Your goal is to help them gain confidence speaking and understanding real‐life French, without sounding like a formal “coach.”
 
         You should:
-
-        1. Chat naturally about everyday topics (travel, food, work, hobbies, culture). Don't stay on the same topic for too long. Generally, only talk about the same topic for a maximum of three responses.
+        1. Chat naturally about everyday topics.
         2. Use intermediate-level (B1) French.
-        3. Gently correct mistakes only if they would severly impede comprehensibility with a native French, with a brief note on how to sound more natural or idiomatic.
-        4. Share cultural tips (idioms, phrasing, register, customs) only when relevant and when the user is attempting to learn a new topic they aren't too knowledgable about.
-        5. Keep each response to no more than three sentences so you don’t overwhelm them.
-        6. Don't ask more than one question at a time.
-        7. Never start with anything similar to "Prêt(e) à papoter un peu en français?". Get right into the conversation
-        8. Listen to the user and generally keep the conversation flowing. Only talk about yourself when the user asks you a question about yourself
+        3. Gently correct mistakes only if they impede comprehension.
+        4. Keep responses under three sentences.
+        5. Never start with “Prêt(e) à papoter un peu en français?”
         ${userMessage}
       `;
       const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
@@ -126,7 +143,7 @@ export default function Chat() {
           aria-label="Send"
           title="Send"
         >
-          <IoSend size={24} color={input.trim() ? colors.primary : colors.border} />
+          <IoSend size={24} color={"#fff"} />
         </button>
       </form>
     </main>
@@ -145,6 +162,7 @@ const styles: Record<string, React.CSSProperties> = {
     overflowY: "auto",
     display: "grid",
     gap: spacing.xs,
+    paddingBottom: 80,
   },
   message: {
     marginTop: spacing.xs,
@@ -157,43 +175,71 @@ const styles: Record<string, React.CSSProperties> = {
     maxWidth: "75%",
   },
   userMessage: {
-    background: "#4A90E2",
+    background: "linear-gradient(135deg, #4A90E2, #357ABD)",
+    color: "white",
     alignSelf: "end",
     justifySelf: "end",
+    padding: "10px 14px",
+    borderRadius: "18px 18px 4px 18px",
+    boxShadow: "0 3px 6px rgba(0,0,0,0.1)",
   },
   botMessage: {
-    background: "#ECF0F1",
+    background: "#fff",
+    border: "1px solid #e6e6e6",
     alignSelf: "start",
     justifySelf: "start",
+    padding: "10px 14px",
+    borderRadius: "18px 18px 18px 4px",
+    boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
   },
+
   inputContainer: {
-    display: "grid",
-    gridTemplateColumns: "1fr auto",
-    alignItems: "end",
-    gap: spacing.sm,
-    padding: spacing.sm,
-    background: colors.surface,
-    borderTop: `1px solid ${colors.border}`,
+    position: "fixed",
+    bottom: 84, // sits *above* nav bar height (around 64px + margin)
+    left: "50%",
+    transform: "translateX(-50%)",
+    width: "clamp(280px, 90%, 720px)",
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    padding: "8px 10px 8px 16px",
+    background: "rgba(255, 255, 255, 0.8)",
+    backdropFilter: "blur(12px)",
+    border: "1px solid rgba(0,0,0,0.06)",
+    borderRadius: 28,
+    boxShadow: "0 8px 24px rgba(0,0,0,0.06)",
+    zIndex: 100,
   },
+
+
   textInput: {
+    flex: 1,
     resize: "none",
-    minHeight: 40,
-    maxHeight: 100,
-    padding: `${spacing.sm}px ${spacing.md}px`,
-    background: colors.background,
-    borderRadius: borderRadius.md,
-    border: `1px solid ${colors.border}`,
-    color: colors.text,
-    ...typography.body,
+    minHeight: 36,
+    maxHeight: 120,
+    padding: "8px 14px",
+    borderRadius: 20,
+    border: "none",
+    background: "transparent",
+    fontSize: 15,
+    lineHeight: 1.4,
     outline: "none",
+    color: colors.text,
   },
+
   sendButton: {
-    padding: spacing.sm,
-    borderRadius: borderRadius.round,
-    justifySelf: "end",
-    alignSelf: "end",
-    border: `1px solid ${colors.border}`,
-    background: colors.surface,
+    width: 44,
+    height: 44,
+    borderRadius: "50%",
+    border: "none",
+    background: colors.primary,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
     cursor: "pointer",
+    boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+    transition: "transform 0.15s ease, background 0.2s ease",
   },
+
+
 };
