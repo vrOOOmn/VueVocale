@@ -14,24 +14,24 @@ export default function App() {
     <QueryClientProvider client={qc}>
       <div
         style={{
-          minHeight: "100svh",
+          height: "100svh",
+          overflow: "hidden", // 🚫 stops outer scroll
           display: "grid",
           gridTemplateRows: "1fr auto",
           color: colors.text,
-          transition: "background 0.3s ease",
         }}
       >
         <main
           style={{
             position: "relative",
             overflow: "hidden",
+            height: "100%",
           }}
         >
-          {/* Keep both mounted */}
           <div
             style={{
               display: activeTab === "scanner" ? "block" : "none",
-              transition: "opacity 0.3s ease",
+              height: "100%",
             }}
           >
             <Scanner />
@@ -39,29 +39,31 @@ export default function App() {
           <div
             style={{
               display: activeTab === "chat" ? "block" : "none",
-              transition: "opacity 0.3s ease",
+              height: "100%",
             }}
           >
             <Chat />
           </div>
         </main>
 
+        {/* Floating nav */}
         <nav
           style={{
-            position: "sticky",
-            bottom: 12,
-            margin: "0 auto 12px auto",
-            width: "90%",
-            background: colors.background,
-            backdropFilter: "blur(18px)",
-            borderRadius: 18,
-            boxShadow: "0 6px 20px rgba(0,0,0,0.1)",
-            border: "1px solid rgba(0,0,0,0.05)",
+            position: "fixed",
+            bottom: 16,
+            left: "50%",
+            transform: "translateX(-50%)",
+            width: "min(95%, 1200px)",
+            background: "rgba(255,255,255,0.85)",
+            backdropFilter: "blur(12px)",
+            borderRadius: 20,
+            boxShadow: "0 4px 18px rgba(0,0,0,0.08)",
+            border: "1px solid rgba(0,0,0,0.06)",
             height: 64,
             display: "flex",
             justifyContent: "space-around",
             alignItems: "center",
-            transition: "all 0.25s ease",
+            zIndex: 99,
           }}
         >
           <TabButton
