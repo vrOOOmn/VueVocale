@@ -1,5 +1,4 @@
-// src/routes/Scanner.tsx
-import React, {useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { IoCamera, IoRepeat, IoWarningOutline } from "react-icons/io5";
 import PhotoPreviewSection from "../components/PhotoPreviewSection";
 import { colors, spacing, borderRadius, typography } from "../theme";
@@ -10,62 +9,134 @@ export default function Scanner() {
   const [facing, setFacing] = useState<Facing>("environment");
   const [streamError, setStreamError] = useState<string | null>(null);
   const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null);
+  const [permissionGranted, setPermissionGranted] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  async function startStream(requestFacing: Facing = facing) {
+  const cleanupStream = useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.pause();
+      videoRef.current.srcObject = null;
+    }
+  }, []);
+
+  const getCameraPermissionState = useCallback(async (): Promise<PermissionState | "prompt"> => {
+    try {
+      const result = await navigator.permissions.query({ name: "camera" as PermissionName });
+      return result.state;
+    } catch {
+      // Safari and some mobile browsers don’t support the Permissions API
+      return "prompt";
+    }
+  }, []);
+
+  const startStream = useCallback(async (requestFacing: Facing = facing) => {
     cleanupStream();
     setStreamError(null);
+
     try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const hasCamera = devices.some(d => d.kind === "videoinput");
+      if (!hasCamera) {
+        setStreamError("No camera found on this device.");
+        return;
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: { ideal: requestFacing } },
         audio: false,
       });
+
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+      }
+
+      setPermissionGranted(true);
+    } catch (err) {
+      setPermissionGranted(false);
+      let msg = "We need your permission to access the camera.";
+      if (err instanceof DOMException) {
+        if (err.name === "NotAllowedError" || err.name === "SecurityError") {
+          msg = "Camera permission denied. Please enable it in browser settings.";
+        } else if (err.name === "NotFoundError") {
+          msg = "No camera found on this device.";
+        } else if (err.name === "NotReadableError") {
+          msg = "Camera is currently in use by another app.";
+        }
+      }
+      setStreamError(msg);
+    }
+  }, [cleanupStream, facing]);
+
+  useEffect(() => {
+    if (!("mediaDevices" in navigator)) {
+      setStreamError("Camera API not supported in this browser.");
+      return;
+    }
+
+    let mounted = true;
+
+    const initCamera = async () => {
+      const permission = await getCameraPermissionState();
+      if (!mounted) return;
+
+      if (permission === "granted" || permission === "prompt") {
+        await startStream();
+      } else {
+        setStreamError("Camera permission denied. Please enable it in browser settings.");
+        setPermissionGranted(false);
+      }
+    };
+
+    initCamera();
+
+    const handleVisibility = () => {
+      if (document.hidden) cleanupStream();
+    };
+
+    document.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener("pagehide", cleanupStream);
+    window.addEventListener("beforeunload", cleanupStream);
+
+    return () => {
+      mounted = false;
+      cleanupStream();
+      document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("pagehide", cleanupStream);
+      window.removeEventListener("beforeunload", cleanupStream);
+    };
+  }, [startStream, cleanupStream, getCameraPermissionState]);
+
+  const toggleCameraFacing = async () => {
+    const next = facing === "environment" ? "user" : "environment";
+    setFacing(next);
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: next } },
+        audio: false,
+      });
+
+      cleanupStream();
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         await videoRef.current.play();
       }
     } catch (err) {
-        let msg = "We need your permission to show the camera";
-        if (err && typeof err === "object" && "name" in err) {
-            switch ((err as DOMException).name) {
-            case "NotFoundError":
-                msg = "No camera found on this device.";
-                break;
-            case "NotReadableError":
-                msg = "The camera is in use by another app.";
-                break;
-            }
-        }
-        setStreamError(msg);
+      console.error("Error switching camera:", err);
     }
-  }
+  };
 
-  function cleanupStream() {
-    streamRef.current?.getTracks().forEach(t => t.stop());
-    streamRef.current = null;
-  }
-
-  useEffect(() => {
-    if (!("mediaDevices" in navigator) || !navigator.mediaDevices.getUserMedia) {
-      setStreamError("Camera API not supported in this browser.");
-      return;
-    }
-    startStream();
-    return () => cleanupStream();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  async function toggleCameraFacing() {
-    const next = facing === "environment" ? "user" : "environment";
-    setFacing(next);
-    await startStream(next);
-  }
-
-  function handleTakePhoto() {
+  const handleTakePhoto = () => {
     const v = videoRef.current;
     const c = canvasRef.current;
     if (!v || !c) return;
@@ -78,15 +149,14 @@ export default function Scanner() {
     ctx.drawImage(v, 0, 0, c.width, c.height);
     const dataUrl = c.toDataURL("image/jpeg", 0.95);
     setPhotoDataUrl(dataUrl);
-    // pause stream to save battery while previewing
     v.pause();
     cleanupStream();
-  }
+  };
 
-  function handleRetakePhoto() {
+  const handleRetakePhoto = () => {
     setPhotoDataUrl(null);
     startStream();
-  }
+  };
 
   if (photoDataUrl) {
     return (
@@ -97,14 +167,11 @@ export default function Scanner() {
     );
   }
 
-  // Permission / error screen
-  if (streamError) {
+  if (streamError && !permissionGranted) {
     return (
       <div style={styles.permissionContainer}>
         <IoWarningOutline size={32} color={colors.secondary} />
-        <p style={styles.permissionText}>
-          {streamError}
-        </p>
+        <p style={styles.permissionText}>{streamError}</p>
         <button style={styles.permissionButton} onClick={() => startStream()}>
           Grant Permission
         </button>
@@ -115,19 +182,21 @@ export default function Scanner() {
   return (
     <div style={styles.container}>
       <div style={styles.cameraBox}>
-        <video
-          ref={videoRef}
-          style={styles.video}
-          playsInline
-          muted
-          autoPlay
-        />
+        <video ref={videoRef} style={styles.video} playsInline muted autoPlay />
         <canvas ref={canvasRef} style={{ display: "none" }} />
         <div style={styles.controls}>
-          <button style={styles.roundBtnSecondary} onClick={toggleCameraFacing} aria-label="Switch camera">
+          <button
+            style={styles.roundBtnSecondary}
+            onClick={toggleCameraFacing}
+            aria-label="Switch camera"
+          >
             <IoRepeat size={24} color={colors.textLight} />
           </button>
-          <button style={styles.roundBtnPrimary} onClick={handleTakePhoto} aria-label="Take photo">
+          <button
+            style={styles.roundBtnPrimary}
+            onClick={handleTakePhoto}
+            aria-label="Take photo"
+          >
             <IoCamera size={28} color={colors.textLight} />
           </button>
         </div>
@@ -138,13 +207,13 @@ export default function Scanner() {
 
 const styles = {
   container: {
-    minHeight: "calc(100svh - 73px)", // account for your tab bar height
+    minHeight: "calc(100svh - 73px)",
     background: colors.background,
     padding: spacing.md,
     display: "grid",
     alignItems: "center",
     justifyItems: "center",
-  } as React.CSSProperties,
+  },
   cameraBox: {
     width: "100%",
     maxWidth: 480,

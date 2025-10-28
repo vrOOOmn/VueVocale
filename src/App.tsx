@@ -53,7 +53,7 @@ export default function App() {
             bottom: 16,
             left: "50%",
             transform: "translateX(-50%)",
-            width: "min(95%, 1200px)",
+            width: "min(80%, 1000px)",
             background: "rgba(255,255,255,0.85)",
             backdropFilter: "blur(12px)",
             borderRadius: 20,
