@@ -1,4 +1,4 @@
-import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
+import React, { useLayoutEffect, useRef, useState } from "react";
 import { IoSend } from "react-icons/io5";
 import { colors, spacing, borderRadius, typography } from "../theme";
 import { GoogleGenerativeAI } from "@google/generative-ai";
@@ -9,24 +9,16 @@ type Message = { text: string; sender: "user" | "bot" };
 const ERROR_TEXT = "Oops, error in generating response! Try Again";
 const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY as string);
 
+let sessionMessages: Message[] = [];
+
 export default function Chat() {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>(sessionMessages);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
 
   const listRef = useRef<HTMLDivElement | null>(null);
   const textRef = useRef<HTMLTextAreaElement | null>(null);
 
-  useEffect(() => {
-    const loadMessages = async () => {
-      const { data, error } = await supabase
-        .from("chat_messages")
-        .select("*")
-        .order("created_at", { ascending: true });
-      if (!error && data) setMessages(data);
-    };
-    loadMessages();
-  }, []);
 
   // --- Scroll logic ---
   const scrollToBottom = (smooth = false) => {
@@ -80,24 +72,34 @@ export default function Chat() {
 
   const sendMessage = async () => {
     const text = input.trim();
-    if (!text || loading) return;
+    if (!text) return;
 
-    setLoading(true);
-    setMessages((prev) => [...prev, { text, sender: "user" }]);
+    // update local + session cache
+    const userMsg = { text, sender: "user" as const };
+    setMessages((prev) => [...prev, userMsg]);
+    sessionMessages = [...messages, userMsg];
+
     setInput("");
+    setLoading(true);
 
-    const aiResponse = await generateAIResponse(text);
+    try {
+      // your AI call
+      const aiResponse = await generateAIResponse(text);
 
-    await supabase.from("chat_messages").insert([
-      { text, sender: "user" },
-      { text: aiResponse, sender: "bot" },
-    ]);
+      const botMsg = { text: aiResponse, sender: "bot" as const };
+      setMessages((prev) => [...prev, botMsg]);
+      sessionMessages = [...sessionMessages, botMsg];
 
-    setMessages((prev) => [
-      ...prev,
-      { text: aiResponse, sender: "bot" },
-    ]);
-    setLoading(false);
+      // log both in Supabase
+      await supabase.from("chat_messages").insert([
+        userMsg,
+        botMsg,
+      ]);
+    } catch (err) {
+      console.error("send error", err);
+    } finally {
+      setLoading(false);
+    }
     textRef.current?.focus();
   };
 
