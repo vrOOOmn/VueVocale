@@ -2,6 +2,7 @@ import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { IoSend } from "react-icons/io5";
 import { colors, spacing, borderRadius, typography } from "../theme";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { supabase } from "../lib/supabaseClient";
 
 type Message = { text: string; sender: "user" | "bot" };
 
@@ -16,16 +17,16 @@ export default function Chat() {
   const listRef = useRef<HTMLDivElement | null>(null);
   const textRef = useRef<HTMLTextAreaElement | null>(null);
 
-  // --- Load saved messages once ---
   useEffect(() => {
-    const saved = localStorage.getItem("chatMessages");
-    if (saved) setMessages(JSON.parse(saved));
+    const loadMessages = async () => {
+      const { data, error } = await supabase
+        .from("chat_messages")
+        .select("*")
+        .order("created_at", { ascending: true });
+      if (!error && data) setMessages(data);
+    };
+    loadMessages();
   }, []);
-
-  // --- Persist messages ---
-  useEffect(() => {
-    localStorage.setItem("chatMessages", JSON.stringify(messages));
-  }, [messages]);
 
   // --- Scroll logic ---
   const scrollToBottom = (smooth = false) => {
@@ -87,9 +88,14 @@ export default function Chat() {
 
     const aiResponse = await generateAIResponse(text);
 
+    await supabase.from("chat_messages").insert([
+      { text, sender: "user" },
+      { text: aiResponse, sender: "bot" },
+    ]);
+
     setMessages((prev) => [
       ...prev,
-      { text: aiResponse ?? ERROR_TEXT, sender: "bot" },
+      { text: aiResponse, sender: "bot" },
     ]);
     setLoading(false);
     textRef.current?.focus();

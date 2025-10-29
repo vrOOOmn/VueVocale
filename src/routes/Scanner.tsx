@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { IoCamera, IoRepeat, IoWarningOutline } from "react-icons/io5";
 import PhotoPreviewSection from "../components/PhotoPreviewSection";
 import { colors, spacing, borderRadius, typography } from "../theme";
+import { supabase } from "../lib/supabaseClient";
 
 type Facing = "environment" | "user";
 
@@ -99,7 +100,12 @@ export default function Scanner() {
     initCamera();
 
     const handleVisibility = () => {
-      if (document.hidden) cleanupStream();
+      if (document.hidden) {
+        cleanupStream(); // stop the stream when leaving
+      } else {
+        // restart the camera when coming back, only if user hasn't taken a photo yet
+        setTimeout(() => startStream(), 300);
+      }
     };
 
     document.addEventListener("visibilitychange", handleVisibility);
@@ -136,22 +142,53 @@ export default function Scanner() {
     }
   };
 
-  const handleTakePhoto = () => {
-    const v = videoRef.current;
-    const c = canvasRef.current;
-    if (!v || !c) return;
+const handleTakePhoto = async () => {
+  const v = videoRef.current;
+  const c = canvasRef.current;
+  if (!v || !c) return;
 
-    c.width = v.videoWidth || 1080;
-    c.height = v.videoHeight || 1440;
-    const ctx = c.getContext("2d");
-    if (!ctx) return;
+  // 1. Draw the frame
+  c.width = v.videoWidth || 1080;
+  c.height = v.videoHeight || 1440;
+  const ctx = c.getContext("2d");
+  if (!ctx) return;
+  ctx.drawImage(v, 0, 0, c.width, c.height);
 
-    ctx.drawImage(v, 0, 0, c.width, c.height);
-    const dataUrl = c.toDataURL("image/jpeg", 0.95);
-    setPhotoDataUrl(dataUrl);
-    v.pause();
-    cleanupStream();
-  };
+  // 2. Convert to dataURL first (to test)
+  const dataUrl = c.toDataURL("image/jpeg", 0.9);
+  setPhotoDataUrl(dataUrl);
+
+  // 3. Optional: Upload asynchronously (non-blocking)
+  c.toBlob(async (blob) => {
+    if (!blob) return;
+
+    try {
+      const fileName = `photo-${Date.now()}.jpg`;
+      const { error } = await supabase.storage
+        .from("photos")
+        .upload(fileName, blob);
+
+      if (error) {
+        console.error("Upload failed:", error.message);
+        return;
+      }
+
+      const { data: publicData } = supabase.storage
+        .from("photos")
+        .getPublicUrl(fileName);
+
+      await supabase
+        .from("photos")
+        .insert([{ photo_url: publicData.publicUrl }]);
+    } catch (err) {
+      console.error("Upload error:", err);
+    }
+  }, "image/jpeg", 0.9);
+
+  // 4. Stop the camera
+  cleanupStream();
+};
+
 
   const handleRetakePhoto = () => {
     setPhotoDataUrl(null);
@@ -182,7 +219,7 @@ export default function Scanner() {
   return (
     <div style={styles.container}>
       <div style={styles.cameraBox}>
-        <video ref={videoRef} style={styles.video} playsInline muted autoPlay />
+        <video ref={videoRef} style={styles.video} playsInline muted autoPlay controls={false}/>
         <canvas ref={canvasRef} style={{ display: "none" }} />
         <div style={styles.controls}>
           <button

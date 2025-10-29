@@ -28,22 +28,8 @@ export default function App() {
             height: "100%",
           }}
         >
-          <div
-            style={{
-              display: activeTab === "scanner" ? "block" : "none",
-              height: "100%",
-            }}
-          >
-            <Scanner />
-          </div>
-          <div
-            style={{
-              display: activeTab === "chat" ? "block" : "none",
-              height: "100%",
-            }}
-          >
-            <Chat />
-          </div>
+          {activeTab === "scanner" && <Scanner />}
+          {activeTab === "chat" && <Chat />}
         </main>
 
         {/* Floating nav */}
