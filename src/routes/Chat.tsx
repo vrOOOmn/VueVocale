@@ -186,7 +186,6 @@ const styles: Record<string, React.CSSProperties> = {
   },
   botMessage: {
     background: "#fff",
-    border: "1px solid #e6e6e6",
     alignSelf: "flex-start",
     borderRadius: "18px 18px 18px 4px",
   },
