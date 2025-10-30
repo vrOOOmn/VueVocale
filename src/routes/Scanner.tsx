@@ -3,8 +3,8 @@ import { IoCamera, IoRepeat, IoWarningOutline } from "react-icons/io5";
 import PhotoPreviewSection from "../components/PhotoPreviewSection";
 import { colors, spacing, borderRadius, typography } from "../theme";
 import { supabase } from "../lib/supabaseClient";
-import * as cocoSsd from "@tensorflow-models/coco-ssd";
-import "@tensorflow/tfjs";
+import { geminiFlash } from "../lib/geminiClient";
+
 
 type Facing = "environment" | "user";
 
@@ -14,12 +14,15 @@ export default function Scanner() {
   const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null);
   const [permissionGranted, setPermissionGranted] = useState(false);
   const [detectedObject, setDetectedObject] = useState<string | null>(null);
+  const [englishObject, setEnglishObject] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const overlayCanvasRef = useRef<HTMLCanvasElement | null>(null);
-  const captureCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
+  // Stop and clear camera stream
   const cleanupStream = useCallback(() => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop());
@@ -31,6 +34,7 @@ export default function Scanner() {
     }
   }, []);
 
+  // Check for camera permission (handles Safari)
   const getCameraPermissionState = useCallback(async (): Promise<PermissionState | "prompt"> => {
     try {
       const result = await navigator.permissions.query({ name: "camera" as PermissionName });
@@ -40,6 +44,7 @@ export default function Scanner() {
     }
   }, []);
 
+  // Start video stream
   const startStream = useCallback(
     async (requestFacing: Facing = facing) => {
       cleanupStream();
@@ -83,6 +88,7 @@ export default function Scanner() {
     [cleanupStream, facing]
   );
 
+  // Initialize camera when component mounts
   useEffect(() => {
     if (!("mediaDevices" in navigator)) {
       setStreamError("Camera API not supported in this browser.");
@@ -126,74 +132,7 @@ export default function Scanner() {
     };
   }, [startStream, cleanupStream, getCameraPermissionState]);
 
-  // 🟢 Object Detection
-  useEffect(() => {
-    let model: cocoSsd.ObjectDetection | null = null;
-    let detectionInterval: number | null = null;
-    const blacklist = ["person", "chair", "couch", "tv", "bed", "refrigerator"];
-
-    const runDetection = async () => {
-      const v = videoRef.current;
-      const c = overlayCanvasRef.current;
-      if (!v || !c || !model) return;
-
-      if (v.videoWidth === 0 || v.videoHeight === 0) return;
-
-      const ctx = c.getContext("2d");
-      if (!ctx) return;
-
-      c.width = v.videoWidth;
-      c.height = v.videoHeight;
-      ctx.clearRect(0, 0, c.width, c.height);
-
-      const predictions = await model.detect(v);
-      const filtered = predictions.filter((p) => p.score > 0.5 && !blacklist.includes(p.class));
-      
-      // get actual rendered size of video
-      const videoWidth = v.videoWidth;
-      const videoHeight = v.videoHeight;
-      const displayWidth = v.clientWidth;
-      const displayHeight = v.clientHeight;
-
-      // calculate scale factors
-      const scaleX = displayWidth / videoWidth;
-      const scaleY = displayHeight / videoHeight;
-
-      filtered.forEach((p) => {
-        const [x, y, width, height] = p.bbox;
-        const scaledX = x * scaleX;
-        const scaledY = y * scaleY;
-        const scaledWidth = width * scaleX;
-        const scaledHeight = height * scaleY;
-
-        ctx.strokeStyle = "#00ff88";
-        ctx.lineWidth = 2;
-        ctx.strokeRect(scaledX, scaledY, scaledWidth, scaledHeight);
-        ctx.fillStyle = "rgba(0, 255, 136, 0.6)";
-        ctx.font = "14px Arial";
-        ctx.fillText(`${p.class} ${(p.score * 100).toFixed(1)}%`, scaledX + 4, scaledY + 16);
-      });
-
-      if (filtered.length > 0) {
-        const main = filtered.reduce((prev, curr) => (curr.score > prev.score ? curr : prev));
-        setDetectedObject(main.class);
-      } else {
-        setDetectedObject(null);
-      }
-    };
-
-    const initModel = async () => {
-      model = await cocoSsd.load();
-      detectionInterval = window.setInterval(runDetection, 300);
-    };
-
-    initModel();
-
-    return () => {
-      if (detectionInterval) clearInterval(detectionInterval);
-    };
-  }, []);
-
+  // Flip camera
   const toggleCameraFacing = async () => {
     const next = facing === "environment" ? "user" : "environment";
     setFacing(next);
@@ -215,10 +154,15 @@ export default function Scanner() {
     }
   };
 
+  // Capture and upload photo
   const handleTakePhoto = async () => {
     const v = videoRef.current;
-    const c = captureCanvasRef.current;
+    const c = canvasRef.current;
     if (!v || !c) return;
+
+    // Reset state
+    setDetectedObject(null);
+    setIsLoading(true);
 
     c.width = v.videoWidth || 1080;
     c.height = v.videoHeight || 1440;
@@ -227,8 +171,50 @@ export default function Scanner() {
     ctx.drawImage(v, 0, 0, c.width, c.height);
 
     const dataUrl = c.toDataURL("image/jpeg", 0.9);
-    setPhotoDataUrl(dataUrl);
 
+    try {
+      const base64Image = dataUrl.split(",")[1];
+
+      // Step 1: Detect object
+      const detection = await geminiFlash.generateContent([
+        {
+          inlineData: { data: base64Image, mimeType: "image/jpeg" },
+        },
+        {
+          text: "Identify the main object in this image. Return only one short English noun, lowercase.",
+        },
+      ]);
+      const englishObject = detection.response.text().trim();
+
+      // Step 2: Translate to French (force a single word output)
+      const translation = await geminiFlash.generateContent([
+        {
+          text: `You are a precise translation assistant. Translate the following English noun into French, returning only a single French word (no explanations, no notes, no articles, no formatting).
+          
+          English: ${englishObject}
+          French (single word only):`
+        }
+      ]);
+
+      setEnglishObject(englishObject);
+
+      // Clean output to avoid stray line breaks or explanations
+      let frenchWord = translation.response.text().trim().split(/\s+/)[0];
+      frenchWord = frenchWord.replace(/[^a-zA-ZÀ-ÿ-]/g, "");
+
+      console.log("Detected:", englishObject, "→", frenchWord);
+
+      setDetectedObject(frenchWord);
+      setPhotoDataUrl(dataUrl); // Show preview now that everything is ready
+    } catch (err) {
+      console.error("Gemini detection error:", err);
+      setStreamError("Erreur: échec de la détection de l'objet.");
+    } finally {
+      setIsLoading(false);
+      cleanupStream();
+    }
+
+    // Optional: upload the photo (same as before)
     c.toBlob(async (blob) => {
       if (!blob) return;
       try {
@@ -244,9 +230,8 @@ export default function Scanner() {
         console.error("Upload error:", err);
       }
     }, "image/jpeg", 0.9);
-
-    cleanupStream();
   };
+
 
   const handleRetakePhoto = () => {
     setPhotoDataUrl(null);
@@ -254,8 +239,17 @@ export default function Scanner() {
   };
 
   if (photoDataUrl) {
-    return <PhotoPreviewSection photoDataUrl={photoDataUrl} handleRetakePhoto={handleRetakePhoto} />;
+    return (
+      <PhotoPreviewSection
+        photoDataUrl={photoDataUrl}
+        handleRetakePhoto={handleRetakePhoto}
+        detectedLabel={detectedObject}
+        englishLabel={englishObject}
+        onChat={() => console.log("Redirect to Chat")}
+      />
+    );
   }
+
 
   if (streamError && !permissionGranted) {
     return (
@@ -269,13 +263,45 @@ export default function Scanner() {
     );
   }
 
+  if (isLoading) {
+    return (
+      <div
+        style={{
+          height: "100svh",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          background: colors.background,
+          color: colors.text,
+          textAlign: "center",
+          fontFamily: typography.body.fontFamily,
+        }}
+      >
+        <div style={{ fontSize: "2.5rem", marginBottom: spacing.md }}>🔍</div>
+        <p style={{ ...typography.body, margin: 0, fontSize: "2.5rem" }}>
+          <em>Analyse et traduction de l’image…</em>
+        </p>
+        <p
+          style={{
+            ...typography.message,
+            margin: 0,
+            opacity: 0.7,
+            fontSize: "2.0rem",
+          }}
+        >
+          <em>Analyzing and translating image…</em>
+        </p>
+      </div>
+    );
+  }
+
+
   return (
     <div style={styles.container}>
       <div style={styles.cameraBox}>
         <video ref={videoRef} style={styles.video} playsInline muted autoPlay controls={false} />
-        <canvas ref={overlayCanvasRef} style={styles.overlayCanvas} />
-        <canvas ref={captureCanvasRef} style={{ display: "none" }} />
-        {detectedObject && <div style={styles.labelOverlay}>{detectedObject.toUpperCase()} DETECTED</div>}
+        <canvas ref={canvasRef} style={{ display: "none" }} />
         <div style={styles.controls}>
           <button style={styles.roundBtnSecondary} onClick={toggleCameraFacing} aria-label="Switch camera">
             <IoRepeat size={24} color={colors.textLight} />
@@ -314,28 +340,6 @@ const styles = {
     objectFit: "cover" as const,
     display: "block",
     background: "#000",
-  },
-  overlayCanvas: {
-    position: "absolute" as const,
-    top: 0,
-    left: 0,
-    width: "100%",
-    height: "100%",
-    pointerEvents: "none" as const,
-  },
-  labelOverlay: {
-    position: "absolute" as const,
-    bottom: spacing.xl,
-    left: "50%",
-    transform: "translateX(-50%)",
-    background: "rgba(0, 0, 0, 0.6)",
-    color: "#fff",
-    padding: "6px 12px",
-    borderRadius: borderRadius.md,
-    fontSize: "1rem",
-    fontWeight: 600,
-    textTransform: "capitalize" as const,
-    pointerEvents: "none" as const,
   },
   controls: {
     position: "absolute" as const,

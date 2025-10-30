@@ -1,13 +1,12 @@
-import React, { useLayoutEffect, useRef, useState } from "react";
+import React, {useLayoutEffect, useRef, useState } from "react";
 import { IoSend } from "react-icons/io5";
 import { colors, spacing, borderRadius, typography } from "../theme";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { supabase } from "../lib/supabaseClient";
+import { geminiFlash } from "../lib/geminiClient";
 
 type Message = { text: string; sender: "user" | "bot" };
 
 const ERROR_TEXT = "Oops, error in generating response! Try Again";
-const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY as string);
 
 let sessionMessages: Message[] = [];
 
@@ -62,8 +61,7 @@ export default function Chat() {
         8. Listen to the user and generally keep the conversation flowing. Only talk about yourself when the user asks you a question about yourself
         ${userMessage}
       `;
-      const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-      const result = await model.generateContent(prompt);
+      const result = await geminiFlash.generateContent(prompt);
       return result.response.text()?.trimEnd() || ERROR_TEXT;
     } catch {
       return ERROR_TEXT;
@@ -224,6 +222,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: "none",
     background: "transparent",
     fontSize: 15,
+    fontFamily: typography.message.fontFamily,
     lineHeight: 1.4,
     outline: "none",
     color: colors.text,
