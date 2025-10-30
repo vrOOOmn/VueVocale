@@ -8,7 +8,7 @@ import { geminiFlash } from "../lib/geminiClient";
 
 type Facing = "environment" | "user";
 
-export default function Scanner() {
+export default function Scanner({ onChat }: { onChat?: (detectedWord: string) => void }) {
   const [facing, setFacing] = useState<Facing>("environment");
   const [streamError, setStreamError] = useState<string | null>(null);
   const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null);
@@ -238,17 +238,21 @@ export default function Scanner() {
     startStream();
   };
 
-  if (photoDataUrl) {
+ if (photoDataUrl) {
     return (
       <PhotoPreviewSection
         photoDataUrl={photoDataUrl}
         handleRetakePhoto={handleRetakePhoto}
         detectedLabel={detectedObject}
         englishLabel={englishObject}
-        onChat={() => console.log("Redirect to Chat")}
+        onChat={() => {
+          if (onChat && detectedObject) {
+            onChat(detectedObject); // send detected word to App
+          }
+        }}
       />
     );
-  }
+ }
 
 
   if (streamError && !permissionGranted) {

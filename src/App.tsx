@@ -9,13 +9,14 @@ const qc = new QueryClient();
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<"scanner" | "chat">("scanner");
+  const [topic, setTopic] = useState<string | null>(null);
 
   return (
     <QueryClientProvider client={qc}>
       <div
         style={{
           height: "100svh",
-          overflow: "hidden", // 🚫 stops outer scroll
+          overflow: "hidden",
           display: "grid",
           gridTemplateRows: "1fr auto",
           color: colors.text,
@@ -28,8 +29,15 @@ export default function App() {
             height: "100%",
           }}
         >
-          {activeTab === "scanner" && <Scanner />}
-          {activeTab === "chat" && <Chat />}
+          {activeTab === "scanner" && (
+            <Scanner
+              onChat={(detectedWord) => {
+                setTopic(detectedWord);
+                setActiveTab("chat");
+              }}
+            />
+          )}
+          {activeTab === "chat" && <Chat topic={topic} />}
         </main>
 
         {/* Floating nav */}

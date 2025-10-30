@@ -10,7 +10,7 @@ const ERROR_TEXT = "Oops, error in generating response! Try Again";
 
 let sessionMessages: Message[] = [];
 
-export default function Chat() {
+export default function Chat({ topic }: { topic?: string | null }) {
   const [messages, setMessages] = useState<Message[]>(sessionMessages);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -36,6 +36,15 @@ export default function Chat() {
   useLayoutEffect(() => {
     scrollToBottom(true); // on new message
   }, [messages.length]);
+
+
+  useLayoutEffect(() => {
+    if (topic && messages.length === 0) {
+      const intro = { text: `Parlons de ${topic} !`, sender: "bot" as const };
+      setMessages([intro]);
+      sessionMessages = [intro];
+    }
+  }, [topic, messages.length]);
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
