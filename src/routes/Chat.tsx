@@ -46,10 +46,11 @@ export default function Chat({
       sessionMessages = updatedMessages;
 
       const prompt = `
-        You are a friendly, patient French friend for intermediate learners (B1).
-        The user has just shared an image of a ${topic}.
-        Respond naturally in French — no greetings, just react casually.
-        Keep it under two sentences, both in French (no English translation).
+        You're chatting as a friendly French friend with an intermediate (B1) learner.  
+        They just sent you a photo of a ${topic}.  
+        React naturally in French — show curiosity or interest, no greetings.  
+        Keep it under three sentences, and ask only one simple question if it fits.  
+        Stay in the flow of conversation and only talk about yourself if asked.  
       `;
 
       try {
@@ -84,13 +85,15 @@ export default function Chat({
   // --- Generate Gemini response ---
   const generateAIResponse = async (userMessage: string): Promise<string> => {
     try {
+      const hasImage = messages.some(m => m.image);
       const prompt = `
-        You are a friendly, patient French friend for intermediate learners (B1).
-        Continue the conversation in French about daily life, hobbies, or culture.
-        Keep your tone natural, friendly, and brief (max 3 sentences).
-        Correct only serious errors gently.
-        If the chat included images, refer casually to them when relevant.
-        
+        You're chatting as a friendly French friend helping an intermediate (B1) learner practice real-life French.  
+        Keep it light, natural, and curious — talk about everyday things like food, travel, or hobbies.  
+        Use only French. Correct serious mistakes gently with quick tips.  
+        Keep replies under three sentences and ask just one question at a time.  
+        Keep the conversation flowing naturally and casually and refrain from talking too much about yourself
+
+        ${hasImage ? "If the chat included images, refer casually to them when relevant." : ""}
         ${userMessage}
       `;
       const result = await geminiFlash.generateContent(prompt);
