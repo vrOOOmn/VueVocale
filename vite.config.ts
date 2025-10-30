@@ -10,4 +10,10 @@ export default defineConfig({
       },
     }),
   ],
+  server:{
+    host: true,
+    allowedHosts: [
+      'unsunken-gearldine-unmentioned.ngrok-free.dev', // your ngrok domain
+    ],
+  }
 })

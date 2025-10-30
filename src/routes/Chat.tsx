@@ -267,7 +267,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   inputContainer: {
     position: "fixed",
-    bottom: 100,
+    bottom: 75,
     left: "50%",
     transform: "translateX(-50%)",
     width: "clamp(280px, 90%, 720px)",

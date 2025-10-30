@@ -55,7 +55,7 @@ export default function App() {
         <nav
           style={{
             position: "fixed",
-            bottom: 16,
+            bottom: 0,
             left: "50%",
             transform: "translateX(-50%)",
             width: "min(90%, 800px)",
