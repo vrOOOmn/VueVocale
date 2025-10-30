@@ -5,7 +5,6 @@ import { colors, spacing, borderRadius, typography } from "../theme";
 import { supabase } from "../lib/supabaseClient";
 import { geminiFlash } from "../lib/geminiClient";
 
-
 type Facing = "environment" | "user";
 
 export default function Scanner({
@@ -21,12 +20,11 @@ export default function Scanner({
   const [englishObject, setEnglishObject] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  // Stop and clear camera stream
+  // Clean up camera stream
   const cleanupStream = useCallback(() => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop());
@@ -38,7 +36,7 @@ export default function Scanner({
     }
   }, []);
 
-  // Check for camera permission (handles Safari)
+  // Camera permission
   const getCameraPermissionState = useCallback(async (): Promise<PermissionState | "prompt"> => {
     try {
       const result = await navigator.permissions.query({ name: "camera" as PermissionName });
@@ -48,7 +46,7 @@ export default function Scanner({
     }
   }, []);
 
-  // Start video stream
+  // Start stream
   const startStream = useCallback(
     async (requestFacing: Facing = facing) => {
       cleanupStream();
@@ -92,7 +90,7 @@ export default function Scanner({
     [cleanupStream, facing]
   );
 
-  // Initialize camera when component mounts
+  // Initialize on mount
   useEffect(() => {
     if (!("mediaDevices" in navigator)) {
       setStreamError("Camera API not supported in this browser.");
@@ -116,11 +114,8 @@ export default function Scanner({
     initCamera();
 
     const handleVisibility = () => {
-      if (document.hidden) {
-        cleanupStream();
-      } else {
-        setTimeout(() => startStream(), 300);
-      }
+      if (document.hidden) cleanupStream();
+      else setTimeout(() => startStream(), 300);
     };
 
     document.addEventListener("visibilitychange", handleVisibility);
@@ -158,13 +153,12 @@ export default function Scanner({
     }
   };
 
-  // Capture and upload photo
+  // Capture photo
   const handleTakePhoto = async () => {
     const v = videoRef.current;
     const c = canvasRef.current;
     if (!v || !c) return;
 
-    // Reset state
     setDetectedObject(null);
     setIsLoading(true);
 
@@ -178,38 +172,28 @@ export default function Scanner({
 
     try {
       const base64Image = dataUrl.split(",")[1];
-
-      // Step 1: Detect object
       const detection = await geminiFlash.generateContent([
-        {
-          inlineData: { data: base64Image, mimeType: "image/jpeg" },
-        },
-        {
-          text: "Identify the main object in this image. Return only one short English noun, lowercase.",
-        },
+        { inlineData: { data: base64Image, mimeType: "image/jpeg" } },
+        { text: "Identify the main object in this image. Return only one short English noun, lowercase." },
       ]);
       const englishObject = detection.response.text().trim();
 
-      // Step 2: Translate to French (force a single word output)
       const translation = await geminiFlash.generateContent([
         {
           text: `You are a precise translation assistant. Translate the following English noun into French, returning only a single French word (no explanations, no notes, no articles, no formatting).
           
           English: ${englishObject}
           French (single word only):`
-        }
+        },
       ]);
 
       setEnglishObject(englishObject);
 
-      // Clean output to avoid stray line breaks or explanations
       let frenchWord = translation.response.text().trim().split(/\s+/)[0];
       frenchWord = frenchWord.replace(/[^a-zA-ZÀ-ÿ-]/g, "");
 
-      console.log("Detected:", englishObject, "→", frenchWord);
-
       setDetectedObject(frenchWord);
-      setPhotoDataUrl(dataUrl); // Show preview now that everything is ready
+      setPhotoDataUrl(dataUrl);
     } catch (err) {
       console.error("Gemini detection error:", err);
       setStreamError("Erreur: échec de la détection de l'objet.");
@@ -218,16 +202,13 @@ export default function Scanner({
       cleanupStream();
     }
 
-    // Optional: upload the photo (same as before)
+    // Upload image
     c.toBlob(async (blob) => {
       if (!blob) return;
       try {
         const fileName = `photo-${Date.now()}.jpg`;
         const { error } = await supabase.storage.from("photos").upload(fileName, blob);
-        if (error) {
-          console.error("Upload failed:", error.message);
-          return;
-        }
+        if (error) console.error("Upload failed:", error.message);
         const { data: publicData } = supabase.storage.from("photos").getPublicUrl(fileName);
         await supabase.from("photos").insert([{ photo_url: publicData.publicUrl }]);
       } catch (err) {
@@ -236,27 +217,10 @@ export default function Scanner({
     }, "image/jpeg", 0.9);
   };
 
-
   const handleRetakePhoto = () => {
     setPhotoDataUrl(null);
     startStream();
   };
-
- if (photoDataUrl) {
-    return (
-      <PhotoPreviewSection
-        photoDataUrl={photoDataUrl}
-        handleRetakePhoto={handleRetakePhoto}
-        detectedLabel={detectedObject}
-        englishLabel={englishObject}
-        onChat={() => {
-          if (onChat && detectedObject && photoDataUrl) {
-            onChat(detectedObject, photoDataUrl); // send detected word to App
-          }
-        }}
-      />
-    );
- }
 
 
   if (streamError && !permissionGranted) {
@@ -273,76 +237,113 @@ export default function Scanner({
 
   if (isLoading) {
     return (
-      <div
-        style={{
-          height: "100svh",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          background: "linear-gradient(180deg, #F6F8FF 0%, #EEF2FF 50%, #F8FAFF 100%)",
-          color: colors.text,
-          textAlign: "center",
-          fontFamily: typography.body.fontFamily,
-        }}
-      >
+      <div style={styles.loadingScreen}>
         <div style={{ fontSize: "2.5rem", marginBottom: spacing.md }}>🔍</div>
-        <p style={{ ...typography.body, margin: 0, fontSize: "2.5rem" }}>
+        <p style={{ ...typography.body, margin: 0, fontSize: "2.2rem" }}>
           <em>Analyse et traduction de l’image…</em>
         </p>
-        <p
-          style={{
-            ...typography.message,
-            margin: 0,
-            opacity: 0.7,
-            fontSize: "2.0rem",
-          }}
-        >
+        <p style={{ opacity: 0.7, fontSize: "1.6rem" }}>
           <em>Analyzing and translating image…</em>
         </p>
       </div>
     );
   }
 
-
   return (
     <div style={styles.container}>
-      <div style={styles.cameraBox}>
-        <video ref={videoRef} style={styles.video} playsInline muted autoPlay controls={false} />
-        <canvas ref={canvasRef} style={{ display: "none" }} />
-        <div style={styles.controls}>
-          <button style={styles.roundBtnSecondary} onClick={toggleCameraFacing} aria-label="Switch camera">
-            <IoRepeat size={24} color={colors.textLight} />
-          </button>
-          <button style={styles.roundBtnPrimary} onClick={handleTakePhoto} aria-label="Take photo">
-            <IoCamera size={28} color={colors.textLight} />
-          </button>
+      {/* Hero section moved inside */}
+      <div style={styles.hero}>
+        <div style={styles.heroHeader}>
+          <img src="/vuevocale.svg" alt="VueVocale logo" style={styles.logo} />
+          <h1 style={styles.title}>VueVocale</h1>
         </div>
+
+        <p style={styles.subtitle}>A conversational French learning companion</p>
+        <p style={styles.description}>
+          VueVocale helps you level up your French speaking skills by engaging in spontaneous conversations about
+          the world around you. Capture an object, and your AI partner will start chatting with
+          you naturally!
+        </p>
       </div>
+
+      {photoDataUrl ? (
+        <PhotoPreviewSection
+          photoDataUrl={photoDataUrl}
+          handleRetakePhoto={handleRetakePhoto}
+          detectedLabel={detectedObject}
+          englishLabel={englishObject}
+          onChat={() => {
+            if (onChat && detectedObject && photoDataUrl) {
+              onChat(detectedObject, photoDataUrl);
+            }
+          }}
+        />
+      ) : (
+        <div style={styles.cameraBox}>
+          <video ref={videoRef} style={styles.video} playsInline muted autoPlay controls={false}/>
+          <canvas ref={canvasRef} style={{ display: "none" }} />
+          <div style={styles.controls}>
+            <button style={styles.roundBtnSecondary} onClick={toggleCameraFacing}>
+              <IoRepeat size={24} color={colors.textLight} />
+            </button>
+            <button style={styles.roundBtnPrimary} onClick={handleTakePhoto}>
+              <IoCamera size={28} color={colors.textLight} />
+            </button>
+          </div>
+        </div>)}
     </div>
   );
 }
 
-const styles = {
+const styles: Record<string, React.CSSProperties> = {
   container: {
-    height: "100%",
-    background: "linear-gradient(180deg, #F6F8FF 0%, #EEF2FF 50%, #F8FAFF 100%)",
+    width: "100%",
+    display: "flex",
+    flexDirection: "column" as const,
+    alignItems: "center",
+    justifyContent: "flex-start",
+    padding: "24px 16px 120px",
+    gap: "24px",
+    background: "transparent",
+  },
+  hero: {
+    textAlign: "center" as const,
+    width: "100%",
+    maxWidth: 800,
+    margin: "0 auto",
+    padding: "28px 16px 0",
+  },
+  heroHeader: {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    padding: "clamp(16px, 4vh, 24px)",
+    gap: 10,
+    marginBottom: 4,
+  },
+  logo: { width: 70, height: 70, objectFit: "contain" as const },
+  title: { fontSize: 38, fontWeight: 700, color: "#3B6BF3", marginTop: 20 },
+  subtitle: { fontSize: 17, color: "#444", fontStyle: "italic", marginTop: 4 },
+  description: {
+    fontSize: 18,
+    color: "#555",
+    marginTop: 10,
+    lineHeight: 1.6,
+    backgroundColor: colors.surface,
+    padding: 14,
+    borderRadius: 16,
   },
   cameraBox: {
-    width: "65vw",              // full responsive width
-    maxWidth: 480,              // cap on large screens
-    height: "55vh",             // dynamically scale height
-    maxHeight: 640,             // cap for large devices
+    width: "min(85vw, 400px)",
+    maxHeight: "70vh",
     position: "relative" as const,
     background: colors.surface,
     border: `1px solid ${colors.border}`,
     borderRadius: borderRadius.lg,
     overflow: "hidden",
+    aspectRatio: "3 / 4",
+    flexShrink: 0,
   },
+
   video: {
     width: "100%",
     height: "100%",
@@ -350,42 +351,63 @@ const styles = {
     display: "block",
     background: "#000",
   },
+
   controls: {
     position: "absolute" as const,
-    left: 0,
-    right: 0,
     bottom: spacing.md,
+    left: "50%",
+    transform: "translateX(-50%)",
     display: "flex",
     justifyContent: "space-between",
-    alignItems: "flex-end",
-    paddingInline: spacing.lg,
+    alignItems: "center",
+    width: "calc(100% - 40px)",
+    maxWidth: 360,                 // keeps button spacing tidy on large screens
+    paddingInline: spacing.md,
+    zIndex: 2,
   },
+
   roundBtnSecondary: {
-    padding: spacing.md,
+    padding: "clamp(8px, 3vw, 12px)", // responsive size
     borderRadius: borderRadius.round,
     background: colors.secondary,
     border: "none",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    transition: "transform 0.2s ease",
   },
+
   roundBtnPrimary: {
-    padding: spacing.lg,
+    padding: "clamp(14px, 4vw, 18px)",
     borderRadius: borderRadius.round,
     background: colors.primary,
     border: "none",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    transition: "transform 0.2s ease",
+  },
+
+  loadingScreen: {
+    height: "100svh",
+    display: "flex",
+    flexDirection: "column" as const,
+    alignItems: "center",
+    justifyContent: "center",
+    background: "transparent",
+    color: colors.text,
+    textAlign: "center" as const,
+    fontFamily: typography.body.fontFamily,
   },
   permissionContainer: {
     minHeight: "calc(100svh - 73px)",
-    background: "linear-gradient(180deg, #F6F8FF 0%, #EEF2FF 50%, #F8FAFF 100%)",
     display: "grid",
     placeItems: "center",
     padding: spacing.xl,
     textAlign: "center" as const,
     gap: spacing.md,
   },
-  permissionText: {
-    ...typography.body,
-    color: colors.text,
-    margin: 0,
-  },
+  permissionText: { ...typography.body, color: colors.text, margin: 0 },
   permissionButton: {
     background: colors.primary,
     color: colors.textLight,

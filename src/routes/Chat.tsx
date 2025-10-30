@@ -233,7 +233,7 @@ const styles: Record<string, React.CSSProperties> = {
   container: {
     height: "100%",
     overflow: "hidden",
-    background: "linear-gradient(180deg, #F6F8FF 0%, #EEF2FF 50%, #F8FAFF 100%)",
+    background: "transparent",
     display: "flex",
     flexDirection: "column",
     position: "relative",
