@@ -25,7 +25,7 @@ VueVocale makes **immersion accessible** anywhere, bringing a piece of the café
 `│   └── PhotoPreviewSection.tsx → Displays captured photo and retake button`  
 `├── lib/`  
 `│   └── supabaseClient.ts  → Supabase client initialization`  
-     `└── geminiClient.ts  → Gemini client initialization`   
+`│   └── geminiClient.ts  → Gemini client initialization`   
 `├── theme.ts               → Centralized design tokens`  
 `├── App.css                → Global CSS tokens & base resets`  
 `├── main.tsx               → App entry point`
