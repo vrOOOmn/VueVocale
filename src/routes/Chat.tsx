@@ -90,6 +90,7 @@ export default function Chat({
         You're chatting as a friendly French friend helping an intermediate (B1) learner practice real-life French.  
         Keep it light, natural, and curious — talk about everyday things like food, travel, or hobbies.  
         Use only French. Correct serious mistakes gently with quick tips.  
+        Never say "Prêt(e) à papoter un peu en français ?"
         Keep replies under three sentences and ask just one question at a time.  
         Keep the conversation flowing naturally and casually and refrain from talking too much about yourself
 
@@ -136,6 +137,19 @@ export default function Chat({
   return (
     <main style={styles.container}>
       <div ref={listRef} style={styles.messages}>
+        {topic && (
+          <p
+            style={{
+              textAlign: "center",
+              color: "#777",
+              fontSize: 13,
+              marginBottom: 6,
+              fontStyle: "italic",
+            }}
+          >
+            Chatting about: <strong>{topic}</strong>
+          </p>
+        )}
         {messages.map((m, i) => (
           <div
             key={i}

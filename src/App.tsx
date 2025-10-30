@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { IoCamera, IoChatbubble } from "react-icons/io5";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { colors } from "./theme";
+import { colors, typography } from "./theme";
 import Scanner from "./routes/Scanner";
 import Chat from "./routes/Chat";
 
@@ -10,12 +10,41 @@ const qc = new QueryClient();
 export default function App() {
   const [activeTab, setActiveTab] = useState<"scanner" | "chat">("scanner");
   const [chatContext, setChatContext] = useState<{ image?: string; label?: string }>({});
+  const [showIntro, setShowIntro] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setShowIntro(false), 2000);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleSwitchToScanner = () => {
-    // reset context when returning to Scanner
     setChatContext({});
     setActiveTab("scanner");
   };
+
+  // --- Intro splash screen ---
+  if (showIntro) {
+    return (
+      <div
+        style={{
+          height: "100svh",
+          display: "grid",
+          placeItems: "center",
+          background: colors.background,
+          textAlign: "center",
+          color: colors.text,
+          fontFamily: typography.body.fontFamily,
+        }}
+      >
+        <h1 style={{ color: colors.primary, fontSize: 36, marginBottom: 8 }}>
+          VueVocale
+        </h1>
+        <p style={{ fontSize: 18, opacity: 0.7 }}>
+          Talk about the world around you — <em>en français</em>.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <QueryClientProvider client={qc}>
@@ -28,11 +57,37 @@ export default function App() {
           color: colors.text,
         }}
       >
+        {/* --- Header --- */}
+        <header
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: 56,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "rgba(255,255,255,0.8)",
+            backdropFilter: "blur(8px)",
+            borderBottom: "1px solid rgba(0,0,0,0.05)",
+            fontFamily: typography.header.fontFamily,
+            fontWeight: 600,
+            fontSize: 20,
+            color: colors.primary,
+            zIndex: 101,
+          }}
+        >
+          <span>VueVocale</span>
+        </header>
+
+        {/* --- Main Area --- */}
         <main
           style={{
             position: "relative",
             overflow: "hidden",
             height: "100%",
+            paddingTop: 56, // push below header
           }}
         >
           {activeTab === "scanner" && (
@@ -45,14 +100,11 @@ export default function App() {
           )}
 
           {activeTab === "chat" && (
-            <Chat
-              topic={chatContext.label}
-              photoDataUrl={chatContext.image}
-            />
+            <Chat topic={chatContext.label} photoDataUrl={chatContext.image} />
           )}
         </main>
 
-        {/* Bottom nav */}
+        {/* --- Bottom Nav --- */}
         <nav
           style={{
             position: "fixed",
