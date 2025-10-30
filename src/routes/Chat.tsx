@@ -137,25 +137,13 @@ export default function Chat({
   return (
     <main style={styles.container}>
       <div ref={listRef} style={styles.messages}>
-        {topic && (
-          <p
-            style={{
-              textAlign: "center",
-              color: "#777",
-              fontSize: 13,
-              marginBottom: 6,
-              fontStyle: "italic",
-            }}
-          >
-            Chatting about: <strong>{topic}</strong>
-          </p>
-        )}
         {messages.map((m, i) => (
           <div
             key={i}
             style={{
               display: "flex",
               justifyContent: m.sender === "user" ? "flex-end" : "flex-start",
+              width: "100%",
             }}
           >
             <div
@@ -222,7 +210,7 @@ export default function Chat({
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={onKeyDown}
-          placeholder="Écris un message…"
+          placeholder="Type a message / Écris un message…"
           rows={1}
           style={styles.textInput}
         />
@@ -245,7 +233,7 @@ const styles: Record<string, React.CSSProperties> = {
   container: {
     height: "100%",
     overflow: "hidden",
-    background: colors.background,
+    background: "linear-gradient(180deg, #F6F8FF 0%, #EEF2FF 50%, #F8FAFF 100%)",
     display: "flex",
     flexDirection: "column",
     position: "relative",
@@ -279,7 +267,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   inputContainer: {
     position: "fixed",
-    bottom: 84,
+    bottom: 100,
     left: "50%",
     transform: "translateX(-50%)",
     width: "clamp(280px, 90%, 720px)",

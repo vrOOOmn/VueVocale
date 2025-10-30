@@ -280,7 +280,7 @@ export default function Scanner({
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          background: colors.background,
+          background: "linear-gradient(180deg, #F6F8FF 0%, #EEF2FF 50%, #F8FAFF 100%)",
           color: colors.text,
           textAlign: "center",
           fontFamily: typography.body.fontFamily,
@@ -325,17 +325,18 @@ export default function Scanner({
 
 const styles = {
   container: {
-    minHeight: "calc(100svh - 73px)",
-    background: colors.background,
-    padding: spacing.md,
-    display: "grid",
+    height: "100%",
+    background: "linear-gradient(180deg, #F6F8FF 0%, #EEF2FF 50%, #F8FAFF 100%)",
+    display: "flex",
     alignItems: "center",
-    justifyItems: "center",
+    justifyContent: "center",
+    padding: "clamp(16px, 4vh, 24px)",
   },
   cameraBox: {
-    width: "100%",
-    maxWidth: 480,
-    aspectRatio: "3 / 4",
+    width: "65vw",              // full responsive width
+    maxWidth: 480,              // cap on large screens
+    height: "55vh",             // dynamically scale height
+    maxHeight: 640,             // cap for large devices
     position: "relative" as const,
     background: colors.surface,
     border: `1px solid ${colors.border}`,
@@ -373,7 +374,7 @@ const styles = {
   },
   permissionContainer: {
     minHeight: "calc(100svh - 73px)",
-    background: colors.background,
+    background: "linear-gradient(180deg, #F6F8FF 0%, #EEF2FF 50%, #F8FAFF 100%)",
     display: "grid",
     placeItems: "center",
     padding: spacing.xl,

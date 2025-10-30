@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { IoCamera, IoChatbubble } from "react-icons/io5";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { colors, typography } from "./theme";
@@ -10,84 +10,111 @@ const qc = new QueryClient();
 export default function App() {
   const [activeTab, setActiveTab] = useState<"scanner" | "chat">("scanner");
   const [chatContext, setChatContext] = useState<{ image?: string; label?: string }>({});
-  const [showIntro, setShowIntro] = useState(true);
 
-  useEffect(() => {
-    const timer = setTimeout(() => setShowIntro(false), 2000);
-    return () => clearTimeout(timer);
-  }, []);
 
   const handleSwitchToScanner = () => {
     setChatContext({});
     setActiveTab("scanner");
   };
 
-  // --- Intro splash screen ---
-  if (showIntro) {
-    return (
-      <div
-        style={{
-          height: "100svh",
-          display: "grid",
-          placeItems: "center",
-          background: colors.background,
-          textAlign: "center",
-          color: colors.text,
-          fontFamily: typography.body.fontFamily,
-        }}
-      >
-        <h1 style={{ color: colors.primary, fontSize: 36, marginBottom: 8 }}>
-          VueVocale
-        </h1>
-        <p style={{ fontSize: 18, opacity: 0.7 }}>
-          Talk about the world around you — <em>en français</em>.
-        </p>
-      </div>
-    );
-  }
+
 
   return (
     <QueryClientProvider client={qc}>
       <div
         style={{
           height: "100svh",
-          overflow: "hidden",
-          display: "grid",
-          gridTemplateRows: "1fr auto",
+          position: "relative",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          background: "linear-gradient(180deg, #F6F8FF 0%, #EEF2FF 50%, #F8FAFF 100%)",
           color: colors.text,
+          overflow: "auto",
         }}
       >
-        {/* --- Header --- */}
-        <header
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: 56,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            background: "rgba(255,255,255,0.8)",
-            backdropFilter: "blur(8px)",
-            borderBottom: "1px solid rgba(0,0,0,0.05)",
-            fontFamily: typography.header.fontFamily,
-            fontWeight: 600,
-            fontSize: 20,
-            color: colors.primary,
-            zIndex: 101,
-          }}
-        >
-          <span>VueVocale</span>
-        </header>
+        {/* --- Floating Overlay Hero (only for Scanner) --- */}
+        {activeTab === "scanner" && (
+          <div
+            style={{
+              position: "relative",
+              width: "90%",
+              textAlign: "center",
+              paddingTop: 28,
+              paddingBottom: 40,
+              background:
+                "linear-gradient(to bottom, rgba(246,248,255,0.95), rgba(246,248,255,0.6), rgba(246,248,255,0))",
+              zIndex: 2,
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 10, // spacing between logo and text
+                marginBottom: 4,
+              }}
+            >
+              <img
+                src="/vuevocale.svg"
+                alt="VueVocale logo"
+                style={{
+                  width: 70,
+                  height: 70,
+                  padding: 10,
+                  objectFit: "contain",
+                }}
+              />
+              <h1
+                style={{
+                  fontSize: 38,
+                  fontWeight: 700,
+                  color: "#3B6BF3",
+                  margin: 0,
+                  fontFamily: typography.header.fontFamily,
+                }}
+              >
+                VueVocale
+              </h1>
+            </div>
+            <p
+              style={{
+                fontSize: 17,
+                color: "#444",
+                fontStyle: "italic",
+                marginTop: 4,
+              }}
+            >
+              A conversational French learning companion
+            </p>
+            <p
+              style={{
+                fontSize: 18,
+                color: "#555",
+                marginTop: 10,
+                maxWidth: 600,
+                lineHeight: 1.6,
+                marginInline: "auto",
+                backgroundColor: colors.surface,
+                padding: 14,
+                borderRadius: 16
+              }}
+            >
+              VueVocale helps you learn intermediate French by engaging in real conversations about the
+              world around you. Capture an object, and your AI partner will start chatting
+              with you naturally!
+            </p>
+          </div>
+        )}
 
-        {/* --- Main Area --- */}
+        {/* --- Main View --- */}
         <main
           style={{
             position: "relative",
-            overflow: "hidden",
+            overflow: "auto",
             height: "100%",
-            paddingTop: 56, // push below header
+            width: "100%",
           }}
         >
           {activeTab === "scanner" && (
@@ -100,24 +127,26 @@ export default function App() {
           )}
 
           {activeTab === "chat" && (
-            <Chat topic={chatContext.label} photoDataUrl={chatContext.image} />
+            <Chat
+              topic={chatContext.label}
+              photoDataUrl={chatContext.image}
+            />
           )}
         </main>
 
-        {/* --- Bottom Nav --- */}
+        {/* --- Navigation --- */}
         <nav
           style={{
             position: "fixed",
             bottom: 16,
             left: "50%",
             transform: "translateX(-50%)",
-            width: "min(80%, 1000px)",
-            background: "rgba(255,255,255,0.85)",
-            backdropFilter: "blur(12px)",
-            borderRadius: 20,
-            boxShadow: "0 4px 18px rgba(0,0,0,0.08)",
-            border: "1px solid rgba(0,0,0,0.06)",
-            height: 64,
+            width: "min(90%, 800px)",
+            background: "rgba(255,255,255,0.75)",
+            backdropFilter: "blur(16px)",
+            borderRadius: 28,
+            boxShadow: "0 6px 20px rgba(0,0,0,0.08)",
+            height: 68,
             display: "flex",
             justifyContent: "space-around",
             alignItems: "center",
@@ -157,21 +186,25 @@ function TabButton({
     <button
       onClick={onClick}
       style={{
-        background: "none",
+        background: active
+          ? "linear-gradient(135deg, #4F8DFD, #3369D6)"
+          : "transparent",
+        color: active ? "#fff" : "#3B6BF3",
         border: "none",
-        outline: "none",
-        cursor: "pointer",
-        color: active ? colors.primary : "#9ca3af",
+        borderRadius: 16,
+        padding: "10px 18px",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        fontSize: 12,
-        fontWeight: active ? 600 : 500,
-        transform: active ? "scale(1.1)" : "scale(1)",
-        transition: "all 0.2s ease",
+        justifyContent: "center",
+        fontSize: 13,
+        fontWeight: 600,
+        cursor: "pointer",
+        boxShadow: active ? "0 4px 10px rgba(74,144,226,0.3)" : "none",
+        transition: "all 0.25s ease",
       }}
     >
-      <span style={{ fontSize: 22, lineHeight: 1 }}>{icon}</span>
+      <span style={{ fontSize: 22, lineHeight: 1, marginBottom: 3 }}>{icon}</span>
       <span>{label}</span>
     </button>
   );
