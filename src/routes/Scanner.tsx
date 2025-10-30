@@ -3,6 +3,8 @@ import { IoCamera, IoRepeat, IoWarningOutline } from "react-icons/io5";
 import PhotoPreviewSection from "../components/PhotoPreviewSection";
 import { colors, spacing, borderRadius, typography } from "../theme";
 import { supabase } from "../lib/supabaseClient";
+import * as cocoSsd from "@tensorflow-models/coco-ssd";
+import "@tensorflow/tfjs";
 
 type Facing = "environment" | "user";
 
@@ -11,14 +13,16 @@ export default function Scanner() {
   const [streamError, setStreamError] = useState<string | null>(null);
   const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null);
   const [permissionGranted, setPermissionGranted] = useState(false);
+  const [detectedObject, setDetectedObject] = useState<string | null>(null);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const overlayCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const captureCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
   const cleanupStream = useCallback(() => {
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
     }
     if (videoRef.current) {
@@ -32,50 +36,52 @@ export default function Scanner() {
       const result = await navigator.permissions.query({ name: "camera" as PermissionName });
       return result.state;
     } catch {
-      // Safari and some mobile browsers don’t support the Permissions API
       return "prompt";
     }
   }, []);
 
-  const startStream = useCallback(async (requestFacing: Facing = facing) => {
-    cleanupStream();
-    setStreamError(null);
+  const startStream = useCallback(
+    async (requestFacing: Facing = facing) => {
+      cleanupStream();
+      setStreamError(null);
 
-    try {
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      const hasCamera = devices.some(d => d.kind === "videoinput");
-      if (!hasCamera) {
-        setStreamError("No camera found on this device.");
-        return;
-      }
-
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: requestFacing } },
-        audio: false,
-      });
-
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-      }
-
-      setPermissionGranted(true);
-    } catch (err) {
-      setPermissionGranted(false);
-      let msg = "We need your permission to access the camera.";
-      if (err instanceof DOMException) {
-        if (err.name === "NotAllowedError" || err.name === "SecurityError") {
-          msg = "Camera permission denied. Please enable it in browser settings.";
-        } else if (err.name === "NotFoundError") {
-          msg = "No camera found on this device.";
-        } else if (err.name === "NotReadableError") {
-          msg = "Camera is currently in use by another app.";
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const hasCamera = devices.some((d) => d.kind === "videoinput");
+        if (!hasCamera) {
+          setStreamError("No camera found on this device.");
+          return;
         }
+
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: requestFacing } },
+          audio: false,
+        });
+
+        streamRef.current = stream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          await videoRef.current.play();
+        }
+
+        setPermissionGranted(true);
+      } catch (err) {
+        setPermissionGranted(false);
+        let msg = "We need your permission to access the camera.";
+        if (err instanceof DOMException) {
+          if (err.name === "NotAllowedError" || err.name === "SecurityError") {
+            msg = "Camera permission denied. Please enable it in browser settings.";
+          } else if (err.name === "NotFoundError") {
+            msg = "No camera found on this device.";
+          } else if (err.name === "NotReadableError") {
+            msg = "Camera is currently in use by another app.";
+          }
+        }
+        setStreamError(msg);
       }
-      setStreamError(msg);
-    }
-  }, [cleanupStream, facing]);
+    },
+    [cleanupStream, facing]
+  );
 
   useEffect(() => {
     if (!("mediaDevices" in navigator)) {
@@ -101,9 +107,8 @@ export default function Scanner() {
 
     const handleVisibility = () => {
       if (document.hidden) {
-        cleanupStream(); // stop the stream when leaving
+        cleanupStream();
       } else {
-        // restart the camera when coming back, only if user hasn't taken a photo yet
         setTimeout(() => startStream(), 300);
       }
     };
@@ -120,6 +125,74 @@ export default function Scanner() {
       window.removeEventListener("beforeunload", cleanupStream);
     };
   }, [startStream, cleanupStream, getCameraPermissionState]);
+
+  // 🟢 Object Detection
+  useEffect(() => {
+    let model: cocoSsd.ObjectDetection | null = null;
+    let detectionInterval: number | null = null;
+    const blacklist = ["person", "chair", "couch", "tv", "bed", "refrigerator"];
+
+    const runDetection = async () => {
+      const v = videoRef.current;
+      const c = overlayCanvasRef.current;
+      if (!v || !c || !model) return;
+
+      if (v.videoWidth === 0 || v.videoHeight === 0) return;
+
+      const ctx = c.getContext("2d");
+      if (!ctx) return;
+
+      c.width = v.videoWidth;
+      c.height = v.videoHeight;
+      ctx.clearRect(0, 0, c.width, c.height);
+
+      const predictions = await model.detect(v);
+      const filtered = predictions.filter((p) => p.score > 0.5 && !blacklist.includes(p.class));
+      
+      // get actual rendered size of video
+      const videoWidth = v.videoWidth;
+      const videoHeight = v.videoHeight;
+      const displayWidth = v.clientWidth;
+      const displayHeight = v.clientHeight;
+
+      // calculate scale factors
+      const scaleX = displayWidth / videoWidth;
+      const scaleY = displayHeight / videoHeight;
+
+      filtered.forEach((p) => {
+        const [x, y, width, height] = p.bbox;
+        const scaledX = x * scaleX;
+        const scaledY = y * scaleY;
+        const scaledWidth = width * scaleX;
+        const scaledHeight = height * scaleY;
+
+        ctx.strokeStyle = "#00ff88";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(scaledX, scaledY, scaledWidth, scaledHeight);
+        ctx.fillStyle = "rgba(0, 255, 136, 0.6)";
+        ctx.font = "14px Arial";
+        ctx.fillText(`${p.class} ${(p.score * 100).toFixed(1)}%`, scaledX + 4, scaledY + 16);
+      });
+
+      if (filtered.length > 0) {
+        const main = filtered.reduce((prev, curr) => (curr.score > prev.score ? curr : prev));
+        setDetectedObject(main.class);
+      } else {
+        setDetectedObject(null);
+      }
+    };
+
+    const initModel = async () => {
+      model = await cocoSsd.load();
+      detectionInterval = window.setInterval(runDetection, 300);
+    };
+
+    initModel();
+
+    return () => {
+      if (detectionInterval) clearInterval(detectionInterval);
+    };
+  }, []);
 
   const toggleCameraFacing = async () => {
     const next = facing === "environment" ? "user" : "environment";
@@ -142,53 +215,38 @@ export default function Scanner() {
     }
   };
 
-const handleTakePhoto = async () => {
-  const v = videoRef.current;
-  const c = canvasRef.current;
-  if (!v || !c) return;
+  const handleTakePhoto = async () => {
+    const v = videoRef.current;
+    const c = captureCanvasRef.current;
+    if (!v || !c) return;
 
-  // 1. Draw the frame
-  c.width = v.videoWidth || 1080;
-  c.height = v.videoHeight || 1440;
-  const ctx = c.getContext("2d");
-  if (!ctx) return;
-  ctx.drawImage(v, 0, 0, c.width, c.height);
+    c.width = v.videoWidth || 1080;
+    c.height = v.videoHeight || 1440;
+    const ctx = c.getContext("2d");
+    if (!ctx) return;
+    ctx.drawImage(v, 0, 0, c.width, c.height);
 
-  // 2. Convert to dataURL first (to test)
-  const dataUrl = c.toDataURL("image/jpeg", 0.9);
-  setPhotoDataUrl(dataUrl);
+    const dataUrl = c.toDataURL("image/jpeg", 0.9);
+    setPhotoDataUrl(dataUrl);
 
-  // 3. Optional: Upload asynchronously (non-blocking)
-  c.toBlob(async (blob) => {
-    if (!blob) return;
-
-    try {
-      const fileName = `photo-${Date.now()}.jpg`;
-      const { error } = await supabase.storage
-        .from("photos")
-        .upload(fileName, blob);
-
-      if (error) {
-        console.error("Upload failed:", error.message);
-        return;
+    c.toBlob(async (blob) => {
+      if (!blob) return;
+      try {
+        const fileName = `photo-${Date.now()}.jpg`;
+        const { error } = await supabase.storage.from("photos").upload(fileName, blob);
+        if (error) {
+          console.error("Upload failed:", error.message);
+          return;
+        }
+        const { data: publicData } = supabase.storage.from("photos").getPublicUrl(fileName);
+        await supabase.from("photos").insert([{ photo_url: publicData.publicUrl }]);
+      } catch (err) {
+        console.error("Upload error:", err);
       }
+    }, "image/jpeg", 0.9);
 
-      const { data: publicData } = supabase.storage
-        .from("photos")
-        .getPublicUrl(fileName);
-
-      await supabase
-        .from("photos")
-        .insert([{ photo_url: publicData.publicUrl }]);
-    } catch (err) {
-      console.error("Upload error:", err);
-    }
-  }, "image/jpeg", 0.9);
-
-  // 4. Stop the camera
-  cleanupStream();
-};
-
+    cleanupStream();
+  };
 
   const handleRetakePhoto = () => {
     setPhotoDataUrl(null);
@@ -196,12 +254,7 @@ const handleTakePhoto = async () => {
   };
 
   if (photoDataUrl) {
-    return (
-      <PhotoPreviewSection
-        photoDataUrl={photoDataUrl}
-        handleRetakePhoto={handleRetakePhoto}
-      />
-    );
+    return <PhotoPreviewSection photoDataUrl={photoDataUrl} handleRetakePhoto={handleRetakePhoto} />;
   }
 
   if (streamError && !permissionGranted) {
@@ -219,21 +272,15 @@ const handleTakePhoto = async () => {
   return (
     <div style={styles.container}>
       <div style={styles.cameraBox}>
-        <video ref={videoRef} style={styles.video} playsInline muted autoPlay controls={false}/>
-        <canvas ref={canvasRef} style={{ display: "none" }} />
+        <video ref={videoRef} style={styles.video} playsInline muted autoPlay controls={false} />
+        <canvas ref={overlayCanvasRef} style={styles.overlayCanvas} />
+        <canvas ref={captureCanvasRef} style={{ display: "none" }} />
+        {detectedObject && <div style={styles.labelOverlay}>{detectedObject.toUpperCase()} DETECTED</div>}
         <div style={styles.controls}>
-          <button
-            style={styles.roundBtnSecondary}
-            onClick={toggleCameraFacing}
-            aria-label="Switch camera"
-          >
+          <button style={styles.roundBtnSecondary} onClick={toggleCameraFacing} aria-label="Switch camera">
             <IoRepeat size={24} color={colors.textLight} />
           </button>
-          <button
-            style={styles.roundBtnPrimary}
-            onClick={handleTakePhoto}
-            aria-label="Take photo"
-          >
+          <button style={styles.roundBtnPrimary} onClick={handleTakePhoto} aria-label="Take photo">
             <IoCamera size={28} color={colors.textLight} />
           </button>
         </div>
@@ -267,6 +314,28 @@ const styles = {
     objectFit: "cover" as const,
     display: "block",
     background: "#000",
+  },
+  overlayCanvas: {
+    position: "absolute" as const,
+    top: 0,
+    left: 0,
+    width: "100%",
+    height: "100%",
+    pointerEvents: "none" as const,
+  },
+  labelOverlay: {
+    position: "absolute" as const,
+    bottom: spacing.xl,
+    left: "50%",
+    transform: "translateX(-50%)",
+    background: "rgba(0, 0, 0, 0.6)",
+    color: "#fff",
+    padding: "6px 12px",
+    borderRadius: borderRadius.md,
+    fontSize: "1rem",
+    fontWeight: 600,
+    textTransform: "capitalize" as const,
+    pointerEvents: "none" as const,
   },
   controls: {
     position: "absolute" as const,

@@ -62,7 +62,7 @@ export default function Chat() {
         8. Listen to the user and generally keep the conversation flowing. Only talk about yourself when the user asks you a question about yourself
         ${userMessage}
       `;
-      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+      const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
       const result = await model.generateContent(prompt);
       return result.response.text()?.trimEnd() || ERROR_TEXT;
     } catch {
