@@ -1,51 +1,79 @@
-import React, {useLayoutEffect, useRef, useState } from "react";
+import React, { useLayoutEffect, useRef, useState } from "react";
 import { IoSend } from "react-icons/io5";
 import { colors, spacing, borderRadius, typography } from "../theme";
 import { supabase } from "../lib/supabaseClient";
 import { geminiFlash } from "../lib/geminiClient";
 
-type Message = { text: string; sender: "user" | "bot" };
+type Message = { text?: string; image?: string; sender: "user" | "bot" };
 
 const ERROR_TEXT = "Oops, error in generating response! Try Again";
-
 let sessionMessages: Message[] = [];
 
-export default function Chat({ topic }: { topic?: string | null }) {
+export default function Chat({
+  topic,
+  photoDataUrl,
+}: {
+  topic?: string | null;
+  photoDataUrl?: string | null;
+}) {
   const [messages, setMessages] = useState<Message[]>(sessionMessages);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
 
   const listRef = useRef<HTMLDivElement | null>(null);
   const textRef = useRef<HTMLTextAreaElement | null>(null);
+  const lastPhotoRef = useRef<string | null>(null); // <-- new guard
 
-
-  // --- Scroll logic ---
+  // --- Scroll to bottom ---
   const scrollToBottom = (smooth = false) => {
     const list = listRef.current;
     if (!list) return;
-    list.scrollTo({
-      top: list.scrollHeight,
-      behavior: smooth ? "smooth" : "auto",
-    });
+    list.scrollTo({ top: list.scrollHeight, behavior: smooth ? "smooth" : "auto" });
   };
 
+  useLayoutEffect(() => scrollToBottom(false), []);
+  useLayoutEffect(() => scrollToBottom(true), [messages.length]);
+  
   useLayoutEffect(() => {
-    scrollToBottom(false); // on mount
-  }, []);
+    const handleNewPhoto = async () => {
+      if (!photoDataUrl || !topic) return;
+      if (lastPhotoRef.current === photoDataUrl) return; // prevents re-runs
+      lastPhotoRef.current = photoDataUrl; // remember this photo
 
-  useLayoutEffect(() => {
-    scrollToBottom(true); // on new message
-  }, [messages.length]);
+      const newMsg = { image: photoDataUrl, sender: "user" as const };
+      const updatedMessages = [...messages, newMsg];
+      setMessages(updatedMessages);
+      sessionMessages = updatedMessages;
 
+      const prompt = `
+        You are a friendly, patient French friend for intermediate learners (B1).
+        The user has just shared an image of a ${topic}.
+        Respond naturally in French — no greetings, just react casually.
+        Keep it under two sentences, both in French (no English translation).
+      `;
 
-  useLayoutEffect(() => {
-    if (topic && messages.length === 0) {
-      const intro = { text: `Parlons de ${topic} !`, sender: "bot" as const };
-      setMessages([intro]);
-      sessionMessages = [intro];
-    }
-  }, [topic, messages.length]);
+      try {
+        setLoading(true);
+        const result = await geminiFlash.generateContent([{ text: prompt }]);
+        const text = result.response.text()?.trim() || "";
+        if (text) {
+          const botMsg = { text, sender: "bot" as const };
+          const newThread = [...updatedMessages, botMsg];
+          setMessages(newThread);
+          sessionMessages = newThread;
+        }
+      } catch (err) {
+        console.error("Gemini image response error:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
+    handleNewPhoto();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [photoDataUrl, topic]); // messages removed safely
+
+  // --- Handle Enter key ---
   const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -53,21 +81,16 @@ export default function Chat({ topic }: { topic?: string | null }) {
     }
   };
 
+  // --- Generate Gemini response ---
   const generateAIResponse = async (userMessage: string): Promise<string> => {
     try {
       const prompt = `
-        You are a friendly, patient French friend for intermediate learners (B1). Your goal is to help them gain confidence speaking and understanding real‐life French, without sounding like a formal “coach.”
-
-        You should:
-
-        1. Chat naturally about everyday topics (travel, food, work, hobbies, culture). Don't stay on the same topic for too long. Generally, only talk about the same topic for a maximum of three responses.
-        2. Use intermediate-level (B1) French.
-        3. Gently correct mistakes only if they would severly impede comprehensibility with a native French, with a brief note on how to sound more natural or idiomatic.
-        4. Share cultural tips (idioms, phrasing, register, customs) only when relevant and when the user is attempting to learn a new topic they aren't too knowledgable about.
-        5. Keep each response to no more than three sentences so you don’t overwhelm them.
-        6. Don't ask more than one question at a time.
-        7. Never start with anything similar to "Prêt(e) à papoter un peu en français?". Get right into the conversation
-        8. Listen to the user and generally keep the conversation flowing. Only talk about yourself when the user asks you a question about yourself
+        You are a friendly, patient French friend for intermediate learners (B1).
+        Continue the conversation in French about daily life, hobbies, or culture.
+        Keep your tone natural, friendly, and brief (max 3 sentences).
+        Correct only serious errors gently.
+        If the chat included images, refer casually to them when relevant.
+        
         ${userMessage}
       `;
       const result = await geminiFlash.generateContent(prompt);
@@ -77,36 +100,33 @@ export default function Chat({ topic }: { topic?: string | null }) {
     }
   };
 
+  // --- Sending user messages ---
   const sendMessage = async () => {
     const text = input.trim();
     if (!text) return;
 
-    // update local + session cache
     const userMsg = { text, sender: "user" as const };
-    setMessages((prev) => [...prev, userMsg]);
-    sessionMessages = [...messages, userMsg];
+    const updated = [...messages, userMsg];
+    setMessages(updated);
+    sessionMessages = updated;
 
     setInput("");
     setLoading(true);
 
     try {
-      // your AI call
       const aiResponse = await generateAIResponse(text);
-
       const botMsg = { text: aiResponse, sender: "bot" as const };
-      setMessages((prev) => [...prev, botMsg]);
-      sessionMessages = [...sessionMessages, botMsg];
+      const newThread = [...updated, botMsg];
+      setMessages(newThread);
+      sessionMessages = newThread;
 
-      // log both in Supabase
-      await supabase.from("chat_messages").insert([
-        userMsg,
-        botMsg,
-      ]);
+      await supabase.from("chat_messages").insert([userMsg, botMsg]);
     } catch (err) {
       console.error("send error", err);
     } finally {
       setLoading(false);
     }
+
     textRef.current?.focus();
   };
 
@@ -117,25 +137,60 @@ export default function Chat({ topic }: { topic?: string | null }) {
           <div
             key={i}
             style={{
-              ...styles.message,
-              ...(m.sender === "user"
-                ? styles.userMessage
-                : styles.botMessage),
+              display: "flex",
+              justifyContent: m.sender === "user" ? "flex-end" : "flex-start",
             }}
           >
-            <p
+            <div
               style={{
-                ...typography.message,
-                margin: 0,
-                color:
-                  m.sender === "user" ? colors.textLight : colors.text,
-                whiteSpace: "pre-wrap",
+                ...styles.message,
+                ...(m.sender === "user" ? styles.userMessage : styles.botMessage),
+                padding: m.image ? 0 : "10px 14px", // no padding for image messages
+                background: m.image
+                  ? "transparent" // 👈 remove blue fill for image bubble
+                  : m.sender === "user"
+                  ? "linear-gradient(135deg, #4A90E2, #357ABD)"
+                  : "#fff",
+                borderRadius: borderRadius.lg,
+                maxWidth: m.image ? "min(280px, 70%)" : "75%",
               }}
             >
-              {m.text}
-            </p>
+              {m.image ? (
+                <img
+                  src={m.image}
+                  alt="user upload"
+                  style={{
+                    width: "100%",
+                    height: "auto",
+                    borderRadius: borderRadius.lg,
+                    display: "block",
+                  }}
+                />
+              ) : (
+                <p
+                  style={{
+                    ...typography.message,
+                    margin: 0,
+                    color: m.sender === "user" ? colors.textLight : colors.text,
+                    whiteSpace: "pre-wrap",
+                  }}
+                >
+                  {m.text}
+                </p>
+              )}
+            </div>
           </div>
         ))}
+
+        {loading && (
+          <div style={{ ...styles.message, ...styles.botMessage, opacity: 0.7 }}>
+            <div className="typing-dots" style={styles.typingDots}>
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+          </div>
+        )}
       </div>
 
       <form
@@ -150,7 +205,7 @@ export default function Chat({ topic }: { topic?: string | null }) {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={onKeyDown}
-          placeholder="Type a message…"
+          placeholder="Écris un message…"
           rows={1}
           style={styles.textInput}
         />
@@ -172,7 +227,7 @@ export default function Chat({ topic }: { topic?: string | null }) {
 const styles: Record<string, React.CSSProperties> = {
   container: {
     height: "100%",
-    overflow: "hidden", // no page scroll
+    overflow: "hidden",
     background: colors.background,
     display: "flex",
     flexDirection: "column",
@@ -185,13 +240,14 @@ const styles: Record<string, React.CSSProperties> = {
     paddingBottom: 160,
     display: "flex",
     flexDirection: "column",
-    gap: spacing.xs,
+    gap: spacing.md,
     scrollBehavior: "smooth",
   },
   message: {
     padding: "10px 14px",
     borderRadius: borderRadius.lg,
     maxWidth: "75%",
+    animation: "fadeIn 0.3s ease-in",
   },
   userMessage: {
     background: "linear-gradient(135deg, #4A90E2, #357ABD)",
@@ -248,4 +304,30 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: "pointer",
     boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
   },
+  typingDots: {
+    display: "flex",
+    gap: 6,
+    alignItems: "center",
+    justifyContent: "flex-start",
+    padding: "6px 8px",
+  },
 };
+
+// Add typing animation
+const styleSheet = document.createElement("style");
+styleSheet.innerHTML = `
+@keyframes typingBounce {
+  0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+  40% { transform: scale(1); opacity: 1; }
+}
+.typing-dots span {
+  width: 10px;
+  height: 10px;
+  background: ${colors.primary === "#4A90E2" ? "#357ABD" : colors.primary};
+  border-radius: 50%;
+  animation: typingBounce 1.4s infinite ease-in-out both;
+}
+.typing-dots span:nth-child(1) { animation-delay: -0.32s; }
+.typing-dots span:nth-child(2) { animation-delay: -0.16s; }
+`;
+document.head.appendChild(styleSheet);

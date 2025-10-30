@@ -9,7 +9,13 @@ const qc = new QueryClient();
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<"scanner" | "chat">("scanner");
-  const [topic, setTopic] = useState<string | null>(null);
+  const [chatContext, setChatContext] = useState<{ image?: string; label?: string }>({});
+
+  const handleSwitchToScanner = () => {
+    // reset context when returning to Scanner
+    setChatContext({});
+    setActiveTab("scanner");
+  };
 
   return (
     <QueryClientProvider client={qc}>
@@ -31,16 +37,22 @@ export default function App() {
         >
           {activeTab === "scanner" && (
             <Scanner
-              onChat={(detectedWord) => {
-                setTopic(detectedWord);
+              onChat={(detectedWord, imageDataUrl) => {
+                setChatContext({ label: detectedWord, image: imageDataUrl });
                 setActiveTab("chat");
               }}
             />
           )}
-          {activeTab === "chat" && <Chat topic={topic} />}
+
+          {activeTab === "chat" && (
+            <Chat
+              topic={chatContext.label}
+              photoDataUrl={chatContext.image}
+            />
+          )}
         </main>
 
-        {/* Floating nav */}
+        {/* Bottom nav */}
         <nav
           style={{
             position: "fixed",
@@ -64,7 +76,7 @@ export default function App() {
             icon={<IoCamera size={22} />}
             label="Scanner"
             active={activeTab === "scanner"}
-            onClick={() => setActiveTab("scanner")}
+            onClick={handleSwitchToScanner}
           />
           <TabButton
             icon={<IoChatbubble size={22} />}
