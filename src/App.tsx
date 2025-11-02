@@ -58,26 +58,27 @@ export default function App() {
             bottom: 0,
             left: "50%",
             transform: "translateX(-50%)",
-            width: "min(90%, 800px)",
+            width: "min(90vw, 50em)",
             background: "rgba(255,255,255,0.75)",
             backdropFilter: "blur(16px)",
             borderRadius: 28,
             boxShadow: "0 6px 20px rgba(0,0,0,0.08)",
-            height: 68,
+            height: "min(6.5vh, 5em)",
             display: "flex",
             justifyContent: "space-around",
             alignItems: "center",
+            marginBottom: 10,
             zIndex: 99,
           }}
         >
           <TabButton
-            icon={<IoCamera size={22} />}
+            icon={<IoCamera size={19} />}
             label="Scanner"
             active={activeTab === "scanner"}
             onClick={handleSwitchToScanner}
           />
           <TabButton
-            icon={<IoChatbubble size={22} />}
+            icon={<IoChatbubble size={19} />}
             label="Chat"
             active={activeTab === "chat"}
             onClick={() => setActiveTab("chat")}
@@ -104,12 +105,12 @@ function TabButton({
       onClick={onClick}
       style={{
         background: active
-          ? "linear-gradient(135deg, #4F8DFD, #3369D6)"
+          ? colors.primary
           : "transparent",
         color: active ? "#fff" : "#3B6BF3",
         border: "none",
         borderRadius: 16,
-        padding: "10px 18px",
+        padding: "4px 1.5em",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -117,6 +118,7 @@ function TabButton({
         fontSize: 13,
         fontWeight: 600,
         cursor: "pointer",
+        height: "min(6vh, 5em)",
         boxShadow: active ? "0 4px 10px rgba(74,144,226,0.3)" : "none",
         transition: "all 0.25s ease",
       }}

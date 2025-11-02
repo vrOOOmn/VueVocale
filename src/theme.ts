@@ -1,5 +1,5 @@
 export const colors = {
-  primary: '#4A90E2',
+  primary: "linear-gradient(135deg, #4F8DFD, #3369D6)",
   secondary: '#34495E',
   background: '#F5F7FA',
   surface: '#FFFFFF',

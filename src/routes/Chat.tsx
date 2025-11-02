@@ -154,7 +154,7 @@ export default function Chat({
                 background: m.image
                   ? "transparent" // 👈 remove blue fill for image bubble
                   : m.sender === "user"
-                  ? "linear-gradient(135deg, #4A90E2, #357ABD)"
+                  ? colors.primary
                   : "#fff",
                 borderRadius: borderRadius.lg,
                 maxWidth: m.image ? "min(280px, 70%)" : "75%",
@@ -255,7 +255,7 @@ const styles: Record<string, React.CSSProperties> = {
     animation: "fadeIn 0.3s ease-in",
   },
   userMessage: {
-    background: "linear-gradient(135deg, #4A90E2, #357ABD)",
+    background: colors.primary,
     color: "white",
     alignSelf: "flex-end",
     borderRadius: "18px 18px 4px 18px",
@@ -274,7 +274,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: "flex",
     alignItems: "center",
     gap: 8,
-    padding: "8px 10px 8px 16px",
+    padding: "6px 10px 6px 16px",
     background: "rgba(255,255,255,0.85)",
     backdropFilter: "blur(12px)",
     border: "1px solid rgba(0,0,0,0.06)",
@@ -287,13 +287,15 @@ const styles: Record<string, React.CSSProperties> = {
     resize: "none",
     minHeight: 36,
     maxHeight: 120,
-    padding: "8px 14px",
+    padding: "8px 4px",
     borderRadius: 20,
     border: "none",
     background: "transparent",
     fontSize: 15,
     fontFamily: typography.message.fontFamily,
     lineHeight: 1.4,
+    textWrap: "nowrap" as const,
+    overflowX: "auto",
     outline: "none",
     color: colors.text,
   },

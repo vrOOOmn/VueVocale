@@ -255,13 +255,13 @@ export default function Scanner({
       <div style={styles.hero}>
         <div style={styles.heroHeader}>
           <img src="/vuevocale.svg" alt="VueVocale logo" style={styles.logo} />
-          <h1 style={styles.title}>VueVocale</h1>
+          <h1 style={styles.title}>VueLocale</h1>
         </div>
 
         <p style={styles.subtitle}>A conversational French learning companion</p>
         <p style={styles.description}>
-          VueVocale helps you level up your French speaking skills by engaging in spontaneous conversations about
-          the world around you. Capture an object, and your AI partner will start chatting with
+          VueLocale helps you level up your French speaking skills by engaging in spontaneous conversations about
+          the world around you. Capture an object, and your AI companion will start chatting with
           you naturally!
         </p>
       </div>
@@ -302,29 +302,43 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: "column" as const,
     alignItems: "center",
     justifyContent: "flex-start",
-    padding: "24px 16px 120px",
+    padding: "5px 5px",
     gap: "24px",
+    // border: '4px solid ' + '#000',
     background: "transparent",
   },
   hero: {
     textAlign: "center" as const,
-    width: "100%",
-    maxWidth: 800,
-    margin: "0 auto",
-    padding: "28px 16px 0",
+    // border: '4px solid ' + '#000',
+    width: "clamp(15rem, 80vw, 50rem)",
+
   },
   heroHeader: {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    gap: 10,
-    marginBottom: 4,
+    gap: "min(5%, 20px)",
+    padding: ".8em",
+    // border: '4px solid ' + '#000',
   },
-  logo: { width: 70, height: 70, objectFit: "contain" as const },
-  title: { fontSize: 38, fontWeight: 700, color: "#3B6BF3", marginTop: 20 },
-  subtitle: { fontSize: 17, color: "#444", fontStyle: "italic", marginTop: 4 },
+  logo: { 
+    width: "min(10vw, 4.2rem", 
+    height: "auto", 
+  },
+  title: { 
+    fontSize: "min(8vw, 3.0rem)", 
+    fontWeight: 700, 
+    color: "#3B6BF3",
+    margin: 0, // reset
+  },
+  subtitle: {
+    fontSize: "clamp(.9rem, 3.6vw, 1.1rem)", 
+    color: "#444", 
+    fontStyle: "italic", 
+    marginTop: 4 
+  },
   description: {
-    fontSize: 18,
+    fontSize: "clamp(1.0rem, 4vw, 1.2rem)",
     color: "#555",
     marginTop: 10,
     lineHeight: 1.6,
@@ -333,15 +347,14 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: 16,
   },
   cameraBox: {
-    width: "min(85vw, 400px)",
-    maxHeight: "70vh",
+    width: "clamp(15rem, 70vw, 23rem)",
     position: "relative" as const,
-    background: colors.surface,
-    border: `1px solid ${colors.border}`,
     borderRadius: borderRadius.lg,
     overflow: "hidden",
     aspectRatio: "3 / 4",
     flexShrink: 0,
+    marginBottom: "min(8rem, 100px)",
+    // border: '4px solid ' + '#000',
   },
 
   video: {

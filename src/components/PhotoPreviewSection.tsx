@@ -18,7 +18,6 @@ export default function PhotoPreviewSection({
 }: Props) {
   return (
     <div style={styles.container}>
-      <div style={styles.box}>
         <img
           src={photoDataUrl}
           alt="Camera preview"
@@ -46,36 +45,27 @@ export default function PhotoPreviewSection({
             </div>
           </div>
         )}
-      </div>
     </div>
   );
 }
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
-    minHeight: "calc(100svh - 73px)",
-    background: colors.background,
-    display: "grid",
-    placeItems: "center",
-    padding: spacing.md,
-  },
-  box: {
-    position: "relative",
-    width: "100%",
-    maxWidth: 480,
-    aspectRatio: "3 / 4",
+    width: "min(85vw, 400px)",
+    maxHeight: "70vh",
+    position: "relative" as const,
     borderRadius: borderRadius.lg,
-    background: colors.surface,
-    border: `1px solid ${colors.border}`,
     overflow: "hidden",
+    aspectRatio: "3 / 4",
+    border: '4px solid ' + '#000',
+    flexShrink: 0,
   },
   preview: {
     width: "100%",
     height: "100%",
-    objectFit: "cover",
+    objectFit: "cover" as const,
     display: "block",
-    borderBottom: `2px solid ${colors.border}`,
-    marginBottom: spacing.sm,
+    background: "#000",
   },
   dialogOverlay: {
     position: "absolute",
