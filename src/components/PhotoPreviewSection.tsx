@@ -50,7 +50,7 @@ export default function PhotoPreviewSection({
 
 const styles: Record<string, React.CSSProperties> = {
 	container: {
-		width: "min(85vw, 400px)",
+		width: "clamp(15rem, 70vw, 23rem)",
 		maxHeight: "70vh",
 		position: "relative" as const,
 		borderRadius: borderRadius.lg,
