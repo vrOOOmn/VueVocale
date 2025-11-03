@@ -56,7 +56,7 @@ const styles: Record<string, React.CSSProperties> = {
 		borderRadius: borderRadius.lg,
 		overflow: "hidden",
 		aspectRatio: "3 / 4",
-		border: "4px solid " + "#000",
+		// border: "4px solid " + "#000",
 		flexShrink: 0,
 	},
 	preview: {

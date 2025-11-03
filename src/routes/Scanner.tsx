@@ -407,6 +407,8 @@ const styles: Record<string, React.CSSProperties> = {
 		justifyContent: "center",
 		background: "transparent",
 		color: colors.text,
+		paddingRight: spacing.lg,
+		paddingLeft: spacing.lg,
 		textAlign: "center" as const,
 		fontFamily: typography.body.fontFamily,
 	},
