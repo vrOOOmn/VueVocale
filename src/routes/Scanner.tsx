@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { IoCamera, IoRepeat, IoWarningOutline } from "react-icons/io5";
 import PhotoPreviewSection from "../components/PhotoPreviewSection";
 import { colors, spacing, borderRadius, typography } from "../theme";
-import { supabase } from "../lib/supabaseClient";
+// import { supabase } from "../lib/supabaseClient";
 import { geminiFlash } from "../lib/geminiClient";
 
 type Facing = "environment" | "user";
@@ -199,22 +199,22 @@ export default function Scanner({ onChat }: { onChat?: (detectedWord: string, im
 		}
 
 		// Upload image
-		c.toBlob(
-			async (blob) => {
-				if (!blob) return;
-				try {
-					const fileName = `photo-${Date.now()}.jpg`;
-					const { error } = await supabase.storage.from("photos").upload(fileName, blob);
-					if (error) console.error("Upload failed:", error.message);
-					const { data: publicData } = supabase.storage.from("photos").getPublicUrl(fileName);
-					await supabase.from("photos").insert([{ photo_url: publicData.publicUrl }]);
-				} catch (err) {
-					console.error("Upload error:", err);
-				}
-			},
-			"image/jpeg",
-			0.9
-		);
+		// c.toBlob(
+		// 	async (blob) => {
+		// 		if (!blob) return;
+		// 		try {
+		// 			const fileName = `photo-${Date.now()}.jpg`;
+		// 			const { error } = await supabase.storage.from("photos").upload(fileName, blob);
+		// 			if (error) console.error("Upload failed:", error.message);
+		// 			const { data: publicData } = supabase.storage.from("photos").getPublicUrl(fileName);
+		// 			await supabase.from("photos").insert([{ photo_url: publicData.publicUrl }]);
+		// 		} catch (err) {
+		// 			console.error("Upload error:", err);
+		// 		}
+		// 	},
+		// 	"image/jpeg",
+		// 	0.9
+		// );
 	};
 
 	const handleRetakePhoto = () => {

@@ -1,7 +1,7 @@
 import React, { useLayoutEffect, useRef, useState } from "react";
 import { IoSend } from "react-icons/io5";
 import { colors, spacing, borderRadius, typography } from "../theme";
-import { supabase } from "../lib/supabaseClient";
+// import { supabase } from "../lib/supabaseClient";
 import { geminiFlash } from "../lib/geminiClient";
 
 type Message = { text?: string; image?: string; sender: "user" | "bot" };
@@ -118,7 +118,7 @@ export default function Chat({ topic, photoDataUrl }: { topic?: string | null; p
 			setMessages(newThread);
 			sessionMessages = newThread;
 
-			await supabase.from("chat_messages").insert([userMsg, botMsg]);
+			// await supabase.from("chat_messages").insert([userMsg, botMsg]);
 		} catch (err) {
 			console.error("send error", err);
 		} finally {
