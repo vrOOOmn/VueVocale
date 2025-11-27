@@ -1,12 +1,12 @@
 export const colors = {
   primary: "linear-gradient(135deg, #4F8DFD, #3369D6)",
-  secondary: '#34495E',
-  background: '#F5F7FA',
-  surface: '#FFFFFF',
-  text: 'black',
-  textLight: '#FFFFFF',
-  error: '#E74C3C',
-  border: '#BDC3C7',
+  secondary: "#34495E",
+  background: "#F5F7FA",
+  surface: "#FFFFFF",
+  text: "black",
+  textLight: "#FFFFFF",
+  error: "#E74C3C",
+  border: "#BDC3C7",
 };
 
 export const spacing = {
@@ -36,13 +36,13 @@ export const typography = {
     lineHeight: 1.25,
   },
   body: {
-    fontFamily: family,       // was 'DMSans-Regular'
+    fontFamily: family, // was 'DMSans-Regular'
     fontSize: 16,
     fontWeight: 400 as const,
     lineHeight: 1.5,
   },
   button: {
-    fontFamily: family,       // was 'DMSans-Medium'
+    fontFamily: family, // was 'DMSans-Medium'
     fontSize: 18,
     fontWeight: 500 as const,
     lineHeight: 1.2,
@@ -54,5 +54,3 @@ export const typography = {
     lineHeight: 1.5,
   },
 } as const;
-
-
