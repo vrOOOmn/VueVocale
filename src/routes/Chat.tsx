@@ -33,12 +33,14 @@ export default function Chat({
   const [loading, setLoading] = useState(false);
   const { recording, start, stop } = useRecorder();
 
-  const listRef = useRef<HTMLDivElement | null>(null);
   const textRef = useRef<HTMLTextAreaElement | null>(null);
   const lastPhotoRef = useRef<string | null>(null); // <-- new guard
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [playingId, setPlayingId] = useState<string | null>(null);
+
+  const bottomRef = useRef<HTMLDivElement | null>(null);
+
 
   const buildAgentHistory = (): { role: "user" | "assistant"; content: string }[] =>
     sessionMessages
@@ -92,14 +94,9 @@ export default function Chat({
   };
 
   // --- Scroll to bottom ---
-  const scrollToBottom = (smooth = false) => {
-    const list = listRef.current;
-    if (!list) return;
-    list.scrollTo({
-      top: list.scrollHeight,
-      behavior: smooth ? "smooth" : "auto",
-    });
-  };
+  useLayoutEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, loading]);
 
   const generateBotMessageWithTTS = async (
     text: string
@@ -125,8 +122,6 @@ export default function Chat({
   };
 
 
-  useLayoutEffect(() => scrollToBottom(false), []);
-  useLayoutEffect(() => scrollToBottom(true), [messages.length]);
 
   useLayoutEffect(() => {
     const handleNewPhoto = async () => {
@@ -256,7 +251,7 @@ export default function Chat({
 
   return (
     <main style={styles.container}>
-      <div ref={listRef} style={styles.messages}>
+      <div style={styles.messages}>
         {messages.map((m, i) => (
           <div
             key={i}
@@ -347,6 +342,7 @@ export default function Chat({
             </div>
           </div>
         )}
+        <div ref={bottomRef} />
       </div>
 
       <form
