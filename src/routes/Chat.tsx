@@ -2,11 +2,11 @@ import React, { useLayoutEffect, useRef, useState } from "react";
 import { IoSend } from "react-icons/io5";
 import { colors, spacing, borderRadius, typography } from "../theme";
 // import { supabase } from "../lib/supabaseClient";
-import { geminiFlash } from "../lib/geminiClient";
+import { generateTextResponse } from "../lib/primaryAgent";
 import { useRecorder } from "../lib/audio/useRecorder";
-import { blobToBase64 } from "../lib/audio/blobToBase64";
 import { IoMic, IoStopSharp, IoVolumeHighSharp, IoVolumeMute } from "react-icons/io5";
 import { generateTTS } from "../lib/audio/generateTTS";
+import { transcribeSTT } from "../lib/audio/transcribeSTT";
 
 
 type Message = {
@@ -15,7 +15,7 @@ type Message = {
   image?: string;
   sender: "user" | "bot";
   audioUrl?: string;
-  audioState?: "idle" | "loading" | "ready" | "error";
+  audioState?: "ready" | "error";
 };
 
 const ERROR_TEXT = "Oops, error in generating response! Try Again";
@@ -39,6 +39,16 @@ export default function Chat({
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [playingId, setPlayingId] = useState<string | null>(null);
+
+  const buildAgentHistory = (): { role: "user" | "assistant"; content: string }[] =>
+    sessionMessages
+      .filter((m) => m.text && !m.image)
+      .map((m) => ({
+        role: (m.sender === "user" ? "user" : "assistant") as "user" | "assistant",
+        content: m.text!,
+      })
+  );
+
 
   const stopAudio = () => {
     const a = audioRef.current;
@@ -81,28 +91,6 @@ export default function Chat({
     });
   };
 
-  const attachTTS = (botId: string, text: string) => {
-    // If bot message was created with audioState: "loading", this is optional,
-    // but harmless and keeps things consistent.
-    commitMessages((prev) =>
-      prev.map((m) => (m.id === botId ? { ...m, audioState: "loading" } : m))
-    );
-
-    generateTTS(text)
-      .then((audioUrl) => {
-        commitMessages((prev) =>
-          prev.map((m) =>
-            m.id === botId ? { ...m, audioUrl, audioState: "ready" } : m
-          )
-        );
-      })
-      .catch(() => {
-        commitMessages((prev) =>
-          prev.map((m) => (m.id === botId ? { ...m, audioState: "error" } : m))
-        );
-      });
-  };
-
   // --- Scroll to bottom ---
   const scrollToBottom = (smooth = false) => {
     const list = listRef.current;
@@ -112,6 +100,30 @@ export default function Chat({
       behavior: smooth ? "smooth" : "auto",
     });
   };
+
+  const generateBotMessageWithTTS = async (
+    text: string
+  ): Promise<Message> => {
+    try {
+      const audioUrl = await generateTTS(text);
+
+      return {
+        id: crypto.randomUUID(),
+        text,
+        sender: "bot",
+        audioUrl,
+        audioState: "ready",
+      };
+    } catch {
+      return {
+        id: crypto.randomUUID(),
+        text,
+        sender: "bot",
+        audioState: "error",
+      };
+    }
+  };
+
 
   useLayoutEffect(() => scrollToBottom(false), []);
   useLayoutEffect(() => scrollToBottom(true), [messages.length]);
@@ -129,38 +141,26 @@ export default function Chat({
       };
       commitMessages((prev) => [...prev, newMsg]);
 
-      const prompt = `
-        You're chatting as a friendly French friend with an intermediate (B1) learner.  
-        They just sent you a photo of a ${topic}.  
-        React naturally in French — show curiosity or interest, no greetings.  
-        Keep it under three sentences, and ask only one simple question if it fits.  
-        Stay in the flow of conversation and only talk about yourself if asked.  
-      `;
 
       try {
         setLoading(true);
-        const result = await geminiFlash.generateContent([{ text: prompt }]);
-        const text = result.response.text()?.trim() || "";
-        if (text) {
-          const botMsg: Message = {
-            id: crypto.randomUUID(),
-            text,
-            sender: "bot",
-            audioState: "loading",
-          };
 
-          commitMessages((prev) => [...prev, botMsg]);
-          attachTTS(botMsg.id, text);
-        }
-      } catch (err) {
-        console.error("Gemini image response error:", err);
+        const text = await generateTextResponse({
+          history: buildAgentHistory(),
+          userMessage: `L’utilisateur a envoyé une image de ${topic}.`,
+          hasImage: true,
+        });
+
+        if (!text) return;
+
+        const botMsg = await generateBotMessageWithTTS(text);
+        commitMessages((prev) => [...prev, botMsg]);
       } finally {
         setLoading(false);
       }
     };
 
     handleNewPhoto();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [photoDataUrl, topic]); // messages removed safely
 
   // --- Handle Enter key ---
@@ -171,30 +171,12 @@ export default function Chat({
     }
   };
 
-  const handleAudioMessage = async (audioBase64: string) => {
+  const handleAudioMessage = async (audioBlob: Blob) => {
     
     try {
-      // Step 1: Ask Gemini to transcribe ONLY the speech
-      const sttResult = await geminiFlash.generateContent({
-        contents: [
-          {
-            role: "user",
-            parts: [
-              {
-                inlineData: {
-                  mimeType: "audio/webm",
-                  data: audioBase64,
-                },
-              },
-              {
-                text: "Transcribe the audio exactly in French. Only output the text transcription.",
-              },
-            ],
-          },
-        ],
-      });
       
-      const transcription = sttResult.response.text()?.trim() || "";
+      const transcription = await transcribeSTT(audioBlob)
+      if (!transcription) return;
       
       // Add the transcription as the user's message
       const userMsg: Message = {
@@ -208,16 +190,9 @@ export default function Chat({
 
       // Step 2: Feed the transcription into your EXISTING ai logic
       const aiReply = await generateAIResponse(transcription);
-
-      const botMsg: Message = {
-        id: crypto.randomUUID(),
-        text: aiReply,
-        sender: "bot",
-        audioState: "loading",
-      };
+      const botMsg = await generateBotMessageWithTTS(aiReply);
 
       commitMessages((prev) => [...prev, botMsg]);
-      attachTTS(botMsg.id, aiReply);
     } catch (error) {
       console.error("Audio message error", error);
     } finally {
@@ -232,30 +207,22 @@ export default function Chat({
     }
 
     const blob = await stop();
-    const base64 = await blobToBase64(blob);
-
-    handleAudioMessage(base64);
+    handleAudioMessage(blob);
   };
 
   // --- Generate Gemini response ---
   const generateAIResponse = async (userMessage: string): Promise<string> => {
     try {
-      const hasImage = sessionMessages.some((m) => m.image);
-      const prompt = `
-        You're chatting as a friendly French friend helping an intermediate (B1) learner practice real-life French.  
-        Keep it light, natural, and curious — talk about everyday things like food, travel, or hobbies.  
-        Use only French. Correct serious mistakes gently with quick tips.  
-        Never say "Prêt(e) à papoter un peu en français ?"
-        Keep replies under three sentences and ask just one question at a time.  
-        Keep the conversation flowing naturally and casually and refrain from talking too much about yourself
+        const hasImage = sessionMessages.some((m) => m.image);
 
-        ${hasImage ? "If the chat included images, refer casually to them when relevant." : ""}
-        ${userMessage}
-      `;
-      const result = await geminiFlash.generateContent(prompt);
-      return result.response.text()?.trimEnd() || ERROR_TEXT;
-    } catch {
-      return ERROR_TEXT;
+        return await generateTextResponse({
+          history: buildAgentHistory(),
+          userMessage,
+          hasImage,
+        });
+      } catch (e) {
+        console.error(e);
+        return ERROR_TEXT;
     }
   };
 
@@ -274,16 +241,9 @@ export default function Chat({
 
     try {
       const aiResponse = await generateAIResponse(text);
-      const botMsg: Message = {
-        id: crypto.randomUUID(),
-        text: aiResponse,
-        sender: "bot",
-        audioState: "loading",
-      };
+      const botMsg = await generateBotMessageWithTTS(aiResponse);
 
       commitMessages((prev) => [...prev, botMsg]);
-      attachTTS(botMsg.id, aiResponse);
-
       // await supabase.from("chat_messages").insert([userMsg, botMsg]);
     } catch (err) {
       console.error("send error", err);

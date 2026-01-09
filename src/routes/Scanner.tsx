@@ -3,7 +3,7 @@ import { IoCamera, IoRepeat, IoWarningOutline } from "react-icons/io5";
 import PhotoPreviewSection from "../components/PhotoPreviewSection";
 import { colors, spacing, borderRadius, typography } from "../theme";
 // import { supabase } from "../lib/supabaseClient";
-import { geminiFlash } from "../lib/geminiClient";
+import { detectAndTranslateFR } from "../lib/vision/detectObject";
 
 type Facing = "environment" | "user";
 
@@ -176,35 +176,16 @@ export default function Scanner({
     ctx.drawImage(v, 0, 0, c.width, c.height);
 
     const dataUrl = c.toDataURL("image/jpeg", 0.9);
-
     try {
       const base64Image = dataUrl.split(",")[1];
-      const detection = await geminiFlash.generateContent([
-        { inlineData: { data: base64Image, mimeType: "image/jpeg" } },
-        {
-          text: "Identify the main object in this image. Return only one short English noun, lowercase.",
-        },
-      ]);
-      const englishObject = detection.response.text().trim();
 
-      const translation = await geminiFlash.generateContent([
-        {
-          text: `You are a precise translation assistant. Translate the following English noun into French, returning only a single French word (no explanations, no notes, no articles, no formatting).
-          
-          English: ${englishObject}
-          French (single word only):`,
-        },
-      ]);
+      const { english, french } = await detectAndTranslateFR(base64Image);
 
-      setEnglishObject(englishObject);
-
-      let frenchWord = translation.response.text().trim().split(/\s+/)[0];
-      frenchWord = frenchWord.replace(/[^a-zA-ZÀ-ÿ-]/g, "");
-
-      setDetectedObject(frenchWord);
+      setEnglishObject(english);
+      setDetectedObject(french);
       setPhotoDataUrl(dataUrl);
     } catch (err) {
-      console.error("Gemini detection error:", err);
+      console.error("Vision scan error:", err);
       setStreamError("Erreur: échec de la détection de l'objet.");
     } finally {
       setIsLoading(false);
