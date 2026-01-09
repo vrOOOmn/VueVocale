@@ -5,7 +5,7 @@ import { colors, spacing, borderRadius, typography } from "../theme";
 import { geminiFlash } from "../lib/geminiClient";
 import { useRecorder } from "../lib/audio/useRecorder";
 import { blobToBase64 } from "../lib/audio/blobToBase64";
-import { IoMic, IoStopSharp } from "react-icons/io5";
+import { IoMic, IoStopSharp, IoVolumeHighSharp, IoVolumeMute } from "react-icons/io5";
 import { generateTTS } from "../lib/audio/generateTTS";
 
 
@@ -205,7 +205,7 @@ export default function Chat({
       commitMessages((prev) => [...prev, userMsg]);
       
       setLoading(true);
-      
+
       // Step 2: Feed the transcription into your EXISTING ai logic
       const aiReply = await generateAIResponse(transcription);
 
@@ -346,17 +346,29 @@ export default function Chat({
                   {m.sender === "bot" && m.audioState === "ready" && m.audioUrl && (
                     <div style={{ marginTop: 6 }}>
                       <button
+                        type="button"
                         onClick={() => togglePlay(m)}
                         style={{
-                          fontSize: 12,
-                          padding: "4px 10px",
-                          borderRadius: 999,
-                          border: "none",
-                          background: "#f2f2f2",
-                          cursor: "pointer",
+                          ...styles.playButton,
+                          background: playingId === m.id ? colors.border : colors.secondary,
                         }}
                       >
-                        {playingId === m.id ? "Pause" : "Play"}
+                        <div
+                          style={{
+                            width: 18, // icon box width
+                            height: 18, // icon box height
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          {playingId === m.id ? (
+                            <IoVolumeMute style={{fontSize: 18, border: 4}} color="white" />
+                          ):(
+                            <IoVolumeHighSharp style={{fontSize: 18, border: 4}} color="white"/>
+                          )}
+                        
+                        </div>
                       </button>
                     </div>
                   )}
@@ -547,6 +559,17 @@ const styles: Record<string, React.CSSProperties> = {
     background: "white",
     borderRadius: "50%",
   },
+  playButton: {
+    width: 35,
+    height: 35,
+    borderRadius: "50%",
+    border: "none",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+    boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+  }
 };
 
 // Add typing animation
