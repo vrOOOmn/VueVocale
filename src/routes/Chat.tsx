@@ -6,8 +6,17 @@ import { geminiFlash } from "../lib/geminiClient";
 import { useRecorder } from "../lib/audio/useRecorder";
 import { blobToBase64 } from "../lib/audio/blobToBase64";
 import { IoMic, IoStopSharp } from "react-icons/io5";
+import { generateTTS } from "../lib/audio/generateTTS";
 
-type Message = { text?: string; image?: string; sender: "user" | "bot" };
+
+type Message = {
+  id: string;
+  text?: string;
+  image?: string;
+  sender: "user" | "bot";
+  audioUrl?: string;
+  audioState?: "idle" | "loading" | "ready" | "error";
+};
 
 const ERROR_TEXT = "Oops, error in generating response! Try Again";
 let sessionMessages: Message[] = [];
@@ -28,6 +37,72 @@ export default function Chat({
   const textRef = useRef<HTMLTextAreaElement | null>(null);
   const lastPhotoRef = useRef<string | null>(null); // <-- new guard
 
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [playingId, setPlayingId] = useState<string | null>(null);
+
+  const stopAudio = () => {
+    const a = audioRef.current;
+    if (!a) return;
+    a.pause();
+    a.currentTime = 0;
+    setPlayingId(null);
+  };
+
+  const togglePlay = (msg: Message) => {
+    if (!msg.audioUrl) return;
+
+    const a = audioRef.current ?? new Audio();
+    audioRef.current = a;
+
+    // if tapping same message, toggle pause/play
+    if (playingId === msg.id) {
+      a.pause();
+      setPlayingId(null);
+      return;
+    }
+
+    // new message: stop previous, load new src, play
+    a.pause();
+    a.src = msg.audioUrl;
+    a.currentTime = 0;
+
+    a.onended = () => setPlayingId(null);
+    a.onerror = () => setPlayingId(null);
+
+    a.play().then(() => setPlayingId(msg.id)).catch(() => setPlayingId(null));
+  };
+
+  // Keep React state + sessionMessages in sync (avoids stale closures)
+  const commitMessages = (updater: (prev: Message[]) => Message[]) => {
+    setMessages((prev) => {
+      const next = updater(prev);
+      sessionMessages = next;
+      return next;
+    });
+  };
+
+  const attachTTS = (botId: string, text: string) => {
+    // If bot message was created with audioState: "loading", this is optional,
+    // but harmless and keeps things consistent.
+    commitMessages((prev) =>
+      prev.map((m) => (m.id === botId ? { ...m, audioState: "loading" } : m))
+    );
+
+    generateTTS(text)
+      .then((audioUrl) => {
+        commitMessages((prev) =>
+          prev.map((m) =>
+            m.id === botId ? { ...m, audioUrl, audioState: "ready" } : m
+          )
+        );
+      })
+      .catch(() => {
+        commitMessages((prev) =>
+          prev.map((m) => (m.id === botId ? { ...m, audioState: "error" } : m))
+        );
+      });
+  };
+
   // --- Scroll to bottom ---
   const scrollToBottom = (smooth = false) => {
     const list = listRef.current;
@@ -47,10 +122,12 @@ export default function Chat({
       if (lastPhotoRef.current === photoDataUrl) return; // prevents re-runs
       lastPhotoRef.current = photoDataUrl; // remember this photo
 
-      const newMsg = { image: photoDataUrl, sender: "user" as const };
-      const updatedMessages = [...messages, newMsg];
-      setMessages(updatedMessages);
-      sessionMessages = updatedMessages;
+      const newMsg: Message = {
+        id: crypto.randomUUID(),
+        image: photoDataUrl,
+        sender: "user",
+      };
+      commitMessages((prev) => [...prev, newMsg]);
 
       const prompt = `
         You're chatting as a friendly French friend with an intermediate (B1) learner.  
@@ -65,10 +142,15 @@ export default function Chat({
         const result = await geminiFlash.generateContent([{ text: prompt }]);
         const text = result.response.text()?.trim() || "";
         if (text) {
-          const botMsg = { text, sender: "bot" as const };
-          const newThread = [...updatedMessages, botMsg];
-          setMessages(newThread);
-          sessionMessages = newThread;
+          const botMsg: Message = {
+            id: crypto.randomUUID(),
+            text,
+            sender: "bot",
+            audioState: "loading",
+          };
+
+          commitMessages((prev) => [...prev, botMsg]);
+          attachTTS(botMsg.id, text);
         }
       } catch (err) {
         console.error("Gemini image response error:", err);
@@ -90,8 +172,7 @@ export default function Chat({
   };
 
   const handleAudioMessage = async (audioBase64: string) => {
-    setLoading(true);
-
+    
     try {
       // Step 1: Ask Gemini to transcribe ONLY the speech
       const sttResult = await geminiFlash.generateContent({
@@ -112,25 +193,31 @@ export default function Chat({
           },
         ],
       });
-
+      
       const transcription = sttResult.response.text()?.trim() || "";
-
+      
       // Add the transcription as the user's message
-      const userMsg = {
+      const userMsg: Message = {
+        id: crypto.randomUUID(),
         text: transcription || "(voice message)",
-        sender: "user" as const,
+        sender: "user",
       };
-      const updated = [...messages, userMsg];
-      setMessages(updated);
-      sessionMessages = updated;
-
+      commitMessages((prev) => [...prev, userMsg]);
+      
+      setLoading(true);
+      
       // Step 2: Feed the transcription into your EXISTING ai logic
       const aiReply = await generateAIResponse(transcription);
 
-      const botMsg = { text: aiReply, sender: "bot" as const };
-      const finalThread = [...updated, botMsg];
-      setMessages(finalThread);
-      sessionMessages = finalThread;
+      const botMsg: Message = {
+        id: crypto.randomUUID(),
+        text: aiReply,
+        sender: "bot",
+        audioState: "loading",
+      };
+
+      commitMessages((prev) => [...prev, botMsg]);
+      attachTTS(botMsg.id, aiReply);
     } catch (error) {
       console.error("Audio message error", error);
     } finally {
@@ -149,10 +236,11 @@ export default function Chat({
 
     handleAudioMessage(base64);
   };
+
   // --- Generate Gemini response ---
   const generateAIResponse = async (userMessage: string): Promise<string> => {
     try {
-      const hasImage = messages.some((m) => m.image);
+      const hasImage = sessionMessages.some((m) => m.image);
       const prompt = `
         You're chatting as a friendly French friend helping an intermediate (B1) learner practice real-life French.  
         Keep it light, natural, and curious — talk about everyday things like food, travel, or hobbies.  
@@ -173,23 +261,28 @@ export default function Chat({
 
   // --- Sending user messages ---
   const sendMessage = async () => {
+    
     const text = input.trim();
     if (!text) return;
-
-    const userMsg = { text, sender: "user" as const };
-    const updated = [...messages, userMsg];
-    setMessages(updated);
-    sessionMessages = updated;
+    stopAudio()
+    
+    const userMsg: Message = { id: crypto.randomUUID(), text, sender: "user" };
+    commitMessages((prev) => [...prev, userMsg]);
 
     setInput("");
     setLoading(true);
 
     try {
       const aiResponse = await generateAIResponse(text);
-      const botMsg = { text: aiResponse, sender: "bot" as const };
-      const newThread = [...updated, botMsg];
-      setMessages(newThread);
-      sessionMessages = newThread;
+      const botMsg: Message = {
+        id: crypto.randomUUID(),
+        text: aiResponse,
+        sender: "bot",
+        audioState: "loading",
+      };
+
+      commitMessages((prev) => [...prev, botMsg]);
+      attachTTS(botMsg.id, aiResponse);
 
       // await supabase.from("chat_messages").insert([userMsg, botMsg]);
     } catch (err) {
@@ -216,15 +309,13 @@ export default function Chat({
             <div
               style={{
                 ...styles.message,
-                ...(m.sender === "user"
-                  ? styles.userMessage
-                  : styles.botMessage),
+                ...(m.sender === "user" ? styles.userMessage : styles.botMessage),
                 padding: m.image ? 0 : "10px 14px", // no padding for image messages
                 background: m.image
                   ? "transparent" // 👈 remove blue fill for image bubble
                   : m.sender === "user"
-                    ? "linear-gradient(135deg, #4A90E2, #357ABD)"
-                    : "#fff",
+                  ? "linear-gradient(135deg, #4A90E2, #357ABD)"
+                  : "#fff",
                 borderRadius: borderRadius.lg,
                 maxWidth: m.image ? "min(280px, 70%)" : "75%",
               }}
@@ -241,25 +332,42 @@ export default function Chat({
                   }}
                 />
               ) : (
-                <p
-                  style={{
-                    ...typography.message,
-                    margin: 0,
-                    color: m.sender === "user" ? colors.textLight : colors.text,
-                    whiteSpace: "pre-wrap",
-                  }}
-                >
-                  {m.text}
-                </p>
+                <>
+                  <p
+                    style={{
+                      ...typography.message,
+                      margin: 0,
+                      color: m.sender === "user" ? colors.textLight : colors.text,
+                      whiteSpace: "pre-wrap",
+                    }}
+                  >
+                    {m.text}
+                  </p>
+                  {m.sender === "bot" && m.audioState === "ready" && m.audioUrl && (
+                    <div style={{ marginTop: 6 }}>
+                      <button
+                        onClick={() => togglePlay(m)}
+                        style={{
+                          fontSize: 12,
+                          padding: "4px 10px",
+                          borderRadius: 999,
+                          border: "none",
+                          background: "#f2f2f2",
+                          cursor: "pointer",
+                        }}
+                      >
+                        {playingId === m.id ? "Pause" : "Play"}
+                      </button>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>
         ))}
 
         {loading && (
-          <div
-            style={{ ...styles.message, ...styles.botMessage, opacity: 0.7 }}
-          >
+          <div style={{ ...styles.message, ...styles.botMessage, opacity: 0.7 }}>
             <div className="typing-dots" style={styles.typingDots}>
               <span></span>
               <span></span>
