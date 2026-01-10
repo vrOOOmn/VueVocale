@@ -2,7 +2,7 @@ import React, { useLayoutEffect, useRef, useState } from "react";
 import { IoSend } from "react-icons/io5";
 import { colors, spacing, borderRadius, typography } from "../theme";
 // import { supabase } from "../lib/supabaseClient";
-import { generateTextResponse } from "../lib/primaryAgent";
+import { generateTextResponse, fixGrammar } from "../lib/primaryAgent";
 import { useRecorder } from "../lib/audio/useRecorder";
 import { IoMic, IoStopSharp, IoVolumeHighSharp, IoVolumeMute } from "react-icons/io5";
 import { generateTTS } from "../lib/audio/generateTTS";
@@ -16,6 +16,9 @@ type Message = {
   sender: "user" | "bot";
   audioUrl?: string;
   audioState?: "ready" | "error";
+
+  grammarFix?: string;
+  grammarStatus?: "idle" | "loading" | "ok" | "fixed" | "error";
 };
 
 const ERROR_TEXT = "Oops, error in generating response! Try Again";
@@ -133,6 +136,7 @@ export default function Chat({
         id: crypto.randomUUID(),
         image: photoDataUrl,
         sender: "user",
+        grammarStatus: "idle",
       };
       commitMessages((prev) => [...prev, newMsg]);
 
@@ -178,6 +182,7 @@ export default function Chat({
         id: crypto.randomUUID(),
         text: transcription || "(voice message)",
         sender: "user",
+        grammarStatus: "idle",
       };
       commitMessages((prev) => [...prev, userMsg]);
       
@@ -194,6 +199,48 @@ export default function Chat({
       setLoading(false);
     }
   };
+
+
+  const handleFixGrammar = async (msg: Message) => {
+  // prevent duplicate calls
+    if (!msg.text || msg.grammarStatus === "loading" || msg.grammarStatus === "fixed" || msg.grammarStatus === "ok") {
+      return;
+    }
+
+    // mark loading
+    commitMessages((prev) =>
+      prev.map((m) =>
+        m.id === msg.id ? { ...m, grammarStatus: "loading" } : m
+      )
+    );
+
+    try {
+      const result = await fixGrammar(msg.text);
+
+      commitMessages((prev) =>
+        prev.map((m) => {
+          if (m.id !== msg.id) return m;
+
+          if (result === "OK") {
+            return { ...m, grammarStatus: "ok" };
+          }
+
+          return {
+            ...m,
+            grammarFix: result,
+            grammarStatus: "fixed",
+          };
+        })
+      );
+    } catch {
+      commitMessages((prev) =>
+        prev.map((m) =>
+          m.id === msg.id ? { ...m, grammarStatus: "error" } : m
+        )
+      );
+    }
+  };
+
 
   const handleMic = async () => {
     if (!recording) {
@@ -228,7 +275,7 @@ export default function Chat({
     if (!text) return;
     stopAudio()
     
-    const userMsg: Message = { id: crypto.randomUUID(), text, sender: "user" };
+    const userMsg: Message = { id: crypto.randomUUID(), text, sender: "user",   grammarStatus: "idle"};
     commitMessages((prev) => [...prev, userMsg]);
 
     setInput("");
@@ -295,9 +342,53 @@ export default function Chat({
                       color: m.sender === "user" ? colors.textLight : colors.text,
                       whiteSpace: "pre-wrap",
                     }}
+                    
                   >
                     {m.text}
                   </p>
+                  {m.sender === "user" && m.text && (
+                    <div style={{ marginTop: 6, display: "flex", gap: 8 }}>
+                      {m.grammarStatus === "idle" && (
+                        <button
+                          onClick={() => handleFixGrammar(m)}
+                          style={{
+                            fontSize: 12,
+                            background: "transparent",
+                            border: "1px solid rgba(255,255,255,0.4)",
+                            color: "white",
+                            borderRadius: 12,
+                            padding: "2px 8px",
+                            cursor: "pointer",
+                          }}
+                        >
+                          Corriger la grammaire
+                        </button>
+                      )}
+
+                      {m.grammarStatus === "loading" && (
+                        <span style={{ fontSize: 12, opacity: 0.7 }}>Vérification…</span>
+                      )}
+
+                      {m.grammarStatus === "ok" && (
+                        <span style={{ fontSize: 12, opacity: 0.7 }}>✓ Bien !</span>
+                      )}
+                    </div>
+                  )}
+                  {m.grammarStatus === "fixed" && m.grammarFix && (
+                    <div
+                      style={{
+                        marginTop: 6,
+                        padding: "6px 10px",
+                        borderRadius: 10,
+                        background: "rgba(255,255,255,0.15)",
+                        fontSize: 13,
+                        color: "white",
+                        opacity: 0.9,
+                      }}
+                    >
+                      ➡ {m.grammarFix}
+                    </div>
+                  )}
                   {m.sender === "bot" && m.audioState === "ready" && m.audioUrl && (
                     <div style={{ marginTop: 6 }}>
                       <button
