@@ -2,8 +2,7 @@
 import OpenAI from "openai";
 
 const openai = new OpenAI({
-  apiKey: import.meta.env.VITE_OPENAI_API_KEY, // or process.env if server-side
-  dangerouslyAllowBrowser: true, // only if you accept browser-side calls (not ideal)
+  apiKey: process.env.OPENAI_API_KEY, // or process.env if server-side
 });
 
 type ScanResult = {

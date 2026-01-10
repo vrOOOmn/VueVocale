@@ -2,8 +2,7 @@
 import OpenAI from "openai";
 
 const openai = new OpenAI({
-  apiKey: import.meta.env.VITE_OPENAI_API_KEY,
-  dangerouslyAllowBrowser: true,
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
 const TTS_STYLE = `
