@@ -19,15 +19,14 @@ Definition of a linguistic error:
 - incorrect verb conjugation
 - incorrect agreement
 - incorrect word choice
-- non-idiomatic language that a native speaker would not say
+- non-idiomatic phrasing
 
 The following are NOT linguistic errors:
 - punctuation
 - capitalization
 - tone
 - formality
-- casual spoken structures i.e. sentence fragments
-- dropping “ne” in negation (e.g. “je sais pas” is valid)
+- sentence fragments that are internally grammatical
 
 Decision rule:
 - If there are ZERO real linguistic errors → the input is valid.
@@ -35,7 +34,7 @@ Decision rule:
 
 Output rules:
 - If the input is valid, return exactly: OK
-- If the input is invalid, return fully corrected and natural text.
+- If the input is invalid, return fully corrected text.
 
 Strict constraints:
 - Do NOT add explanations.
@@ -44,6 +43,14 @@ Strict constraints:
 - Return only ONE of the two allowed outputs.
   `.trim(),
 };
+
+function normalizeForGrammarCheck(text: string): string {
+  return text
+    // capitalize first letter
+    .replace(/^\s*[a-zà-ÿ]/, c => c.toUpperCase())
+    // capitalize letter after . ? !
+    .replace(/([.!?]\s*)([a-zà-ÿ])/g, (_, sep, char) => sep + char.toUpperCase());
+}
 
 export default {
   async fetch(request: Request) {
@@ -58,7 +65,7 @@ export default {
         model: "gpt-4.1-nano",
         input: [
           GRAMMAR_FIX_INSTRUCTION,
-          { role: "user", content: text },
+          { role: "user", content: normalizeForGrammarCheck(text)},
         ],
         store: false,
       });
@@ -74,3 +81,4 @@ export default {
     }
   },
 };
+
