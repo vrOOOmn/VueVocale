@@ -14,14 +14,14 @@ The input is SPOKEN French that has been transcribed to text.
 You must decide ONE thing only:
 Does the input contain any real linguistic error?
 
-Definition of a real linguistic error:
+Definition of a linguistic error:
 - grammar errors
 - incorrect verb conjugation
 - incorrect agreement
 - incorrect word choice
-- non-idiomatic phrasing that a native speaker would not say
+- non-idiomatic language that a native speaker would not say
 
-Ignore completely:
+The following are NOT linguistic errors:
 - punctuation
 - capitalization
 - tone
@@ -35,12 +35,12 @@ Decision rule:
 
 Output rules:
 - If the input is valid, return exactly: OK
-- If the input is invalid, return a fully corrected and natural version of the input.
+- If the input is invalid, return fully corrected and natural text.
 
 Strict constraints:
 - Do NOT add explanations.
-- Do NOT add punctuation.
-- Do NOT return the original input.
+- Do NOT edit punctuation.
+- NEVER return the original input.
 - Return only ONE of the two allowed outputs.
   `.trim(),
 };

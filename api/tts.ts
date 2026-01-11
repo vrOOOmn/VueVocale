@@ -5,13 +5,10 @@ const openai = new OpenAI({
 });
 
 const TTS_STYLE = `
-Speak like a French friend chatting casually during everday conversations.
-
-Tone:
-Maintain a warm, curious, and enthusiastic tone. Don't be instructional or over-dramatic.
+Speak like warm, curious, and enthusiastic French friend chatting casually during everday conversations.
 
 Delivery:
-Keep a smooth, moderate pace with natural French intonation.
+Keep a smooth, moderate pace with natural French intonation. Don't be istructional or over-dramatic
 
 Pronunciation:
 Casual metropolitan French, like everyday speech.
