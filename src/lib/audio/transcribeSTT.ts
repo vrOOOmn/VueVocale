@@ -1,23 +1,23 @@
 // src/lib/audio/transcribeSTT.ts
-import OpenAI from "openai";
-
-const openai = new OpenAI({
-  apiKey: import.meta.env.VITE_OPENAI_API_KEY,
-  dangerouslyAllowBrowser: true, // fine for local testing
-});
-
 export async function transcribeSTT(blob: Blob): Promise<string> {
-  const file = new File([blob], "speech.webm", {
-    type: blob.type || "audio/webm",
+  const fd = new FormData();
+  fd.append("audio", blob);
+
+  const res = await fetch("/api/stt", {
+    method: "POST",
+    body: fd,
   });
 
-  const transcription = await openai.audio.transcriptions.create({
-    file,
-    model: "gpt-4o-mini-transcribe",
-    language: "fr",
-    prompt:
-      "Transcris exactement ce qui est dit en français. N’ajoute rien.",
-  });
+  if (!res.ok) {
+    const msg = await res.text().catch(() => "");
+    throw new Error(msg || "Speech-to-text request failed");
+  }
 
-  return transcription.text?.trim() || "";
+  const data = await res.json();
+
+  if (typeof data?.text !== "string") {
+    throw new Error("Invalid STT response");
+  }
+
+  return data.text;
 }

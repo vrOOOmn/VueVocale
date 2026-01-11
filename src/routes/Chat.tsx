@@ -4,7 +4,7 @@ import { colors, spacing, borderRadius, typography } from "../theme";
 // import { supabase } from "../lib/supabaseClient";
 import { generateTextResponse, fixGrammar } from "../lib/primaryAgent";
 import { useRecorder } from "../lib/audio/useRecorder";
-import { IoMic, IoStopSharp, IoVolumeHighSharp, IoVolumeMute } from "react-icons/io5";
+import { IoMic, IoStopSharp, IoVolumeHighSharp, IoVolumeMute, IoEllipsisHorizontal } from "react-icons/io5";
 import { generateTTS } from "../lib/audio/generateTTS";
 import { transcribeSTT } from "../lib/audio/transcribeSTT";
 
@@ -14,8 +14,9 @@ type Message = {
   text?: string;
   image?: string;
   sender: "user" | "bot";
+
   audioUrl?: string;
-  audioState?: "ready" | "error";
+  audioState?: "ready" | "error" | "idle" | "loading";
 
   grammarFix?: string;
   grammarStatus?: "idle" | "loading" | "ok" | "fixed" | "error";
@@ -63,29 +64,63 @@ export default function Chat({
     setPlayingId(null);
   };
 
-  const togglePlay = (msg: Message) => {
-    if (!msg.audioUrl) return;
+  const togglePlay = async (msg: Message) => {
+    if (playingId && playingId !== msg.id) stopAudio();
 
-    const a = audioRef.current ?? new Audio();
-    audioRef.current = a;
-
-    // if tapping same message, toggle pause/play
+    // If tapping same message while it's already playing: pause
     if (playingId === msg.id) {
-      a.pause();
+      const a = audioRef.current;
+      if (a) a.pause();
       setPlayingId(null);
       return;
     }
 
-    // new message: stop previous, load new src, play
+    // If we're already generating TTS for this message, do nothing
+    if (msg.audioState === "loading") return;
+
+    let urlToPlay = msg.audioUrl;
+
+    // Generate TTS once, and immediately use it for playback
+    if (!urlToPlay && msg.audioState === "idle" && msg.text) {
+      commitMessages((prev) =>
+        prev.map((m) => (m.id === msg.id ? { ...m, audioState: "loading" } : m))
+      );
+
+      try {
+        urlToPlay = await generateTTS(msg.text);
+
+        commitMessages((prev) =>
+          prev.map((m) =>
+            m.id === msg.id ? { ...m, audioUrl: urlToPlay, audioState: "ready" } : m
+          )
+        );
+      } catch {
+        commitMessages((prev) =>
+          prev.map((m) => (m.id === msg.id ? { ...m, audioState: "error" } : m))
+        );
+        return;
+      }
+    }
+
+    if (!urlToPlay) return;
+
+    const a = audioRef.current ?? new Audio();
+    audioRef.current = a;
+
     a.pause();
-    a.src = msg.audioUrl;
+    a.src = urlToPlay;
     a.currentTime = 0;
 
     a.onended = () => setPlayingId(null);
     a.onerror = () => setPlayingId(null);
 
-    a.play().then(() => setPlayingId(msg.id)).catch(() => setPlayingId(null));
+    a.play()
+      .then(() => setPlayingId(msg.id))
+      .catch(() => setPlayingId(null));
   };
+
+
+
 
   // Keep React state + sessionMessages in sync (avoids stale closures)
   const commitMessages = (updater: (prev: Message[]) => Message[]) => {
@@ -101,28 +136,13 @@ export default function Chat({
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
-  const generateBotMessageWithTTS = async (
-    text: string
-  ): Promise<Message> => {
-    try {
-      const audioUrl = await generateTTS(text);
+  const createBotMessage = (text: string): Message => ({
+    id: crypto.randomUUID(),
+    text,
+    sender: "bot",
+    audioState: "idle",
+  });
 
-      return {
-        id: crypto.randomUUID(),
-        text,
-        sender: "bot",
-        audioUrl,
-        audioState: "ready",
-      };
-    } catch {
-      return {
-        id: crypto.randomUUID(),
-        text,
-        sender: "bot",
-        audioState: "error",
-      };
-    }
-  };
 
 
 
@@ -152,7 +172,7 @@ export default function Chat({
 
         if (!text) return;
 
-        const botMsg = await generateBotMessageWithTTS(text);
+        const botMsg = createBotMessage(text);
         commitMessages((prev) => [...prev, botMsg]);
       } finally {
         setLoading(false);
@@ -190,7 +210,7 @@ export default function Chat({
 
       // Step 2: Feed the transcription into your EXISTING ai logic
       const aiReply = await generateAIResponse(transcription);
-      const botMsg = await generateBotMessageWithTTS(aiReply);
+      const botMsg = createBotMessage(aiReply);
 
       commitMessages((prev) => [...prev, botMsg]);
     } catch (error) {
@@ -283,7 +303,7 @@ export default function Chat({
 
     try {
       const aiResponse = await generateAIResponse(text);
-      const botMsg = await generateBotMessageWithTTS(aiResponse);
+      const botMsg = createBotMessage(aiResponse);
 
       commitMessages((prev) => [...prev, botMsg]);
       // await supabase.from("chat_messages").insert([userMsg, botMsg]);
@@ -389,14 +409,17 @@ export default function Chat({
                       ➡ {m.grammarFix}
                     </div>
                   )}
-                  {m.sender === "bot" && m.audioState === "ready" && m.audioUrl && (
+                  {m.sender === "bot" && (
                     <div style={{ marginTop: 6 }}>
                       <button
                         type="button"
                         onClick={() => togglePlay(m)}
+                        disabled={m.audioState === "loading"}
                         style={{
                           ...styles.playButton,
                           background: playingId === m.id ? colors.border : colors.secondary,
+                          opacity: m.audioState === "loading" ? 0.8 : 1,
+                          cursor: m.audioState === "loading" ? "default" : "pointer",
                         }}
                       >
                         <div
@@ -408,9 +431,11 @@ export default function Chat({
                             justifyContent: "center",
                           }}
                         >
-                          {playingId === m.id ? (
+                          {m.audioState === "loading" ? (
+                            <IoEllipsisHorizontal style={{fontSize: 18, border: 4}} color="white" />
+                          ) : playingId === m.id ? (
                             <IoVolumeMute style={{fontSize: 18, border: 4}} color="white" />
-                          ):(
+                          ) : (
                             <IoVolumeHighSharp style={{fontSize: 18, border: 4}} color="white"/>
                           )}
                         
