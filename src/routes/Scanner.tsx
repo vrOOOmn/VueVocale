@@ -248,14 +248,14 @@ export default function Scanner({
       <div style={styles.hero}>
         <div style={styles.heroHeader}>
           <img src="/vuevocale.svg" alt="VueVocale logo" style={styles.logo} />
-          <h1 style={styles.title}>VueLocale</h1>
+          <h1 style={styles.title}>VueVocale</h1>
         </div>
 
         <p style={styles.subtitle}>
           A conversational French learning companion
         </p>
         <p style={styles.description}>
-          VueLocale helps you level up your French speaking skills by engaging
+          VueVocale helps you level up your French speaking skills by engaging
           in spontaneous conversations about the world around you. Capture an
           object, and your AI companion will start chatting with you naturally!
         </p>
