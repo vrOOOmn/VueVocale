@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useRef, useState, useCallback } from "react";
 import { IoCamera, IoRepeat, IoWarningOutline } from "react-icons/io5";
 import PhotoPreviewSection from "../components/PhotoPreviewSection";
@@ -327,7 +329,7 @@ const styles: Record<string, React.CSSProperties> = {
     // border: '4px solid ' + '#000',
   },
   logo: {
-    width: "min(13vw, 4.3rem",
+    width: "min(13vw, 4.3rem)",
     height: "auto",
   },
   title: {

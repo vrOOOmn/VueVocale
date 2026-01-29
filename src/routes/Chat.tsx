@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useLayoutEffect, useRef, useState } from "react";
 import { IoSend } from "react-icons/io5";
 import { colors, spacing, borderRadius, typography } from "../theme";
@@ -643,22 +645,3 @@ const styles: Record<string, React.CSSProperties> = {
     boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
   }
 };
-
-// Add typing animation
-const styleSheet = document.createElement("style");
-styleSheet.innerHTML = `
-@keyframes typingBounce {
-  0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
-  40% { transform: scale(1); opacity: 1; }
-}
-.typing-dots span {
-  width: 10px;
-  height: 10px;
-  background: ${colors.primary === "#4A90E2" ? "#357ABD" : colors.primary};
-  border-radius: 50%;
-  animation: typingBounce 1.4s infinite ease-in-out both;
-}
-.typing-dots span:nth-child(1) { animation-delay: -0.32s; }
-.typing-dots span:nth-child(2) { animation-delay: -0.16s; }
-`;
-document.head.appendChild(styleSheet);

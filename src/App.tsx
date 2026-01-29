@@ -1,11 +1,10 @@
+"use client";
+
 import React, { useState } from "react";
 import { IoCamera, IoChatbubble } from "react-icons/io5";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { colors } from "./theme";
 import Scanner from "./routes/Scanner";
 import Chat from "./routes/Chat";
-
-const qc = new QueryClient();
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<"scanner" | "chat">("scanner");
@@ -20,76 +19,74 @@ export default function App() {
   };
 
   return (
-    <QueryClientProvider client={qc}>
-      <div
+    <div
+      style={{
+        minHeight: "100svh", // ✅ allow page to grow and scroll
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        background:
+          "linear-gradient(180deg, #F6F8FF 0%, #EEF2FF 50%, #F8FAFF 100%)",
+        color: colors.text,
+        overflowY: activeTab === "scanner" ? "auto" : "hidden", // ✅ scroll only scanner
+        WebkitOverflowScrolling: "touch",
+      }}
+    >
+      <main
         style={{
-          minHeight: "100svh", // ✅ allow page to grow and scroll
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          background:
-            "linear-gradient(180deg, #F6F8FF 0%, #EEF2FF 50%, #F8FAFF 100%)",
-          color: colors.text,
-          overflowY: activeTab === "scanner" ? "auto" : "hidden", // ✅ scroll only scanner
-          WebkitOverflowScrolling: "touch",
+          width: "100%",
+          flex: 1,
+          overflow: "visible",
         }}
       >
-        <main
-          style={{
-            width: "100%",
-            flex: 1,
-            overflow: "visible",
-          }}
-        >
-          {activeTab === "scanner" && (
-            <Scanner
-              onChat={(detectedWord, imageDataUrl) => {
-                setChatContext({ label: detectedWord, image: imageDataUrl });
-                setActiveTab("chat");
-              }}
-            />
-          )}
-
-          {activeTab === "chat" && (
-            <Chat topic={chatContext.label} photoDataUrl={chatContext.image} />
-          )}
-        </main>
-
-        {/* --- Bottom Navigation --- */}
-        <nav
-          style={{
-            position: "fixed",
-            bottom: 0,
-            left: "50%",
-            transform: "translateX(-50%)",
-            width: "min(90vw, 50em)",
-            background: "rgba(255,255,255,0.75)",
-            backdropFilter: "blur(16px)",
-            borderRadius: 28,
-            boxShadow: "0 6px 20px rgba(0,0,0,0.08)",
-            height: 68,
-            display: "flex",
-            justifyContent: "space-around",
-            alignItems: "center",
-            marginBottom: 10,
-            zIndex: 99,
-          }}
-        >
-          <TabButton
-            icon={<IoCamera size={22} />}
-            label="Scanner"
-            active={activeTab === "scanner"}
-            onClick={handleSwitchToScanner}
+        {activeTab === "scanner" && (
+          <Scanner
+            onChat={(detectedWord, imageDataUrl) => {
+              setChatContext({ label: detectedWord, image: imageDataUrl });
+              setActiveTab("chat");
+            }}
           />
-          <TabButton
-            icon={<IoChatbubble size={22} />}
-            label="Chat"
-            active={activeTab === "chat"}
-            onClick={() => setActiveTab("chat")}
-          />
-        </nav>
-      </div>
-    </QueryClientProvider>
+        )}
+
+        {activeTab === "chat" && (
+          <Chat topic={chatContext.label} photoDataUrl={chatContext.image} />
+        )}
+      </main>
+
+      {/* --- Bottom Navigation --- */}
+      <nav
+        style={{
+          position: "fixed",
+          bottom: 0,
+          left: "50%",
+          transform: "translateX(-50%)",
+          width: "min(90vw, 50em)",
+          background: "rgba(255,255,255,0.75)",
+          backdropFilter: "blur(16px)",
+          borderRadius: 28,
+          boxShadow: "0 6px 20px rgba(0,0,0,0.08)",
+          height: 68,
+          display: "flex",
+          justifyContent: "space-around",
+          alignItems: "center",
+          marginBottom: 10,
+          zIndex: 99,
+        }}
+      >
+        <TabButton
+          icon={<IoCamera size={22} />}
+          label="Scanner"
+          active={activeTab === "scanner"}
+          onClick={handleSwitchToScanner}
+        />
+        <TabButton
+          icon={<IoChatbubble size={22} />}
+          label="Chat"
+          active={activeTab === "chat"}
+          onClick={() => setActiveTab("chat")}
+        />
+      </nav>
+    </div>
   );
 }
 
