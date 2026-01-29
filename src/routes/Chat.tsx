@@ -223,10 +223,10 @@ export default function Chat({
             text: row.text ?? undefined,
             image: row.image ?? undefined,
             sender: row.sender,
-            audioState: row.sender === "bot" ? "idle" : undefined,
+            audioState: row.sender === "bot" ? ("idle" as const) : undefined,
             audioUrl: signedUrl,
             audioPath: row.audio_path ?? undefined,
-            grammarStatus: row.sender === "user" ? "idle" : undefined,
+            grammarStatus: row.sender === "user" ? ("idle" as const) : undefined,
           };
         })
       );
@@ -376,7 +376,7 @@ export default function Chat({
   // --- Generate Gemini response ---
   const generateAIResponse = async (userMessage: string): Promise<string> => {
     try {
-        const hasImage = sessionMessages.some((m) => m.image);
+        const hasImage = messagesRef.current.some((m) => m.image);
 
         return await generateTextResponse({
           history: buildAgentHistory(),
