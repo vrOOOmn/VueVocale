@@ -138,3 +138,349 @@ textarea:focus {
 .typing-dots span:nth-child(2) {
   animation-delay: -0.16s;
 }
+
+.landing {
+  min-height: 100svh;
+  background:
+    radial-gradient(1200px 600px at 10% -10%, rgba(79, 141, 253, 0.2), transparent 60%),
+    radial-gradient(900px 500px at 90% 10%, rgba(52, 73, 94, 0.15), transparent 55%),
+    linear-gradient(180deg, #f6f8ff 0%, #eef2ff 55%, #f8faff 100%);
+  color: #111827;
+  padding: 28px clamp(18px, 4vw, 56px) 48px;
+}
+
+.landing-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 48px;
+}
+
+.logo-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo {
+  width: 44px;
+  height: 44px;
+}
+
+.logo-text {
+  font-weight: 700;
+  font-size: 20px;
+  color: #2e4da7;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  font-weight: 600;
+  color: #1f2a44;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 36px;
+  align-items: center;
+  margin-bottom: 64px;
+}
+
+.hero-copy h1 {
+  font-size: clamp(2.2rem, 5vw, 3.6rem);
+  margin: 12px 0 16px;
+  line-height: 1.05;
+}
+
+.accent {
+  color: #2d6cdf;
+}
+
+.pill {
+  display: inline-block;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(45, 108, 223, 0.12);
+  color: #2d6cdf;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.sub {
+  font-size: 1.1rem;
+  color: #334155;
+}
+
+.cta-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 20px 0 10px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-radius: 999px;
+  border: 0;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn-primary {
+  background: #2d6cdf;
+  color: #fff;
+  box-shadow: 0 10px 20px rgba(45, 108, 223, 0.25);
+}
+
+.btn-secondary {
+  background: #fff;
+  color: #1f2a44;
+  border: 1px solid rgba(31, 42, 68, 0.15);
+}
+
+.btn-ghost {
+  border: 1px solid rgba(31, 42, 68, 0.2);
+  padding: 8px 14px;
+  border-radius: 16px;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.18);
+}
+
+.mini {
+  color: #475569;
+  font-size: 0.95rem;
+}
+
+.hero-card {
+  background: #0f172a;
+  border-radius: 28px;
+  padding: 20px;
+  color: #e2e8f0;
+  box-shadow: 0 18px 50px rgba(15, 23, 42, 0.35);
+}
+
+.hero-card-top {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #334155;
+}
+
+.hero-screen {
+  background: #111827;
+  border-radius: 20px;
+  padding: 24px;
+  min-height: 280px;
+  position: relative;
+  overflow: hidden;
+}
+
+.screen-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(45, 108, 223, 0.2);
+  color: #9dc2ff;
+  padding: 6px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.scan-ring {
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  border: 2px dashed rgba(157, 194, 255, 0.6);
+  margin: 18px auto;
+  position: relative;
+}
+
+.scan-ring::after {
+  content: "";
+  position: absolute;
+  inset: 18px;
+  border-radius: 50%;
+  border: 2px solid rgba(157, 194, 255, 0.35);
+}
+
+.scan-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 10px 14px;
+  border-radius: 14px;
+  margin-bottom: 16px;
+}
+
+.chat-bubble {
+  background: rgba(45, 108, 223, 0.22);
+  padding: 12px 14px;
+  border-radius: 16px 16px 4px 16px;
+  font-size: 0.95rem;
+}
+
+.section {
+  margin: 56px auto;
+  max-width: 1100px;
+}
+
+.section h2 {
+  font-size: clamp(1.8rem, 3vw, 2.4rem);
+  margin-bottom: 24px;
+}
+
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 18px;
+}
+
+.feature {
+  background: #fff;
+  border-radius: 18px;
+  padding: 18px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+}
+
+.how .steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: rgba(45, 108, 223, 0.12);
+  border-radius: 16px;
+  padding: 16px;
+  font-weight: 600;
+}
+
+.step span {
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #2d6cdf;
+  color: #fff;
+}
+
+.faq-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 18px;
+}
+
+.cta {
+  text-align: center;
+}
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: 0.9rem;
+  color: #64748b;
+  margin-top: 48px;
+}
+
+.auth {
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(800px 500px at 20% 0%, rgba(45, 108, 223, 0.18), transparent 60%);
+  padding: 32px;
+}
+
+.auth-card {
+  width: min(460px, 95vw);
+  background: #fff;
+  border-radius: 24px;
+  padding: 28px;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.12);
+}
+
+.auth-head {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.auth-logo {
+  width: 52px;
+  height: 52px;
+}
+
+.auth-form {
+  display: grid;
+  gap: 14px;
+}
+
+.auth-form label {
+  display: grid;
+  gap: 6px;
+  font-weight: 600;
+  color: #1f2a44;
+}
+
+.auth-form input {
+  border: 1px solid rgba(31, 42, 68, 0.18);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 1rem;
+}
+
+.auth-error {
+  color: #b91c1c;
+  background: rgba(185, 28, 28, 0.08);
+  border-radius: 12px;
+  padding: 8px 10px;
+  font-size: 0.95rem;
+}
+
+.auth-footer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 18px;
+  color: #475569;
+  font-weight: 600;
+}
+
+@media (max-width: 720px) {
+  .landing-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .nav {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+  .footer {
+    flex-direction: column;
+  }
+}
