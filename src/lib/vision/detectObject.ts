@@ -1,4 +1,5 @@
 // src/lib/vision/detectObject.ts
+import { getAuthHeaders } from "../supabaseSession";
 
 export type ScanResult = {
   english: string;
@@ -8,10 +9,12 @@ export type ScanResult = {
 export async function detectAndTranslateFR(
   base64Jpeg: string
 ): Promise<ScanResult> {
+  const authHeaders = await getAuthHeaders();
   const res = await fetch("/api/vision", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      ...authHeaders,
     },
     body: JSON.stringify({ base64Jpeg }),
   });

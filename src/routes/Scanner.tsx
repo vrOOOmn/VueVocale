@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { IoCamera, IoRepeat, IoWarningOutline } from "react-icons/io5";
 import PhotoPreviewSection from "../components/PhotoPreviewSection";
 import { colors, spacing, borderRadius, typography } from "../theme";
-// import { supabase } from "../lib/supabaseClient";
+import { supabase } from "../lib/supabaseClient";
 import { detectAndTranslateFR } from "../lib/vision/detectObject";
 
 type Facing = "environment" | "user";
@@ -21,6 +21,7 @@ export default function Scanner({
   const [detectedObject, setDetectedObject] = useState<string | null>(null);
   const [englishObject, setEnglishObject] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -186,6 +187,26 @@ export default function Scanner({
       setEnglishObject(english);
       setDetectedObject(french);
       setPhotoDataUrl(dataUrl);
+
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userId = sessionData.session?.user?.id;
+      if (userId) {
+        const blob = await new Promise<Blob | null>((resolve) =>
+          c.toBlob((b) => resolve(b), "image/jpeg", 0.9)
+        );
+        if (blob) {
+          const path = `${userId}/${Date.now()}.jpg`;
+          const { error } = await supabase.storage
+            .from("chat-images")
+            .upload(path, blob, { contentType: "image/jpeg", upsert: false });
+          if (!error) {
+            const { data } = supabase.storage
+              .from("chat-images")
+              .getPublicUrl(path);
+            setUploadedUrl(data.publicUrl);
+          }
+        }
+      }
     } catch (err) {
       console.error("Vision scan error:", err);
       setStreamError("Erreur: échec de la détection de l'objet.");
@@ -215,6 +236,7 @@ export default function Scanner({
 
   const handleRetakePhoto = () => {
     setPhotoDataUrl(null);
+    setUploadedUrl(null);
     startStream();
   };
 
@@ -270,8 +292,9 @@ export default function Scanner({
           detectedLabel={detectedObject}
           englishLabel={englishObject}
           onChat={() => {
-            if (onChat && detectedObject && photoDataUrl) {
-              onChat(detectedObject, photoDataUrl);
+            const imageForChat = uploadedUrl ?? photoDataUrl;
+            if (onChat && detectedObject && imageForChat) {
+              onChat(detectedObject, imageForChat);
             }
           }}
         />

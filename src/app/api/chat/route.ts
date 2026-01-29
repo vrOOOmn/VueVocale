@@ -1,4 +1,6 @@
 import OpenAI from "openai";
+import { getAuthContext } from "../_lib/auth";
+import { getClientId, rateLimit } from "../_lib/rateLimit";
 
 export const runtime = "nodejs";
 
@@ -29,6 +31,20 @@ const IMAGE_INSTRUCTION = {
 };
 
 export async function POST(request: Request) {
+  const auth = await getAuthContext(request);
+  if (auth.role !== "admin") {
+    const clientId = getClientId(request);
+    const limit = rateLimit(`chat:${clientId}`, 30, 60_000);
+    if (!limit.ok) {
+      return new Response("Rate limit exceeded", {
+        status: 429,
+        headers: {
+          "Retry-After": Math.ceil(limit.resetMs / 1000).toString(),
+        },
+      });
+    }
+  }
+
   try {
     const { history, userMessage, hasImage } = await request.json();
 

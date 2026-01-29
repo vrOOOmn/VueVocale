@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
-import { IoCamera, IoChatbubble } from "react-icons/io5";
+import React, { useEffect, useState } from "react";
+import { IoCamera, IoChatbubble, IoPersonCircle } from "react-icons/io5";
+import { supabase } from "./lib/supabaseClient";
 import { colors } from "./theme";
 import Scanner from "./routes/Scanner";
 import Chat from "./routes/Chat";
@@ -12,10 +13,39 @@ export default function App() {
     image?: string;
     label?: string;
   }>({});
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [signOutHover, setSignOutHover] = useState(false);
 
   const handleSwitchToScanner = () => {
     setChatContext({});
     setActiveTab("scanner");
+  };
+
+  useEffect(() => {
+    let isMounted = true;
+    supabase.auth.getUser().then(async ({ data }) => {
+      if (!isMounted) return;
+      const user = data.user;
+      setUserEmail(user?.email ?? null);
+      if (user?.id) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", user.id)
+          .maybeSingle();
+        if (!isMounted) return;
+        setUserRole(profile?.role ?? null);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    window.location.href = "/signin";
   };
 
   return (
@@ -32,6 +62,73 @@ export default function App() {
         WebkitOverflowScrolling: "touch",
       }}
     >
+      <header
+        style={{
+          position: "fixed",
+          top: 12,
+          right: 14,
+          zIndex: 120,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "flex-end",
+          gap: 8,
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            padding: "8px 12px",
+            background: "rgba(255,255,255,0.8)",
+            borderRadius: 16,
+            boxShadow: "0 8px 20px rgba(0,0,0,0.08)",
+          }}
+        >
+          <IoPersonCircle size={28} color="#2F5BD1" />
+          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ fontSize: 12, fontWeight: 700 }}>
+                {userEmail ?? "Account"}
+              </span>
+              {userRole === "admin" && (
+                <span
+                  style={{
+                    fontSize: 10,
+                    fontWeight: 700,
+                    letterSpacing: "0.04em",
+                    padding: "2px 6px",
+                    borderRadius: 999,
+                    background: "linear-gradient(90deg,#0EA5E9,#3B82F6)",
+                    color: "white",
+                  }}
+                >
+                  ADMIN
+                </span>
+              )}
+            </div>
+            <button
+              onClick={handleSignOut}
+              onMouseEnter={() => setSignOutHover(true)}
+              onMouseLeave={() => setSignOutHover(false)}
+              style={{
+                border: "none",
+                background: signOutHover ? "rgba(47,91,209,0.12)" : "transparent",
+                color: "#2F5BD1",
+                fontSize: 12,
+                fontWeight: 600,
+                padding: "2px 6px",
+                cursor: "pointer",
+                textAlign: "left",
+                borderRadius: 8,
+                transition: "all 0.2s ease",
+              }}
+            >
+              Sign out
+            </button>
+          </div>
+        </div>
+      </header>
       <main
         style={{
           width: "100%",

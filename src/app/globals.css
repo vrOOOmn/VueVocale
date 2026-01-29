@@ -455,6 +455,29 @@ textarea:focus {
   font-size: 1rem;
 }
 
+.auth-oauth {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #64748b;
+  font-weight: 600;
+  margin: 10px 0 18px;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+  height: 1px;
+  background: rgba(148, 163, 184, 0.4);
+  flex: 1;
+}
+
 .auth-error {
   color: #b91c1c;
   background: rgba(185, 28, 28, 0.08);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "../../lib/supabaseClient";
 
@@ -9,6 +9,18 @@ export default function SignInPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [oauthLoading, setOauthLoading] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    supabase.auth.getSession().then(({ data }) => {
+      if (!isMounted) return;
+      if (data.session) window.location.href = "/app";
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -28,6 +40,21 @@ export default function SignInPage() {
     window.location.href = "/app";
   };
 
+  const onGoogle = async () => {
+    setError(null);
+    setOauthLoading(true);
+    const { error: oauthError } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/app`,
+      },
+    });
+    if (oauthError) {
+      setError(oauthError.message);
+      setOauthLoading(false);
+    }
+  };
+
   return (
     <div className="auth">
       <div className="auth-card">
@@ -37,6 +64,21 @@ export default function SignInPage() {
             <h1>Sign in</h1>
             <p>Continue your French conversation practice.</p>
           </div>
+        </div>
+
+        <div className="auth-oauth">
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={onGoogle}
+            disabled={oauthLoading}
+          >
+            {oauthLoading ? "Connecting..." : "Continue with Google"}
+          </button>
+        </div>
+
+        <div className="auth-divider">
+          <span>or</span>
         </div>
 
         <form onSubmit={onSubmit} className="auth-form">
@@ -68,7 +110,6 @@ export default function SignInPage() {
 
         <div className="auth-footer">
           <Link href="/">Back to landing</Link>
-          <Link href="/app">Skip to demo</Link>
         </div>
       </div>
     </div>

@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useLayoutEffect, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { IoSend } from "react-icons/io5";
 import { colors, spacing, borderRadius, typography } from "../theme";
-// import { supabase } from "../lib/supabaseClient";
+import { supabase } from "../lib/supabaseClient";
 import { generateTextResponse, fixGrammar } from "../lib/primaryAgent";
 import { useRecorder } from "../lib/audio/useRecorder";
 import { IoMic, IoStopSharp, IoVolumeHighSharp, IoVolumeMute, IoEllipsisHorizontal } from "react-icons/io5";
@@ -18,14 +18,26 @@ type Message = {
   sender: "user" | "bot";
 
   audioUrl?: string;
+  audioPath?: string;
   audioState?: "ready" | "error" | "idle" | "loading";
 
   grammarFix?: string;
   grammarStatus?: "idle" | "loading" | "ok" | "fixed" | "error";
 };
 
+type DbMessage = {
+  id: string;
+  user_id: string;
+  sender: "user" | "bot";
+  text: string | null;
+  image: string | null;
+  audio_path: string | null;
+  created_at: string;
+};
+
+const SIGNED_URL_TTL_SECONDS = 7 * 24 * 60 * 60;
+
 const ERROR_TEXT = "Oops, error in generating response! Try Again";
-let sessionMessages: Message[] = [];
 
 export default function Chat({
   topic,
@@ -34,10 +46,11 @@ export default function Chat({
   topic?: string | null;
   photoDataUrl?: string | null;
 }) {
-  const [messages, setMessages] = useState<Message[]>(sessionMessages);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const { recording, start, stop } = useRecorder();
+  const [userId, setUserId] = useState<string | null>(null);
 
   const textRef = useRef<HTMLTextAreaElement | null>(null);
   const lastPhotoRef = useRef<string | null>(null); // <-- new guard
@@ -46,10 +59,11 @@ export default function Chat({
   const [playingId, setPlayingId] = useState<string | null>(null);
 
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  const messagesRef = useRef<Message[]>([]);
 
 
   const buildAgentHistory = (): { role: "user" | "assistant"; content: string }[] =>
-    sessionMessages
+    messagesRef.current
       .filter((m) => m.text && !m.image)
       .map((m) => ({
         role: (m.sender === "user" ? "user" : "assistant") as "user" | "assistant",
@@ -83,19 +97,32 @@ export default function Chat({
     let urlToPlay = msg.audioUrl;
 
     // Generate TTS once, and immediately use it for playback
+    if (!urlToPlay && msg.audioPath) {
+      const { data } = await supabase.storage
+        .from("chat-audio")
+        .createSignedUrl(msg.audioPath, SIGNED_URL_TTL_SECONDS);
+      urlToPlay = data?.signedUrl;
+    }
+
     if (!urlToPlay && msg.audioState === "idle" && msg.text) {
       commitMessages((prev) =>
         prev.map((m) => (m.id === msg.id ? { ...m, audioState: "loading" } : m))
       );
 
       try {
-        urlToPlay = await generateTTS(msg.text);
+        const result = await generateTTS(msg.text, userId, msg.id);
+        urlToPlay = result.url;
 
         commitMessages((prev) =>
           prev.map((m) =>
-            m.id === msg.id ? { ...m, audioUrl: urlToPlay, audioState: "ready" } : m
+            m.id === msg.id
+              ? { ...m, audioUrl: urlToPlay, audioPath: result.path ?? undefined, audioState: "ready" }
+              : m
           )
         );
+        if (result.path) {
+          updateMessageAudio(msg.id, result.path);
+        }
       } catch {
         commitMessages((prev) =>
           prev.map((m) => (m.id === msg.id ? { ...m, audioState: "error" } : m))
@@ -128,7 +155,7 @@ export default function Chat({
   const commitMessages = (updater: (prev: Message[]) => Message[]) => {
     setMessages((prev) => {
       const next = updater(prev);
-      sessionMessages = next;
+      messagesRef.current = next;
       return next;
     });
   };
@@ -145,6 +172,74 @@ export default function Chat({
     audioState: "idle",
   });
 
+  const insertMessage = async (msg: Message) => {
+    if (!userId) return;
+    await supabase.from("chat_messages").insert({
+      id: msg.id,
+      user_id: userId,
+      sender: msg.sender,
+      text: msg.text ?? null,
+      image: msg.image ?? null,
+      audio_path: msg.audioPath ?? null,
+    });
+  };
+
+  const updateMessageAudio = async (messageId: string, audioPath: string) => {
+    if (!userId) return;
+    await supabase
+      .from("chat_messages")
+      .update({ audio_path: audioPath })
+      .eq("id", messageId)
+      .eq("user_id", userId);
+  };
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadSessionAndHistory = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (!isMounted) return;
+      const session = data.session;
+      if (!session?.user?.id) return;
+      setUserId(session.user.id);
+
+      const { data: rows } = await supabase
+        .from("chat_messages")
+        .select("*")
+        .eq("user_id", session.user.id)
+        .order("created_at", { ascending: true });
+
+      if (!isMounted) return;
+      const mapped = await Promise.all(
+        ((rows as DbMessage[] | null) ?? []).map(async (row) => {
+          let signedUrl: string | undefined;
+          if (row.audio_path) {
+            const { data } = await supabase.storage
+              .from("chat-audio")
+              .createSignedUrl(row.audio_path, SIGNED_URL_TTL_SECONDS);
+            signedUrl = data?.signedUrl;
+          }
+          return {
+            id: row.id,
+            text: row.text ?? undefined,
+            image: row.image ?? undefined,
+            sender: row.sender,
+            audioState: row.sender === "bot" ? "idle" : undefined,
+            audioUrl: signedUrl,
+            audioPath: row.audio_path ?? undefined,
+            grammarStatus: row.sender === "user" ? "idle" : undefined,
+          };
+        })
+      );
+
+      messagesRef.current = mapped;
+      setMessages(mapped);
+    };
+
+    loadSessionAndHistory();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
 
 
@@ -161,6 +256,7 @@ export default function Chat({
         grammarStatus: "idle",
       };
       commitMessages((prev) => [...prev, newMsg]);
+      insertMessage(newMsg);
 
 
       try {
@@ -176,6 +272,7 @@ export default function Chat({
 
         const botMsg = createBotMessage(text);
         commitMessages((prev) => [...prev, botMsg]);
+        insertMessage(botMsg);
       } finally {
         setLoading(false);
       }
@@ -197,7 +294,7 @@ export default function Chat({
     try {
       
       const transcription = await transcribeSTT(audioBlob)
-      if (!transcription) return;
+    if (!transcription) return;
       
       // Add the transcription as the user's message
       const userMsg: Message = {
@@ -207,6 +304,7 @@ export default function Chat({
         grammarStatus: "idle",
       };
       commitMessages((prev) => [...prev, userMsg]);
+      insertMessage(userMsg);
       
       setLoading(true);
 
@@ -215,6 +313,7 @@ export default function Chat({
       const botMsg = createBotMessage(aiReply);
 
       commitMessages((prev) => [...prev, botMsg]);
+      insertMessage(botMsg);
     } catch (error) {
       console.error("Audio message error", error);
     } finally {
@@ -296,9 +395,10 @@ export default function Chat({
     const text = input.trim();
     if (!text) return;
     stopAudio()
-    
+
     const userMsg: Message = { id: crypto.randomUUID(), text, sender: "user",   grammarStatus: "idle"};
     commitMessages((prev) => [...prev, userMsg]);
+    insertMessage(userMsg);
 
     setInput("");
     setLoading(true);
@@ -308,7 +408,7 @@ export default function Chat({
       const botMsg = createBotMessage(aiResponse);
 
       commitMessages((prev) => [...prev, botMsg]);
-      // await supabase.from("chat_messages").insert([userMsg, botMsg]);
+      insertMessage(botMsg);
     } catch (err) {
       console.error("send error", err);
     } finally {

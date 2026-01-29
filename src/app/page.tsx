@@ -12,7 +12,7 @@ export default function LandingPage() {
           <Link href="#features">Features</Link>
           <Link href="#how">How it works</Link>
           <Link href="#faq">FAQ</Link>
-          <Link href="/app" className="btn btn-ghost">Open app</Link>
+          <Link href="/signin" className="btn btn-ghost">Sign in</Link>
         </nav>
       </header>
 
@@ -30,9 +30,6 @@ export default function LandingPage() {
           <div className="cta-row">
             <Link href="/signin" className="btn btn-primary">
               Sign in
-            </Link>
-            <Link href="/app" className="btn btn-secondary">
-              Try the demo
             </Link>
           </div>
           <div className="mini">

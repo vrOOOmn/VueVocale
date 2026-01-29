@@ -1,11 +1,14 @@
+import { getAuthHeaders } from "./supabaseSession";
+
 export async function generateTextResponse(params: {
   history: { role: "user" | "assistant"; content: string }[];
   userMessage: string;
   hasImage: boolean;
 }) {
+  const authHeaders = await getAuthHeaders();
   const res = await fetch("/api/chat", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...authHeaders },
     body: JSON.stringify(params),
   });
 
@@ -25,9 +28,10 @@ export async function generateTextResponse(params: {
 
 
 export async function fixGrammar(text: string) {
+  const authHeaders = await getAuthHeaders();
   const res = await fetch("/api/grammar", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...authHeaders },
     body: JSON.stringify({ text }),
   });
 
