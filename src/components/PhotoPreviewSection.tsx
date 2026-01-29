@@ -36,7 +36,7 @@ export default function PhotoPreviewSection({
             </p>
             <div style={styles.buttonRow}>
               <button onClick={onChat} style={styles.primaryBtn}>
-                Oui, parlons-en / Yes, let's talk
+                Oui, parlons-en / Yes, let&apos;s talk
               </button>
               <button onClick={handleRetakePhoto} style={styles.secondaryBtn}>
                 Reprendre la photo / Retake Photo
