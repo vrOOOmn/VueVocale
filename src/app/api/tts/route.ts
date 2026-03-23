@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { openaiRateLimitResponse } from "../../../lib/api/openaiRateLimit";
 
 export const runtime = "nodejs";
 
@@ -41,6 +42,10 @@ export async function POST(request: Request) {
     });
   } catch (err) {
     console.error(err);
+    const rateLimitResponse = openaiRateLimitResponse(err);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
     return new Response("TTS failed", { status: 500 });
   }
 }

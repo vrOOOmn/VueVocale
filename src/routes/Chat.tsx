@@ -277,16 +277,21 @@ export default function Chat({
   // --- Generate Gemini response ---
   const generateAIResponse = async (userMessage: string): Promise<string> => {
     try {
-        const hasImage = sessionMessages.some((m) => m.image);
+      const hasImage = sessionMessages.some((m) => m.image);
 
-        return await generateTextResponse({
-          history: buildAgentHistory(),
-          userMessage,
-          hasImage,
-        });
-      } catch (e) {
-        console.error(e);
-        return ERROR_TEXT;
+      return await generateTextResponse({
+        history: buildAgentHistory(),
+        userMessage,
+        hasImage,
+      });
+    } catch (e) {
+      console.error(e);
+
+      if (e instanceof Error && e.message) {
+        return e.message;
+      }
+
+      return ERROR_TEXT;
     }
   };
 
