@@ -1,16 +1,10 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { colors, typography } from "../theme";
-import {
-  clearClassAccessGrant,
-  markClassAccessGrant,
-  readClassAccessGrant,
-} from "../lib/classAccess";
 
 const CLASS_ACCESS_ENDPOINT = "/api/class-access";
-
-type GateStatus = "idle" | "checking" | "verifying" | "error";
+type GateStatus = "idle" | "verifying" | "error";
 
 export default function ClassAccessGate({
   onAuthorized,
@@ -18,51 +12,8 @@ export default function ClassAccessGate({
   onAuthorized: () => void;
 }) {
   const [code, setCode] = useState("");
-  const [status, setStatus] = useState<GateStatus>("checking");
+  const [status, setStatus] = useState<GateStatus>("idle");
   const [message, setMessage] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    if (readClassAccessGrant()) {
-      onAuthorized();
-      return () => {
-        cancelled = true;
-      };
-    }
-
-    const verify = async () => {
-      setStatus("checking");
-      try {
-        const res = await fetch(CLASS_ACCESS_ENDPOINT, {
-          method: "GET",
-          credentials: "include",
-        });
-        if (cancelled) return;
-        if (res.ok) {
-          markClassAccessGrant();
-          onAuthorized();
-          return;
-        }
-
-        if (res.status === 401) {
-          clearClassAccessGrant();
-        }
-
-        setStatus("idle");
-      } catch (error) {
-        if (!cancelled) {
-          setStatus("idle");
-          setMessage("Unable to verify access right now. Please try again.");
-        }
-      }
-    };
-
-    verify();
-    return () => {
-      cancelled = true;
-    };
-  }, [onAuthorized]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -80,11 +31,9 @@ export default function ClassAccessGate({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code }),
-        credentials: "include",
       });
 
       if (res.ok) {
-        markClassAccessGrant();
         onAuthorized();
         return;
       }
@@ -92,12 +41,10 @@ export default function ClassAccessGate({
       const errorMessage = (await res.text().catch(() => "")) || "Incorrect class code.";
       setMessage(errorMessage);
       setStatus("error");
-      clearClassAccessGrant();
     } catch (error) {
       console.error("Class access error", error);
       setMessage("Unable to reach the server. Try again in a moment.");
       setStatus("error");
-      clearClassAccessGrant();
     }
   };
 
@@ -160,12 +107,12 @@ export default function ClassAccessGate({
               transition: "border 0.2s ease, box-shadow 0.2s ease",
               background: colors.surface,
             }}
-            disabled={status === "checking" || status === "verifying"}
+            disabled={status === "verifying"}
             autoFocus
           />
           <button
             type="submit"
-            disabled={status === "checking" || status === "verifying"}
+            disabled={status === "verifying"}
             style={{
               padding: "10px 7px",
               fontSize: typography.button.fontSize,
@@ -175,7 +122,7 @@ export default function ClassAccessGate({
               border: "none",
               background: colors.primary,
               color: "#fff",
-              cursor: status === "checking" || status === "verifying" ? "wait" : "pointer",
+              cursor: status === "verifying" ? "wait" : "pointer",
               boxShadow:
                 status === "verifying"
                   ? "0 18px 36px rgba(74, 144, 226, 0.3)"
@@ -188,18 +135,6 @@ export default function ClassAccessGate({
         </form>
 
         <div style={{ minHeight: 0 }} aria-live="polite">
-          {status === "checking" && (
-            <p
-              style={{
-                margin: 0,
-                fontSize: typography.body.fontSize,
-                color: colors.textMuted,
-                fontFamily: typography.body.fontFamily,
-              }}
-            >
-              Checking existing access…
-            </p>
-          )}
           {message && (
             <p
               style={{
