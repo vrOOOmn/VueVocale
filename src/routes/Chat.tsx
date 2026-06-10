@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useLayoutEffect, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { IoSend } from "react-icons/io5";
 import { colors, spacing, borderRadius, typography } from "../theme";
 // import { supabase } from "../lib/supabaseClient";
@@ -37,7 +37,10 @@ export default function Chat({
   const [messages, setMessages] = useState<Message[]>(sessionMessages);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const { recording, start, stop } = useRecorder();
+  const { recording, start, stop, audioInputs } = useRecorder();
+  const [micMenuOpen, setMicMenuOpen] = useState(false);
+  const [selectedMicId, setSelectedMicId] = useState("");
+  const micMenuRef = useRef<HTMLDivElement | null>(null);
 
   const textRef = useRef<HTMLTextAreaElement | null>(null);
   const lastPhotoRef = useRef<string | null>(null); // <-- new guard
@@ -46,6 +49,36 @@ export default function Chat({
   const [playingId, setPlayingId] = useState<string | null>(null);
 
   const bottomRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const savedMicId = window.localStorage.getItem("vuelocale.selectedMicId");
+    if (savedMicId) {
+      setSelectedMicId(savedMicId);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!selectedMicId) {
+      window.localStorage.removeItem("vuelocale.selectedMicId");
+      return;
+    }
+
+    window.localStorage.setItem("vuelocale.selectedMicId", selectedMicId);
+  }, [selectedMicId]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        micMenuRef.current &&
+        !micMenuRef.current.contains(event.target as Node)
+      ) {
+        setMicMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
 
   const buildAgentHistory = (): { role: "user" | "assistant"; content: string }[] =>
@@ -265,13 +298,29 @@ export default function Chat({
 
 
   const handleMic = async () => {
-    if (!recording) {
-      start();
-      return;
-    }
+    try {
+      if (!recording) {
+        setMicMenuOpen(false);
+        await start(selectedMicId || null);
+        return;
+      }
 
-    const blob = await stop();
-    handleAudioMessage(blob);
+      const blob = await stop();
+      handleAudioMessage(blob);
+    } catch (error) {
+      console.error("Microphone error", error);
+    }
+  };
+
+  const selectedMicLabel =
+    selectedMicId === ""
+      ? "Browser default"
+      : audioInputs.find((device) => device.deviceId === selectedMicId)?.label ||
+        "Saved mic unavailable";
+
+  const chooseMic = (deviceId: string) => {
+    setSelectedMicId(deviceId);
+    setMicMenuOpen(false);
   };
 
   // --- Generate Gemini response ---
@@ -484,6 +533,47 @@ export default function Chat({
           rows={1}
           style={styles.textInput}
         />
+        <div ref={micMenuRef} style={styles.micControlGroup}>
+          <button
+            type="button"
+            onClick={() => setMicMenuOpen((open) => !open)}
+            disabled={recording}
+            title={`Selected mic: ${selectedMicLabel}`}
+            style={styles.micPickerButton}
+          >
+            <span style={styles.micPickerLabel}>{selectedMicLabel}</span>
+            <span style={styles.micPickerCaret}>▾</span>
+          </button>
+
+          {micMenuOpen && (
+            <div style={styles.micDropdown}>
+              <button
+                type="button"
+                onClick={() => chooseMic("")}
+                style={{
+                  ...styles.micDropdownItem,
+                  fontWeight: selectedMicId === "" ? 700 : 500,
+                }}
+              >
+                Browser default
+              </button>
+              {audioInputs.map((device) => (
+                <button
+                  type="button"
+                  key={device.deviceId}
+                  onClick={() => chooseMic(device.deviceId)}
+                  style={{
+                    ...styles.micDropdownItem,
+                    fontWeight:
+                      selectedMicId === device.deviceId ? 700 : 500,
+                  }}
+                >
+                  {device.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
         <button
           type="button"
           onClick={handleMic}
@@ -601,6 +691,66 @@ const styles: Record<string, React.CSSProperties> = {
     lineHeight: 1.4,
     outline: "none",
     color: colors.text,
+  },
+  micControlGroup: {
+    position: "relative",
+    display: "flex",
+    alignItems: "center",
+  },
+  micPickerButton: {
+    height: 44,
+    minWidth: 116,
+    borderRadius: 20,
+    border: "1px solid rgba(59,107,243,0.16)",
+    background: "rgba(255,255,255,0.92)",
+    color: colors.text,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+    padding: "0 12px",
+    marginRight: 8,
+    fontSize: 12,
+    fontWeight: 600,
+    cursor: "pointer",
+    boxShadow: "0 2px 6px rgba(0,0,0,0.06)",
+  },
+  micPickerLabel: {
+    maxWidth: 76,
+    overflow: "hidden",
+    whiteSpace: "nowrap",
+    textOverflow: "ellipsis",
+  },
+  micPickerCaret: {
+    fontSize: 11,
+    opacity: 0.7,
+    lineHeight: 1,
+  },
+  micDropdown: {
+    position: "absolute",
+    left: 0,
+    bottom: "calc(100% + 8px)",
+    minWidth: 220,
+    maxWidth: 280,
+    maxHeight: 240,
+    overflowY: "auto",
+    padding: 6,
+    borderRadius: 16,
+    background: "rgba(255,255,255,0.98)",
+    border: "1px solid rgba(0,0,0,0.08)",
+    boxShadow: "0 12px 32px rgba(0,0,0,0.14)",
+    zIndex: 120,
+  },
+  micDropdownItem: {
+    width: "100%",
+    border: "none",
+    borderRadius: 12,
+    padding: "9px 10px",
+    background: "transparent",
+    color: colors.text,
+    textAlign: "left",
+    fontSize: 13,
+    cursor: "pointer",
   },
   sendButton: {
     width: 44,
