@@ -37,7 +37,7 @@ export default function UserMenu({ user }: { user: AuthedUser }) {
           width: 40,
           height: 40,
           borderRadius: "50%",
-          border: "1px solid rgba(148, 163, 184, 0.4)",
+          border: `1px solid ${colors.borderSubtle}`,
           background: user.avatarUrl ? "transparent" : colors.primary,
           padding: 0,
           overflow: "hidden",
@@ -83,7 +83,7 @@ export default function UserMenu({ user }: { user: AuthedUser }) {
             style={{
               fontFamily: typography.body.fontFamily,
               fontSize: 13,
-              color: "#5A6472",
+              color: colors.textSubtle,
               padding: "0 4px",
               overflow: "hidden",
               textOverflow: "ellipsis",

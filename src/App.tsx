@@ -30,7 +30,7 @@ export default function App({ user }: { user: AuthedUser }) {
           flexDirection: "column",
           alignItems: "center",
           background:
-            "linear-gradient(180deg, #F6F8FF 0%, #EEF2FF 50%, #F8FAFF 100%)",
+            "linear-gradient(180deg, #FDFBF6 0%, #F5EEDF 50%, #FAF6EF 100%)",
           color: colors.text,
           overflowY: activeTab === "scanner" ? "auto" : "hidden", // ✅ scroll only scanner
           WebkitOverflowScrolling: "touch",
@@ -117,7 +117,7 @@ function TabButton({
       onClick={onClick}
       style={{
         background: active ? colors.primary : "transparent",
-        color: active ? "#fff" : "#3B6BF3",
+        color: active ? "#fff" : colors.primarySolid,
         border: "none",
         borderRadius: 16,
         padding: "10px 18px",
@@ -128,7 +128,7 @@ function TabButton({
         fontSize: 13,
         fontWeight: 600,
         cursor: "pointer",
-        boxShadow: active ? "0 4px 10px rgba(74,144,226,0.3)" : "none",
+        boxShadow: active ? "0 4px 10px rgba(27, 58, 138, 0.3)" : "none",
         transition: "all 0.25s ease",
       }}
     >

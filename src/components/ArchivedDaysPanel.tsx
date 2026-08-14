@@ -49,7 +49,7 @@ export default function ArchivedDaysPanel({
         position: "fixed",
         inset: 0,
         zIndex: 200,
-        background: "rgba(15, 23, 42, 0.35)",
+        background: "rgba(46, 42, 36, 0.4)",
         display: "flex",
         justifyContent: "center",
       }}
@@ -75,7 +75,7 @@ export default function ArchivedDaysPanel({
                 alignItems: "center",
                 gap: 8,
                 padding: `${spacing.md}px ${spacing.lg}px`,
-                borderBottom: "1px solid rgba(148, 163, 184, 0.25)",
+                borderBottom: `1px solid ${colors.borderSubtle}`,
               }}
             >
               <button
@@ -96,7 +96,7 @@ export default function ArchivedDaysPanel({
                 >
                   {selectedConversation ? formatDate(selectedConversation.conversationDate) : ""}
                 </span>
-                <span style={{ fontFamily: typography.body.fontFamily, fontSize: 12, color: "#9AA4B2" }}>
+                <span style={{ fontFamily: typography.body.fontFamily, fontSize: 12, color: colors.textFaint }}>
                   Lecture seule
                 </span>
               </div>
@@ -131,7 +131,7 @@ export default function ArchivedDaysPanel({
                 alignItems: "center",
                 justifyContent: "space-between",
                 padding: `${spacing.md}px ${spacing.lg}px`,
-                borderBottom: "1px solid rgba(148, 163, 184, 0.25)",
+                borderBottom: `1px solid ${colors.borderSubtle}`,
               }}
             >
               <span
@@ -167,7 +167,7 @@ export default function ArchivedDaysPanel({
                   style={{
                     fontFamily: typography.body.fontFamily,
                     fontSize: 14,
-                    color: "#9AA4B2",
+                    color: colors.textFaint,
                     textAlign: "center",
                     marginTop: spacing.xl,
                   }}

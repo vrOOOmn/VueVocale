@@ -147,7 +147,7 @@ export default function LandingPage() {
                 fontFamily: scriptFamily,
                 fontWeight: 400,
                 fontSize: "1.5em",
-                color: colors.accent,
+                color: colors.primarySolid,
               }}
             >
               French.

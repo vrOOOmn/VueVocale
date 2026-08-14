@@ -23,7 +23,7 @@ export default function ArchivedDayCard({
         width: "100%",
         textAlign: "left",
         background: colors.surface,
-        border: "1px solid rgba(148, 163, 184, 0.3)",
+        border: `1px solid ${colors.borderSubtle}`,
         borderRadius: borderRadius.lg,
         padding: "14px 16px",
         cursor: "pointer",
@@ -46,7 +46,7 @@ export default function ArchivedDayCard({
           style={{
             fontFamily: typography.body.fontFamily,
             fontSize: 13.5,
-            color: "#5A6472",
+            color: colors.textSubtle,
             lineHeight: 1.4,
           }}
         >
@@ -54,7 +54,7 @@ export default function ArchivedDayCard({
         </span>
       )}
 
-      <span style={{ fontFamily: typography.body.fontFamily, fontSize: 12, color: "#9AA4B2" }}>
+      <span style={{ fontFamily: typography.body.fontFamily, fontSize: 12, color: colors.textFaint }}>
         {conversation.messageCount} messages · {conversation.grammarCorrectionCount} corrections
       </span>
     </button>

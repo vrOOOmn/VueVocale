@@ -38,7 +38,7 @@ export default function LoginForm({
         alignItems: "center",
         justifyContent: "center",
         background:
-          "linear-gradient(180deg, #F6F8FF 0%, #EEF2FF 45%, #F8FAFF 100%)",
+          "linear-gradient(180deg, #FDFBF6 0%, #F5EEDF 45%, #FAF6EF 100%)",
         padding: 24,
       }}
     >
@@ -71,7 +71,7 @@ export default function LoginForm({
           style={{
             fontFamily: typography.body.fontFamily,
             fontSize: 15,
-            color: "#5A6472",
+            color: colors.textSubtle,
             margin: "0 0 28px",
             lineHeight: 1.5,
           }}
@@ -90,7 +90,7 @@ export default function LoginForm({
             width: "100%",
             padding: "13px 16px",
             borderRadius: 14,
-            border: "1px solid rgba(148, 163, 184, 0.5)",
+            border: `1px solid ${colors.borderSubtle}`,
             background: "#fff",
             fontFamily: typography.button.fontFamily,
             fontSize: 15,

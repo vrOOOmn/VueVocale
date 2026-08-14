@@ -351,18 +351,18 @@ const styles: Record<string, React.CSSProperties> = {
   title: {
     fontSize: "min(9vw, 3.1rem)",
     fontWeight: 700,
-    color: "#3B6BF3",
+    color: colors.primarySolid,
     margin: 0, // reset
   },
   subtitle: {
     fontSize: "clamp(.9rem, 3.6vw, 1.1rem)",
-    color: "#444",
+    color: colors.textSubtle,
     fontStyle: "italic",
     marginTop: 4,
   },
   description: {
     fontSize: "clamp(1.0rem, 4vw, 1.2rem)",
-    color: "#555",
+    color: colors.textSubtle,
     marginTop: 10,
     lineHeight: 1.6,
     backgroundColor: colors.surface,

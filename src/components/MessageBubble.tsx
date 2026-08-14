@@ -43,8 +43,8 @@ export default function MessageBubble({
           background: m.image
             ? "transparent"
             : m.sender === "user"
-            ? "linear-gradient(135deg, #4A90E2, #357ABD)"
-            : "#fff",
+            ? colors.primary
+            : colors.surface,
           borderRadius: borderRadius.lg,
           maxWidth: m.image ? "min(280px, 70%)" : "75%",
         }}

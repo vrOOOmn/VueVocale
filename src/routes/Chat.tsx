@@ -450,7 +450,7 @@ export default function Chat({
           disabled={!conversationId || messagesPending}
           style={{
             ...styles.micButton,
-            background: recording ? "#e74c3c" : "#ffa747",
+            background: recording ? colors.error : colors.accent,
           }}
         >
           <div
@@ -528,8 +528,8 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 12.5,
     fontWeight: 700,
     color: colors.secondary,
-    background: "rgba(255, 167, 71, 0.18)",
-    border: "1px solid rgba(255, 167, 71, 0.4)",
+    background: "rgba(184, 134, 58, 0.18)",
+    border: "1px solid rgba(184, 134, 58, 0.4)",
     borderRadius: borderRadius.round,
     padding: "6px 12px",
   },
@@ -538,7 +538,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 600,
     color: colors.secondary,
     background: "rgba(255,255,255,0.7)",
-    border: "1px solid rgba(148, 163, 184, 0.3)",
+    border: `1px solid ${colors.borderSubtle}`,
     borderRadius: borderRadius.round,
     padding: "6px 12px",
     cursor: "pointer",
@@ -551,7 +551,7 @@ const styles: Record<string, React.CSSProperties> = {
     height: 30,
     color: colors.error,
     background: "rgba(255,255,255,0.7)",
-    border: "1px solid rgba(148, 163, 184, 0.3)",
+    border: `1px solid ${colors.borderSubtle}`,
     borderRadius: borderRadius.round,
     padding: 0,
   },

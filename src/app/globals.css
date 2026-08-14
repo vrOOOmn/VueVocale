@@ -1,13 +1,15 @@
 /* Global styles */
 :root {
-  --color-primary: "linear-gradient(135deg, #4F8DFD, #3369D6)";
-  --color-secondary: #34495e;
-  --color-bg: #f5f7fa;
+  --color-primary: #1b3a8c;
+  --color-primary-gradient: linear-gradient(135deg, #4a63c7, #1b3a8c);
+  --color-secondary: #2e2a24;
+  --color-accent: #b8863a;
+  --color-bg: #faf6ef;
   --color-surface: #ffffff;
-  --color-text: #000000;
+  --color-text: #211e1a;
   --color-text-light: #ffffff;
-  --color-error: #e74c3c;
-  --color-border: #bdc3c7;
+  --color-error: #c1432e;
+  --color-border: #e4dccb;
 
   --space-xs: 4px;
   --space-sm: 8px;
@@ -84,7 +86,7 @@ textarea {
 }
 
 textarea:focus {
-  box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.25);
+  box-shadow: 0 0 0 2px rgba(27, 58, 138, 0.25);
   border-color: var(--color-primary);
 }
 
@@ -126,7 +128,7 @@ textarea:focus {
 .typing-dots span {
   width: 10px;
   height: 10px;
-  background: #357abd;
+  background: var(--color-primary);
   border-radius: 50%;
   animation: typingBounce 1.4s infinite ease-in-out both;
 }
@@ -160,13 +162,13 @@ textarea:focus {
 }
 
 .lp-btn-primary {
-  background: linear-gradient(135deg, #4f8dfd, #3369d6);
+  background: var(--color-primary-gradient);
   color: #fff;
-  box-shadow: 0 10px 30px rgba(51, 105, 214, 0.35);
+  box-shadow: 0 10px 30px rgba(27, 58, 138, 0.35);
 }
 
 .lp-btn-primary:hover {
-  box-shadow: 0 14px 36px rgba(51, 105, 214, 0.45);
+  box-shadow: 0 14px 36px rgba(27, 58, 138, 0.45);
 }
 
 .lp-btn-secondary {
@@ -204,7 +206,7 @@ textarea:focus {
 
 .lp-feature-card:hover {
   transform: translateY(-3px);
-  box-shadow: 0 12px 28px rgba(51, 105, 214, 0.12);
+  box-shadow: 0 12px 28px rgba(27, 58, 138, 0.12);
 }
 
 .lp-step-card {
