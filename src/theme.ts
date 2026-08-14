@@ -1,13 +1,22 @@
+// `primary` is a gradient — only ever use it for `background`/`backgroundImage`.
+// Anything else (border-color, outline-color, text color, SVG fill/stroke)
+// must use `primarySolid` instead; a gradient string is not valid CSS there
+// and the whole declaration gets silently dropped by the browser.
 export const colors = {
-  primary: "linear-gradient(135deg, #4F8DFD, #3369D6)",
-  secondary: "#34495E",
-  background: "#F5F7FA",
+  primary: "linear-gradient(135deg, #4A63C7, #1B3A8C)",
+  primarySolid: "#1B3A8C",
+  secondary: "#2E2A24",
+  accent: "#B8863A",
+  background: "#FAF6EF",
   surface: "#FFFFFF",
-  text: "black",
-  textMuted: "#64748B",
+  text: "#211E1A",
+  textMuted: "#7A7166",
+  textSubtle: "#6B6259",
+  textFaint: "#847A6C",
   textLight: "#FFFFFF",
-  error: "#E74C3C",
-  border: "#BDC3C7",
+  error: "#C1432E",
+  border: "#E4DCCB",
+  borderSubtle: "rgba(184, 160, 120, 0.3)",
 };
 
 export const spacing = {

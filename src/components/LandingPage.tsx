@@ -1,6 +1,12 @@
 import Link from "next/link";
 import Image from "next/image";
+import "@fontsource/playfair-display/700.css";
+import "@fontsource/playfair-display/900.css";
+import "@fontsource/parisienne/400.css";
 import { colors, spacing, typography } from "../theme";
+
+const serifFamily = "'Playfair Display', Georgia, serif";
+const scriptFamily = "'Parisienne', cursive";
 
 const STEPS = [
   {
@@ -52,8 +58,7 @@ export default function LandingPage() {
     <div
       style={{
         minHeight: "100svh",
-        background:
-          "linear-gradient(180deg, #F6F8FF 0%, #EEF2FF 45%, #F8FAFF 100%)",
+        background: "linear-gradient(180deg, #FDFBF6 0%, #F5EEDF 45%, #FAF6EF 100%)",
         color: colors.text,
       }}
     >
@@ -113,8 +118,8 @@ export default function LandingPage() {
               fontSize: 13,
               fontWeight: 600,
               letterSpacing: 0.4,
-              color: "#3369D6",
-              background: "rgba(79, 141, 253, 0.12)",
+              color: colors.primarySolid,
+              background: "rgba(27, 58, 138, 0.1)",
               borderRadius: 999,
               padding: "6px 14px",
               marginBottom: 20,
@@ -124,10 +129,10 @@ export default function LandingPage() {
           </span>
           <h1
             style={{
-              fontFamily: typography.header.fontFamily,
+              fontFamily: serifFamily,
               fontWeight: 700,
-              fontSize: "clamp(32px, 4vw, 48px)",
-              lineHeight: 1.15,
+              fontSize: "clamp(32px, 4vw, 50px)",
+              lineHeight: 1.2,
               margin: 0,
               color: colors.secondary,
             }}
@@ -136,14 +141,24 @@ export default function LandingPage() {
             <br />
             Say what you see.
             <br />
-            Actually speak French.
+            Actually speak{" "}
+            <span
+              style={{
+                fontFamily: scriptFamily,
+                fontWeight: 400,
+                fontSize: "1.5em",
+                color: colors.accent,
+              }}
+            >
+              French.
+            </span>
           </h1>
           <p
             style={{
               fontFamily: typography.body.fontFamily,
               fontSize: 18,
               lineHeight: 1.6,
-              color: "#5A6472",
+              color: colors.textSubtle,
               marginTop: 20,
               maxWidth: 480,
             }}
@@ -190,7 +205,7 @@ export default function LandingPage() {
                   fontFamily: typography.header.fontFamily,
                   fontWeight: 700,
                   fontSize: 14,
-                  color: "#9BB4F0",
+                  color: "rgba(27, 58, 138, 0.35)",
                   letterSpacing: 1,
                 }}
               >
@@ -212,7 +227,7 @@ export default function LandingPage() {
                   fontFamily: typography.body.fontFamily,
                   fontSize: 15,
                   lineHeight: 1.55,
-                  color: "#5A6472",
+                  color: colors.textSubtle,
                   margin: 0,
                 }}
               >
@@ -259,7 +274,7 @@ export default function LandingPage() {
                   fontFamily: typography.body.fontFamily,
                   fontSize: 14.5,
                   lineHeight: 1.55,
-                  color: "#5A6472",
+                  color: colors.textSubtle,
                   margin: 0,
                 }}
               >
@@ -283,15 +298,15 @@ export default function LandingPage() {
             borderRadius: 32,
             padding: "48px 32px",
             textAlign: "center",
-            background: "linear-gradient(135deg, #4F8DFD, #3369D6)",
-            boxShadow: "0 20px 50px rgba(51, 105, 214, 0.3)",
+            background: colors.primary,
+            boxShadow: "0 20px 50px rgba(27, 58, 138, 0.3)",
           }}
         >
           <h2
             style={{
-              fontFamily: typography.header.fontFamily,
+              fontFamily: serifFamily,
               fontWeight: 700,
-              fontSize: "clamp(24px, 3vw, 32px)",
+              fontSize: "clamp(24px, 3vw, 34px)",
               color: "#fff",
               margin: "0 0 12px",
             }}
@@ -311,7 +326,7 @@ export default function LandingPage() {
           <Link
             href="/app"
             className="lp-btn"
-            style={{ background: "#fff", color: "#3369D6", padding: "14px 30px" }}
+            style={{ background: "#fff", color: colors.primarySolid, padding: "14px 30px" }}
           >
             Launch App
           </Link>
@@ -327,7 +342,7 @@ export default function LandingPage() {
           textAlign: "center",
           fontFamily: typography.body.fontFamily,
           fontSize: 13,
-          color: "#9AA4B2",
+          color: colors.textFaint,
         }}
       >
         VueVocale — built by Varun Narayanan
@@ -346,7 +361,7 @@ function SectionHeading({ eyebrow, title }: { eyebrow: string; title: string }) 
           fontWeight: 600,
           letterSpacing: 0.6,
           textTransform: "uppercase",
-          color: "#3369D6",
+          color: colors.primarySolid,
           marginBottom: 8,
         }}
       >
@@ -354,9 +369,9 @@ function SectionHeading({ eyebrow, title }: { eyebrow: string; title: string }) 
       </span>
       <h2
         style={{
-          fontFamily: typography.header.fontFamily,
+          fontFamily: serifFamily,
           fontWeight: 700,
-          fontSize: "clamp(22px, 3vw, 30px)",
+          fontSize: "clamp(22px, 3vw, 32px)",
           margin: 0,
           color: colors.secondary,
         }}
@@ -380,8 +395,8 @@ function PhoneMockup() {
           width: 280,
           borderRadius: 36,
           background: "#fff",
-          border: "1px solid rgba(148, 163, 184, 0.35)",
-          boxShadow: "0 30px 60px rgba(51, 105, 214, 0.18)",
+          border: `1px solid ${colors.borderSubtle}`,
+          boxShadow: "0 30px 60px rgba(27, 58, 138, 0.18)",
           padding: 14,
         }}
       >
@@ -397,7 +412,7 @@ function PhoneMockup() {
               width: 60,
               height: 5,
               borderRadius: 999,
-              background: "rgba(148, 163, 184, 0.4)",
+              background: colors.borderSubtle,
             }}
           />
         </div>
@@ -436,7 +451,7 @@ function PhoneMockup() {
             style={{
               alignSelf: "flex-end",
               maxWidth: "80%",
-              background: "linear-gradient(135deg, #4F8DFD, #3369D6)",
+              background: colors.primary,
               color: "#fff",
               borderRadius: "16px 16px 4px 16px",
               padding: "9px 13px",
@@ -452,8 +467,8 @@ function PhoneMockup() {
             style={{
               alignSelf: "flex-start",
               maxWidth: "85%",
-              background: "#F1F5F9",
-              color: "#1E293B",
+              background: "#F4EEE1",
+              color: colors.secondary,
               borderRadius: "16px 16px 16px 4px",
               padding: "9px 13px",
               fontFamily: typography.body.fontFamily,
