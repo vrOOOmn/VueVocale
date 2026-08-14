@@ -1,0 +1,181 @@
+import React from "react";
+import {
+  IoVolumeHighSharp,
+  IoVolumeMute,
+  IoEllipsisHorizontal,
+  IoWarningOutline,
+} from "react-icons/io5";
+import { colors, borderRadius, typography } from "../theme";
+import type { Message } from "../lib/data/conversations";
+
+type Props = {
+  message: Message;
+  mode: "live" | "readonly";
+  isPlaying: boolean;
+  onTogglePlay: (m: Message) => void;
+  onFixGrammar?: (m: Message) => void;
+};
+
+export default function MessageBubble({
+  message: m,
+  mode,
+  isPlaying,
+  onTogglePlay,
+  onFixGrammar,
+}: Props) {
+  const showGrammarTrigger =
+    mode === "live" &&
+    m.sender === "user" &&
+    m.text &&
+    (m.grammarStatus === "idle" || m.grammarStatus === "error");
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        justifyContent: m.sender === "user" ? "flex-end" : "flex-start",
+        width: "100%",
+      }}
+    >
+      <div
+        style={{
+          padding: m.image ? 0 : "10px 14px",
+          background: m.image
+            ? "transparent"
+            : m.sender === "user"
+            ? "linear-gradient(135deg, #4A90E2, #357ABD)"
+            : "#fff",
+          borderRadius: borderRadius.lg,
+          maxWidth: m.image ? "min(280px, 70%)" : "75%",
+        }}
+      >
+        {m.image ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={m.image}
+            alt="user upload"
+            style={{
+              width: "100%",
+              height: "auto",
+              borderRadius: borderRadius.lg,
+              display: "block",
+            }}
+          />
+        ) : (
+          <>
+            <p
+              style={{
+                ...typography.message,
+                margin: 0,
+                color: m.sender === "user" ? colors.textLight : colors.text,
+                whiteSpace: "pre-wrap",
+              }}
+            >
+              {m.text}
+            </p>
+
+            {m.sender === "user" && m.text && (
+              <div style={{ marginTop: 6, display: "flex", flexDirection: "column", gap: 4 }}>
+                {showGrammarTrigger && (
+                  <button
+                    onClick={() => onFixGrammar?.(m)}
+                    style={{
+                      alignSelf: "flex-start",
+                      fontSize: 12,
+                      background: "transparent",
+                      border: "1px solid rgba(255,255,255,0.4)",
+                      color: "white",
+                      borderRadius: 12,
+                      padding: "2px 8px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {m.grammarStatus === "error" ? "Réessayer" : "Corriger la grammaire"}
+                  </button>
+                )}
+
+                {mode === "live" && m.grammarStatus === "loading" && (
+                  <span style={{ fontSize: 12, opacity: 0.7 }}>Vérification…</span>
+                )}
+
+                {m.grammarStatus === "error" && (
+                  <span style={{ fontSize: 11.5, color: "#FFD9D6" }}>
+                    Échec de la vérification.
+                  </span>
+                )}
+
+                {m.grammarStatus === "ok" && (
+                  <span style={{ fontSize: 12, opacity: 0.7 }}>✓ Bien !</span>
+                )}
+              </div>
+            )}
+
+            {m.grammarStatus === "fixed" && m.grammarFix && (
+              <div
+                style={{
+                  marginTop: 6,
+                  padding: "6px 10px",
+                  borderRadius: 10,
+                  background: "rgba(255,255,255,0.15)",
+                  fontSize: 13,
+                  color: "white",
+                  opacity: 0.9,
+                }}
+              >
+                ➡ {m.grammarFix}
+              </div>
+            )}
+
+            {m.sender === "bot" && (
+              <div style={{ marginTop: 6 }}>
+                <button
+                  type="button"
+                  onClick={() => onTogglePlay(m)}
+                  disabled={m.audioState === "loading"}
+                  style={{
+                    width: 35,
+                    height: 35,
+                    borderRadius: "50%",
+                    border: "none",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: m.audioState === "loading" ? "default" : "pointer",
+                    boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+                    background:
+                      m.audioState === "error"
+                        ? colors.error
+                        : isPlaying
+                        ? colors.border
+                        : colors.secondary,
+                    opacity: m.audioState === "loading" ? 0.8 : 1,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 18,
+                      height: 18,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    {m.audioState === "loading" ? (
+                      <IoEllipsisHorizontal style={{ fontSize: 18 }} color="white" />
+                    ) : m.audioState === "error" ? (
+                      <IoWarningOutline style={{ fontSize: 18 }} color="white" />
+                    ) : isPlaying ? (
+                      <IoVolumeMute style={{ fontSize: 18 }} color="white" />
+                    ) : (
+                      <IoVolumeHighSharp style={{ fontSize: 18 }} color="white" />
+                    )}
+                  </div>
+                </button>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}

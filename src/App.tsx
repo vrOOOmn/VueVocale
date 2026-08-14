@@ -12,6 +12,7 @@ export default function App({ user }: { user: AuthedUser }) {
   const [chatContext, setChatContext] = useState<{
     image?: string;
     label?: string;
+    storagePath?: string | null;
   }>({});
 
   const handleSwitchToScanner = () => {
@@ -44,15 +45,21 @@ export default function App({ user }: { user: AuthedUser }) {
         >
           {activeTab === "scanner" && (
             <Scanner
-              onChat={(detectedWord, imageDataUrl) => {
-                setChatContext({ label: detectedWord, image: imageDataUrl });
+              user={user}
+              onChat={(detectedWord, imageDataUrl, storagePath) => {
+                setChatContext({ label: detectedWord, image: imageDataUrl, storagePath });
                 setActiveTab("chat");
               }}
             />
           )}
 
           {activeTab === "chat" && (
-            <Chat topic={chatContext.label} photoDataUrl={chatContext.image} />
+            <Chat
+              topic={chatContext.label}
+              photoDataUrl={chatContext.image}
+              photoStoragePath={chatContext.storagePath}
+              user={user}
+            />
           )}
         </main>
 

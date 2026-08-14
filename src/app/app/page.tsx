@@ -17,6 +17,7 @@ export default async function Page() {
   return (
     <App
       user={{
+        id: user.id,
         email: user.email ?? null,
         name: (meta.full_name as string) || (meta.name as string) || null,
         avatarUrl: (meta.avatar_url as string) || (meta.picture as string) || null,

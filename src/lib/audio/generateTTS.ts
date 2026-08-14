@@ -1,5 +1,5 @@
 // src/lib/audio/generateTTS.ts
-export async function generateTTS(text: string): Promise<string> {
+export async function generateTTS(text: string): Promise<{ url: string; blob: Blob }> {
   const res = await fetch("/api/tts", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -11,5 +11,5 @@ export async function generateTTS(text: string): Promise<string> {
   }
 
   const blob = await res.blob();
-  return URL.createObjectURL(blob);
+  return { url: URL.createObjectURL(blob), blob };
 }
