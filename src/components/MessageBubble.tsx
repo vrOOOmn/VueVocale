@@ -59,6 +59,10 @@ export default function MessageBubble({
         }}
       >
         {m.image ? (
+          // Plain <img>, deliberately not next/image: this is either a
+          // freshly-captured data: URL or a signed Supabase Storage URL, and
+          // the storage host isn't in next.config's image remotePatterns, so
+          // next/image would just fail to load it as-is.
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={m.image}
@@ -127,6 +131,15 @@ export default function MessageBubble({
                   type="button"
                   onClick={() => onTogglePlay(m)}
                   disabled={m.audioState === "loading"}
+                  aria-label={
+                    m.audioState === "loading"
+                      ? "Chargement de l'audio / Loading audio"
+                      : m.audioState === "error"
+                      ? "Erreur audio / Audio error"
+                      : isPlaying
+                      ? "Mettre en pause / Pause"
+                      : "Écouter / Listen"
+                  }
                   style={{
                     width: 35,
                     height: 35,

@@ -1,5 +1,5 @@
 import React from "react";
-import { IoArrowUndoOutline } from "react-icons/io5";
+import { IoArrowUndoOutline, IoWarningOutline } from "react-icons/io5";
 import { colors, spacing, borderRadius, typography } from "../theme";
 
 type Props = {
@@ -7,6 +7,7 @@ type Props = {
   handleRetakePhoto: () => void;
   detectedLabel?: string | null;
   englishLabel?: string | null;
+  uploadFailed?: boolean;
   onChat?: () => void;
 };
 
@@ -15,10 +16,15 @@ export default function PhotoPreviewSection({
   handleRetakePhoto,
   detectedLabel,
   englishLabel,
+  uploadFailed,
   onChat,
 }: Props) {
   return (
     <div style={styles.container}>
+      {/* Plain <img>, deliberately not next/image: this is a client-generated
+          data: URL from a canvas capture, not a fetchable asset — there's no
+          network request for next/image to optimize away. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={photoDataUrl} alt="Camera preview" style={styles.preview} />
 
       {/* Detected-object chip, overlaid on the photo like the landing page's
@@ -32,18 +38,29 @@ export default function PhotoPreviewSection({
       {/* Confirm/retake — two buttons, no question. */}
       {detectedLabel && (
         <div style={styles.dialogOverlay}>
-          <button className="photo-preview-btn" onClick={onChat} style={styles.primaryBtn}>
-            Oui, parlons-en / Yes, let&apos;s talk
-          </button>
-          <button
-            className="photo-preview-btn round-btn"
-            onClick={handleRetakePhoto}
-            aria-label="Reprendre la photo / Retake photo"
-            title="Reprendre la photo / Retake photo"
-            style={styles.retakeBtn}
-          >
-            <IoArrowUndoOutline size={22} color={colors.textLight} />
-          </button>
+          {uploadFailed && (
+            <div style={styles.uploadWarning}>
+              <IoWarningOutline size={14} color={colors.navy} />
+              <span>
+                Photo non enregistrée, mais vous pouvez continuer / Photo
+                wasn&apos;t saved, but you can still continue
+              </span>
+            </div>
+          )}
+          <div style={styles.buttonRow}>
+            <button className="photo-preview-btn" onClick={onChat} style={styles.primaryBtn}>
+              Oui, parlons-en / Yes, let&apos;s talk
+            </button>
+            <button
+              className="photo-preview-btn round-btn"
+              onClick={handleRetakePhoto}
+              aria-label="Reprendre la photo / Retake photo"
+              title="Reprendre la photo / Retake photo"
+              style={styles.retakeBtn}
+            >
+              <IoArrowUndoOutline size={22} color={colors.textLight} />
+            </button>
+          </div>
         </div>
       )}
     </div>
@@ -89,10 +106,28 @@ const styles: Record<string, React.CSSProperties> = {
     right: 0,
     bottom: 0,
     display: "flex",
-    alignItems: "center",
+    flexDirection: "column" as const,
     gap: spacing.sm,
     padding: spacing.lg,
     animation: "fadeIn 0.3s ease-out",
+  },
+  uploadWarning: {
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+    alignSelf: "flex-start",
+    background: "rgba(255,255,255,0.92)",
+    color: colors.navy,
+    fontFamily: typography.body.fontFamily,
+    fontSize: 12,
+    fontWeight: 600,
+    borderRadius: borderRadius.md,
+    padding: "6px 10px",
+  },
+  buttonRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: spacing.sm,
   },
   primaryBtn: {
     flex: 1,

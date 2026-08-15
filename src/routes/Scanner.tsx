@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import Image from "next/image";
 import { IoCamera, IoRepeat, IoWarningOutline } from "react-icons/io5";
 import PhotoPreviewSection from "../components/PhotoPreviewSection";
 import { colors, spacing, borderRadius, typography } from "../theme";
@@ -29,6 +30,7 @@ export default function Scanner({
   const [detectedObject, setDetectedObject] = useState<string | null>(null);
   const [englishObject, setEnglishObject] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [photoUploadFailed, setPhotoUploadFailed] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -178,6 +180,7 @@ export default function Scanner({
 
     setDetectedObject(null);
     setPhotoStoragePath(null);
+    setPhotoUploadFailed(false);
     setIsLoading(true);
 
     c.width = v.videoWidth || 1080;
@@ -187,27 +190,47 @@ export default function Scanner({
     ctx.drawImage(v, 0, 0, c.width, c.height);
 
     const dataUrl = c.toDataURL("image/jpeg", 0.9);
+    let detected = false;
     try {
       const base64Image = dataUrl.split(",")[1];
 
       const { english, french } = await detectAndTranslateFR(base64Image);
 
+      if (!french) {
+        // Nothing recognizable in the frame — treat like any other
+        // detection failure rather than showing a photo with no label and
+        // no way to retake it.
+        throw new Error("No object recognized in photo");
+      }
+
       setEnglishObject(english);
       setDetectedObject(french);
       setPhotoDataUrl(dataUrl);
+      detected = true;
     } catch (err) {
       console.error("Vision scan error:", err);
       setStreamError("Erreur: échec de la détection de l'objet.");
     } finally {
       setIsLoading(false);
-      cleanupStream();
+      if (detected) {
+        cleanupStream();
+      } else {
+        // Resume the live camera instead of leaving a stopped stream with
+        // no photo and no controls to retry.
+        await startStream();
+      }
     }
+
+    if (!detected) return;
 
     // Persist the captured photo to Storage so it survives reload and can be
     // referenced from the message that gets created once the user confirms.
     c.toBlob(
       async (blob) => {
-        if (!blob) return;
+        if (!blob) {
+          setPhotoUploadFailed(true);
+          return;
+        }
         try {
           const path = `${user.id}/${crypto.randomUUID()}.jpg`;
           const supabase = createClient();
@@ -216,11 +239,13 @@ export default function Scanner({
             .upload(path, blob, { contentType: "image/jpeg" });
           if (error) {
             console.error("Photo upload failed:", error.message);
+            setPhotoUploadFailed(true);
             return;
           }
           setPhotoStoragePath(path);
         } catch (err) {
           console.error("Photo upload error:", err);
+          setPhotoUploadFailed(true);
         }
       },
       "image/jpeg",
@@ -231,6 +256,7 @@ export default function Scanner({
   const handleRetakePhoto = () => {
     setPhotoDataUrl(null);
     setPhotoStoragePath(null);
+    setPhotoUploadFailed(false);
     startStream();
   };
 
@@ -248,8 +274,8 @@ export default function Scanner({
 
   if (isLoading) {
     return (
-      <div style={styles.loadingScreen}>
-        <div style={{ fontSize: "2.5rem", marginBottom: spacing.md }}>🔍</div>
+      <div style={styles.loadingScreen} role="status" aria-live="polite">
+        <div className="spin-loader" style={{ marginBottom: spacing.md }} />
         <p style={{ ...typography.body, margin: 0, fontSize: "2.2rem" }}>
           <em>Analyse et traduction de l’image…</em>
         </p>
@@ -265,7 +291,7 @@ export default function Scanner({
       {/* Hero section moved inside */}
       <div style={styles.hero}>
         <div style={styles.heroHeader}>
-          <img src="/vuevocale.svg" alt="VueVocale logo" style={styles.logo} />
+          <Image src="/vuevocale.svg" alt="VueVocale logo" width={38} height={38} style={styles.logo} />
           <h1 style={styles.title}>VueVocale</h1>
         </div>
 
@@ -284,6 +310,7 @@ export default function Scanner({
           handleRetakePhoto={handleRetakePhoto}
           detectedLabel={detectedObject}
           englishLabel={englishObject}
+          uploadFailed={photoUploadFailed}
           onChat={() => {
             if (onChat && detectedObject && photoDataUrl) {
               onChat(detectedObject, photoDataUrl, photoStoragePath);

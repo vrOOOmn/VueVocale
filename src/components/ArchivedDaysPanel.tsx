@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { IoClose, IoChevronBack } from "react-icons/io5";
 import { colors, spacing, borderRadius, typography } from "../theme";
@@ -24,14 +24,64 @@ export default function ArchivedDaysPanel({
   userId: string;
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  const previouslyFocused = useRef<HTMLElement | null>(null);
 
-  const { data: archived = [] } = useQuery({
+  // Move focus into the panel on open, and restore it to whatever triggered
+  // the panel on close — standard dialog focus-management behavior.
+  useEffect(() => {
+    if (open) {
+      previouslyFocused.current = document.activeElement as HTMLElement | null;
+      panelRef.current?.focus();
+    } else {
+      previouslyFocused.current?.focus();
+      previouslyFocused.current = null;
+    }
+  }, [open]);
+
+  // Escape backs out one level (transcript -> list -> close); Tab is
+  // trapped inside the panel while it's open.
+  useEffect(() => {
+    if (!open) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        if (selectedId) setSelectedId(null);
+        else onClose();
+        return;
+      }
+
+      if (e.key === "Tab") {
+        const focusable = panelRef.current?.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        );
+        if (!focusable || focusable.length === 0) return;
+        const list = Array.from(focusable);
+        const first = list[0];
+        const last = list[list.length - 1];
+
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [open, selectedId, onClose]);
+
+  const { data: archived = [], isPending: archivedPending } = useQuery({
     queryKey: ["archivedConversations"],
     queryFn: fetchArchivedConversations,
     enabled: open,
   });
 
-  const { data: transcript = [] } = useQuery({
+  const { data: transcript = [], isPending: transcriptPending } = useQuery({
     queryKey: ["messages", selectedId],
     queryFn: () => fetchMessages(selectedId!),
     enabled: !!selectedId,
@@ -45,27 +95,17 @@ export default function ArchivedDaysPanel({
 
   return (
     <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 200,
-        background: "rgba(17, 27, 63, 0.4)",
-        display: "flex",
-        justifyContent: "center",
-      }}
+      className="archived-panel-backdrop"
       onClick={() => (selectedId ? setSelectedId(null) : onClose())}
     >
       <div
+        ref={panelRef}
+        className="archived-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Historique des conversations / Conversation history"
+        tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
-        style={{
-          width: "min(560px, 100%)",
-          background: colors.paper,
-          borderRadius: "0 0 28px 28px",
-          maxHeight: "85vh",
-          display: "flex",
-          flexDirection: "column",
-          boxShadow: "0 20px 50px rgba(0,0,0,0.2)",
-        }}
       >
         {selectedId ? (
           <>
@@ -80,6 +120,7 @@ export default function ArchivedDaysPanel({
             >
               <button
                 onClick={() => setSelectedId(null)}
+                aria-label="Retour / Back"
                 style={{ background: "transparent", border: "none", cursor: "pointer", padding: 4 }}
               >
                 <IoChevronBack size={20} color={colors.navy} />
@@ -112,15 +153,32 @@ export default function ArchivedDaysPanel({
                 gap: spacing.md,
               }}
             >
-              {mergeAudioState(transcript).map((m) => (
-                <MessageBubble
-                  key={m.id}
-                  message={m}
-                  mode="readonly"
-                  isPlaying={playingId === m.id}
-                  onTogglePlay={togglePlay}
-                />
-              ))}
+              {transcriptPending ? (
+                <>
+                  <div
+                    className="skeleton"
+                    style={{ height: 44, width: "62%", borderRadius: "18px 18px 18px 4px", alignSelf: "flex-start" }}
+                  />
+                  <div
+                    className="skeleton"
+                    style={{ height: 36, width: "42%", borderRadius: "18px 18px 4px 18px", alignSelf: "flex-end" }}
+                  />
+                  <div
+                    className="skeleton"
+                    style={{ height: 50, width: "58%", borderRadius: "18px 18px 18px 4px", alignSelf: "flex-start" }}
+                  />
+                </>
+              ) : (
+                mergeAudioState(transcript).map((m) => (
+                  <MessageBubble
+                    key={m.id}
+                    message={m}
+                    mode="readonly"
+                    isPlaying={playingId === m.id}
+                    onTogglePlay={togglePlay}
+                  />
+                ))
+              )}
             </div>
           </>
         ) : (
@@ -146,6 +204,7 @@ export default function ArchivedDaysPanel({
               </span>
               <button
                 onClick={onClose}
+                aria-label="Fermer / Close"
                 style={{ background: "transparent", border: "none", cursor: "pointer", padding: 4 }}
               >
                 <IoClose size={20} color={colors.navy} />
@@ -162,7 +221,13 @@ export default function ArchivedDaysPanel({
                 gap: spacing.sm,
               }}
             >
-              {archived.length === 0 ? (
+              {archivedPending ? (
+                <>
+                  <div className="skeleton" style={{ height: 78, borderRadius: borderRadius.lg }} />
+                  <div className="skeleton" style={{ height: 78, borderRadius: borderRadius.lg }} />
+                  <div className="skeleton" style={{ height: 78, borderRadius: borderRadius.lg }} />
+                </>
+              ) : archived.length === 0 ? (
                 <p
                   style={{
                     fontFamily: typography.body.fontFamily,

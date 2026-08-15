@@ -2,7 +2,14 @@
 
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { IoSend, IoMic, IoMicOutline, IoStopSharp, IoTrashOutline } from "react-icons/io5";
+import {
+  IoSend,
+  IoMic,
+  IoMicOutline,
+  IoStopSharp,
+  IoTrashOutline,
+  IoWarningOutline,
+} from "react-icons/io5";
 import { colors, spacing, borderRadius, typography } from "../theme";
 import { generateTextResponse, fixGrammar } from "../lib/primaryAgent";
 import { useRecorder } from "../lib/audio/useRecorder";
@@ -141,26 +148,6 @@ export default function Chat({
         content: m.text!,
       }));
 
-  const generateAIResponse = async (userMessage: string, historyMsgs: Message[]): Promise<string> => {
-    try {
-      const hasImage = historyMsgs.some((m) => m.image);
-
-      return await generateTextResponse({
-        history: buildAgentHistory(historyMsgs),
-        userMessage,
-        hasImage,
-      });
-    } catch (e) {
-      console.error(e);
-
-      if (e instanceof Error && e.message) {
-        return e.message;
-      }
-
-      return ERROR_TEXT;
-    }
-  };
-
   const sendTextMutation = useMutation({
     mutationFn: async (text: string) => {
       if (!conversationId) throw new Error("No active conversation yet");
@@ -177,7 +164,46 @@ export default function Chat({
       appendMessage(userMsg);
       queryClient.invalidateQueries({ queryKey: ["streak"] });
 
-      const aiResponse = await generateAIResponse(text, historyBefore);
+      // Deliberately not caught here — a failure surfaces as a distinct
+      // error card (see retryReplyMutation) instead of being stringified
+      // into a fake bot message. Persisting the error text as a real "bot"
+      // message would also poison future AI context, since buildAgentHistory
+      // feeds every past bot message back in as assistant turns.
+      const aiResponse = await generateTextResponse({
+        history: buildAgentHistory(historyBefore),
+        userMessage: text,
+        hasImage: historyBefore.some((m) => m.image),
+      });
+      const botMsg = await insertMessage({
+        conversation_id: conversationId,
+        user_id: user.id,
+        sender: "bot",
+        text: aiResponse,
+      });
+      appendMessage(botMsg);
+    },
+  });
+
+  // Retries only the AI-reply half of a failed send — the user's message
+  // already persisted successfully, so re-running the full send would
+  // duplicate it. Reads the latest cached message list to find the most
+  // recent user turn to reply to.
+  const retryReplyMutation = useMutation({
+    mutationFn: async () => {
+      if (!conversationId) throw new Error("No active conversation yet");
+
+      const currentMsgs =
+        queryClient.getQueryData<Message[]>(["messages", conversationId]) ?? [];
+      const lastUserMsg = [...currentMsgs].reverse().find((m) => m.sender === "user" && m.text);
+      if (!lastUserMsg?.text) throw new Error("Nothing to retry");
+
+      const historyBefore = currentMsgs.filter((m) => m.id !== lastUserMsg.id);
+
+      const aiResponse = await generateTextResponse({
+        history: buildAgentHistory(historyBefore),
+        userMessage: lastUserMsg.text,
+        hasImage: historyBefore.some((m) => m.image),
+      });
       const botMsg = await insertMessage({
         conversation_id: conversationId,
         user_id: user.id,
@@ -360,6 +386,7 @@ export default function Chat({
             onClick={clearChat}
             disabled={messages.length === 0}
             title="Effacer la conversation"
+            aria-label="Effacer la conversation / Clear conversation"
             style={{
               ...styles.clearButton,
               opacity: messages.length === 0 ? 0.4 : 1,
@@ -368,7 +395,12 @@ export default function Chat({
           >
             <IoTrashOutline size={16} />
           </button>
-          <button type="button" onClick={() => setHistoryOpen(true)} style={styles.historyButton}>
+          <button
+            type="button"
+            onClick={() => setHistoryOpen(true)}
+            aria-label="Historique / History"
+            style={styles.historyButton}
+          >
             🕘 <span className="chat-header-label">Historique</span>
           </button>
         </div>
@@ -378,18 +410,26 @@ export default function Chat({
       </div>
 
       <div style={styles.messages}>
-        {displayMessages.map((m) => (
-          <MessageBubble
-            key={m.id}
-            message={m}
-            mode="live"
-            isPlaying={playingId === m.id}
-            onTogglePlay={togglePlay}
-            onFixGrammar={handleFixGrammar}
-          />
-        ))}
+        {messagesPending ? (
+          <>
+            <div className="skeleton" style={styles.skeletonBot} />
+            <div className="skeleton" style={styles.skeletonUser} />
+            <div className="skeleton" style={{ ...styles.skeletonBot, width: "50%" }} />
+          </>
+        ) : (
+          displayMessages.map((m) => (
+            <MessageBubble
+              key={m.id}
+              message={m}
+              mode="live"
+              isPlaying={playingId === m.id}
+              onTogglePlay={togglePlay}
+              onFixGrammar={handleFixGrammar}
+            />
+          ))
+        )}
 
-        {(sendTextMutation.isPending || photoReplyPending) && (
+        {(sendTextMutation.isPending || photoReplyPending || retryReplyMutation.isPending) && (
           <div style={{ ...styles.message, ...styles.botMessage, opacity: 0.7 }}>
             <div className="typing-dots" style={styles.typingDots}>
               <span></span>
@@ -398,6 +438,28 @@ export default function Chat({
             </div>
           </div>
         )}
+
+        {(sendTextMutation.isError || retryReplyMutation.isError) &&
+          !retryReplyMutation.isPending && (
+            <div style={styles.errorCard} role="alert">
+              <IoWarningOutline size={16} color={colors.rouge} style={{ flexShrink: 0 }} />
+              <span style={{ flex: 1 }}>
+                {(() => {
+                  const err = retryReplyMutation.isError
+                    ? retryReplyMutation.error
+                    : sendTextMutation.error;
+                  return err instanceof Error && err.message ? err.message : ERROR_TEXT;
+                })()}
+              </span>
+              <button
+                type="button"
+                onClick={() => retryReplyMutation.mutate()}
+                style={styles.errorRetryButton}
+              >
+                Réessayer / Retry
+              </button>
+            </div>
+          )}
         <div ref={bottomRef} />
       </div>
 
@@ -423,6 +485,7 @@ export default function Chat({
             onClick={() => setMicMenuOpen((open) => !open)}
             disabled={recording}
             title={`Selected mic: ${selectedMicLabel}`}
+            aria-label={`Choisir le micro / Choose microphone — ${selectedMicLabel}`}
             className="mic-picker-btn"
             style={styles.micPickerButton}
           >
@@ -468,6 +531,11 @@ export default function Chat({
           type="button"
           onClick={handleMic}
           disabled={!conversationId || messagesPending}
+          aria-label={
+            recording
+              ? "Arrêter l'enregistrement / Stop recording"
+              : "Démarrer l'enregistrement / Start recording"
+          }
           style={{
             ...styles.micButton,
             // "Blue means action or listening" — an active recording is
@@ -498,6 +566,7 @@ export default function Chat({
           disabled={
             !input.trim() || sendTextMutation.isPending || !conversationId || messagesPending
           }
+          aria-label="Envoyer / Send"
           style={{
             ...styles.sendButton,
             opacity:
@@ -651,6 +720,44 @@ const styles: Record<string, React.CSSProperties> = {
     border: "1px solid #D8D0FF",
     alignSelf: "flex-start",
     borderRadius: "18px 18px 18px 4px",
+  },
+  errorCard: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    alignSelf: "flex-start",
+    maxWidth: "85%",
+    padding: "10px 14px",
+    borderRadius: borderRadius.lg,
+    background: "rgba(185, 74, 72, 0.08)",
+    border: `1px solid ${colors.rouge}`,
+    color: colors.rouge,
+    fontSize: 13,
+    fontWeight: 600,
+    animation: "fadeIn 0.3s ease-in",
+  },
+  errorRetryButton: {
+    flexShrink: 0,
+    background: "transparent",
+    border: `1px solid ${colors.rouge}`,
+    color: colors.rouge,
+    borderRadius: borderRadius.round,
+    padding: "6px 12px",
+    fontSize: 12,
+    fontWeight: 700,
+    cursor: "pointer",
+  },
+  skeletonBot: {
+    height: 44,
+    width: "62%",
+    borderRadius: "18px 18px 18px 4px",
+    alignSelf: "flex-start",
+  },
+  skeletonUser: {
+    height: 36,
+    width: "42%",
+    borderRadius: "18px 18px 4px 18px",
+    alignSelf: "flex-end",
   },
   inputContainer: {
     position: "fixed",
