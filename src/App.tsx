@@ -128,14 +128,15 @@ export default function App({ user }: { user: AuthedUser }) {
             left: "50%",
             transform: "translateX(-50%)",
             width: "min(90vw, 50em)",
-            background: "rgba(255, 253, 249, 0.85)",
+            background: "rgba(255, 253, 249, 0.92)",
             backdropFilter: "blur(16px)",
             borderRadius: 28,
             boxShadow: "0 6px 20px rgba(17, 27, 63, 0.08)",
             height: 68,
             display: "flex",
-            justifyContent: "space-around",
             alignItems: "center",
+            gap: 6,
+            padding: 6,
             marginBottom: 10,
             zIndex: 99,
           }}
@@ -186,23 +187,26 @@ function TabButton({
       tabIndex={active ? 0 : -1}
       onClick={onClick}
       style={{
+        flex: 1,
+        height: "100%",
         background: active ? colors.electric : "transparent",
         color: active ? colors.textLight : colors.electric,
         border: "none",
-        borderRadius: 16,
-        padding: "10px 18px",
+        borderRadius: 20,
+        padding: "0 20px",
         display: "flex",
-        flexDirection: "column",
+        flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
-        fontSize: 13,
-        fontWeight: 600,
+        gap: 8,
+        fontSize: 15,
+        fontWeight: 700,
         cursor: "pointer",
         boxShadow: active ? "0 4px 10px rgba(49, 104, 255, 0.3)" : "none",
         transition: "all 0.25s ease",
       }}
     >
-      <span style={{ fontSize: 22, lineHeight: 1, marginBottom: 3 }}>
+      <span style={{ fontSize: 20, lineHeight: 1, display: "flex" }}>
         {icon}
       </span>
       <span>{label}</span>

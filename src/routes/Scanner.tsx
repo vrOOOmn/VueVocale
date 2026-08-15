@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import Image from "next/image";
-import { IoCamera, IoRepeat, IoWarningOutline } from "react-icons/io5";
+import { IoCamera, IoLocateOutline, IoRepeat, IoWarningOutline } from "react-icons/io5";
 import PhotoPreviewSection from "../components/PhotoPreviewSection";
 import { colors, spacing, borderRadius, typography } from "../theme";
 import { createClient } from "../lib/supabase/client";
@@ -288,14 +288,19 @@ export default function Scanner({
 
   return (
     <div style={styles.container}>
-      {/* Hero section moved inside */}
-      <div style={styles.hero}>
-        <div style={styles.heroHeader}>
-          <Image src="/vuevocale.svg" alt="VueVocale logo" width={38} height={38} style={styles.logo} />
-          <h1 style={styles.title}>VueVocale</h1>
-        </div>
+      {/* Fixed like UserMenu's top-right avatar, so the brand mark stays
+          put instead of scrolling away with the page on tall content. */}
+      <div style={styles.brandMark}>
+        <Image src="/vuevocale.svg" alt="VueVocale logo" width={32} height={32} style={styles.logo} />
+        <span style={styles.brandTitle}>VueVocale</span>
+      </div>
 
-        <div style={styles.introCard}>
+      <div className="scan-intro" style={styles.introCard}>
+        <div style={styles.introIconChip}>
+          <IoLocateOutline size={22} color={colors.electric} />
+        </div>
+        <div style={{ minWidth: 0 }}>
+          <span style={styles.introEyebrow}>Mode scanner</span>
           <h2 style={styles.introTitle}>Find something to talk about.</h2>
           <p style={styles.introSubtitle}>
             Point your camera at an object. VueVocale finds the French word
@@ -359,11 +364,11 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: "column" as const,
     alignItems: "center",
     justifyContent: "flex-start",
-    // Symmetric side padding matching Chat's header inset, and enough top
-    // clearance to roughly line up with the fixed account avatar (top:16).
-    paddingTop: 20,
     paddingLeft: 16,
     paddingRight: 16,
+    // Clears the fixed brandMark (top:16 + ~32px tall) above it, same idea
+    // as Chat's header clearance on .chat-messages.
+    paddingTop: 72,
     // The bottom nav is position:fixed (68px tall + 10px bottom margin) and
     // floats over whatever's scrolled beneath it — without this clearance
     // the camera box's bottom edge (and its capture button) ends up
@@ -373,34 +378,51 @@ const styles: Record<string, React.CSSProperties> = {
     gap: "24px",
     background: "transparent",
   },
-  hero: {
-    textAlign: "left" as const,
-    width: "clamp(15rem, 80vw, 50rem)",
-    display: "flex",
-    flexDirection: "column" as const,
-    gap: 18,
-  },
-  heroHeader: {
+  brandMark: {
+    position: "fixed" as const,
+    top: 16,
+    left: 16,
+    zIndex: 100,
     display: "flex",
     alignItems: "center",
-    justifyContent: "flex-start",
-    gap: 12,
+    gap: 10,
   },
   logo: {
-    width: 38,
-    height: 38,
+    width: 32,
+    height: 32,
   },
-  title: {
-    fontSize: 25,
+  brandTitle: {
+    fontSize: 21,
     fontWeight: 700,
     color: colors.navy,
-    margin: 0, // reset
   },
   introCard: {
+    display: "flex",
+    alignItems: "flex-start",
+    gap: 14,
     background: colors.paper,
     border: `1px solid ${colors.hairline}`,
     borderRadius: borderRadius.xl,
     padding: "22px 22px",
+  },
+  introIconChip: {
+    width: 44,
+    height: 44,
+    flexShrink: 0,
+    borderRadius: borderRadius.md,
+    background: "rgba(49, 104, 255, 0.12)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  introEyebrow: {
+    display: "block",
+    fontSize: 11,
+    fontWeight: 700,
+    letterSpacing: "0.08em",
+    textTransform: "uppercase" as const,
+    color: colors.brass,
+    marginBottom: 4,
   },
   introTitle: {
     fontSize: "clamp(1.15rem, 4.4vw, 1.4rem)",

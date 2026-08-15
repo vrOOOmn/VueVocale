@@ -682,12 +682,15 @@ textarea:focus {
    tall at the 3:4 aspect ratio) reads as oversized against the rest of the
    page — shrink it well below that once there's real desktop width to work
    with instead of relying on scroll to reach the controls beneath it. */
-.scan-frame {
+.scan-frame,
+.scan-intro {
   width: clamp(18rem, 88vw, 30rem);
 }
 
 @media (min-width: 768px) {
-  .scan-frame {
-    width: 20rem;
+  /* 30% bigger than the original 20rem desktop cap. */
+  .scan-frame,
+  .scan-intro {
+    width: 26rem;
   }
 }
