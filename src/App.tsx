@@ -116,7 +116,7 @@ function TabButton({
       onClick={onClick}
       style={{
         background: active ? colors.electric : "transparent",
-        color: active ? "#fff" : colors.electric,
+        color: active ? colors.textLight : colors.electric,
         border: "none",
         borderRadius: 16,
         padding: "10px 18px",

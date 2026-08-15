@@ -344,23 +344,30 @@ export default function Chat({
   return (
     <main style={styles.container}>
       <div style={styles.header}>
-        <button
-          type="button"
-          onClick={clearChat}
-          disabled={messages.length === 0}
-          title="Effacer la conversation"
-          style={{
-            ...styles.clearButton,
-            opacity: messages.length === 0 ? 0.4 : 1,
-            cursor: messages.length === 0 ? "default" : "pointer",
-          }}
-        >
-          <IoTrashOutline size={14} />
-        </button>
-        {streak > 0 && <span style={styles.streakBadge}>🔥 {streak}</span>}
-        <button type="button" onClick={() => setHistoryOpen(true)} style={styles.historyButton}>
-          🕘 Historique
-        </button>
+        {topic ? (
+          <span style={styles.contextPill}>Contexte · {topic}</span>
+        ) : (
+          <span />
+        )}
+        <div style={styles.headerActions}>
+          <button
+            type="button"
+            onClick={clearChat}
+            disabled={messages.length === 0}
+            title="Effacer la conversation"
+            style={{
+              ...styles.clearButton,
+              opacity: messages.length === 0 ? 0.4 : 1,
+              cursor: messages.length === 0 ? "default" : "pointer",
+            }}
+          >
+            <IoTrashOutline size={14} />
+          </button>
+          {streak > 0 && <span style={styles.streakBadge}>🔥 {streak}</span>}
+          <button type="button" onClick={() => setHistoryOpen(true)} style={styles.historyButton}>
+            🕘 Historique
+          </button>
+        </div>
       </div>
 
       <div style={styles.messages}>
@@ -521,11 +528,29 @@ const styles: Record<string, React.CSSProperties> = {
   header: {
     display: "flex",
     alignItems: "center",
-    justifyContent: "flex-end",
+    justifyContent: "space-between",
     gap: 8,
     // Right padding clears the fixed account icon (40px circle at
     // top:16/right:16) so header buttons never sit underneath it.
     padding: `${spacing.sm}px 64px 0 ${spacing.md}px`,
+  },
+  headerActions: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+  },
+  contextPill: {
+    fontSize: 12.5,
+    fontWeight: 600,
+    color: colors.navy,
+    background: colors.paper,
+    border: `1px solid ${colors.hairline}`,
+    borderRadius: borderRadius.round,
+    padding: "6px 12px",
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    maxWidth: "45vw",
   },
   streakBadge: {
     fontSize: 12.5,
@@ -575,7 +600,8 @@ const styles: Record<string, React.CSSProperties> = {
     animation: "fadeIn 0.3s ease-in",
   },
   botMessage: {
-    background: "#fff",
+    background: "#F4F0FF",
+    border: "1px solid #D8D0FF",
     alignSelf: "flex-start",
     borderRadius: "18px 18px 18px 4px",
   },
@@ -672,8 +698,8 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: "pointer",
   },
   sendButton: {
-    width: 44,
-    height: 44,
+    width: 48,
+    height: 48,
     borderRadius: "50%",
     border: "none",
     background: colors.electric,
@@ -681,7 +707,7 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: "center",
     justifyContent: "center",
     cursor: "pointer",
-    boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+    boxShadow: "0 4px 12px rgba(49, 104, 255, 0.3)",
   },
   typingDots: {
     display: "flex",
@@ -691,14 +717,14 @@ const styles: Record<string, React.CSSProperties> = {
     padding: "6px 8px",
   },
   micButton: {
-    width: 44,
-    height: 44,
+    width: 48,
+    height: 48,
     borderRadius: "50%",
     border: "none",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     cursor: "pointer",
-    boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+    boxShadow: "0 4px 12px rgba(17, 27, 63, 0.18)",
   },
 };

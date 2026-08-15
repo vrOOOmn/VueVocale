@@ -20,16 +20,18 @@ export default function PhotoPreviewSection({
     <div style={styles.container}>
       <img src={photoDataUrl} alt="Camera preview" style={styles.preview} />
 
-      {/* Detection Dialogue */}
+      {/* Detected-object chip, overlaid on the photo like the landing page's
+          "une orange" chip — matches the app-wide dark-chip convention. */}
+      {detectedLabel && (
+        <div style={styles.chip}>
+          {detectedLabel} / {englishLabel}
+        </div>
+      )}
+
+      {/* Confirm/retake card */}
       {detectedLabel && (
         <div style={styles.dialogOverlay}>
           <div style={styles.dialogCard}>
-            <p style={styles.title}>
-              Objet détecté:{" "}
-              <strong>
-                {detectedLabel} / {englishLabel}{" "}
-              </strong>
-            </p>
             <p style={styles.subtitle}>
               Souhaitez-vous en parler en français ? / Do you want to talk about
               it in French?
@@ -61,7 +63,7 @@ const styles: Record<string, React.CSSProperties> = {
     overflow: "hidden",
     aspectRatio: "3 / 4",
     marginBottom: "min(8rem, 100px)",
-    // border: "4px solid " + "#000",
+    border: "1px solid #BDEBFF",
     flexShrink: 0,
   },
   preview: {
@@ -70,6 +72,19 @@ const styles: Record<string, React.CSSProperties> = {
     objectFit: "cover" as const,
     display: "block",
     background: "#000",
+  },
+  chip: {
+    position: "absolute",
+    top: spacing.md,
+    left: spacing.md,
+    background: colors.navy,
+    color: colors.textLight,
+    fontFamily: typography.body.fontFamily,
+    fontSize: 14,
+    fontWeight: 600,
+    borderRadius: borderRadius.round,
+    padding: "8px 14px",
+    boxShadow: "0 4px 14px rgba(17, 27, 63, 0.25)",
   },
   dialogOverlay: {
     position: "absolute",
@@ -91,15 +106,10 @@ const styles: Record<string, React.CSSProperties> = {
     maxWidth: 400,
     animation: "fadeIn 0.3s ease-out",
   },
-  title: {
-    ...typography.body,
-    color: colors.navy,
-    margin: 0,
-  },
   subtitle: {
     ...typography.message,
-    color: colors.textMuted,
-    marginTop: spacing.xs,
+    color: colors.navy,
+    margin: 0,
     marginBottom: spacing.sm,
   },
   buttonRow: {
@@ -112,18 +122,19 @@ const styles: Record<string, React.CSSProperties> = {
     background: colors.electric,
     color: colors.textLight,
     border: "none",
-    borderRadius: borderRadius.md,
-    padding: "12px 16px",
+    borderRadius: borderRadius.lg,
+    padding: "14px 16px",
     fontWeight: 600,
     cursor: "pointer",
+    boxShadow: "0 8px 20px rgba(49, 104, 255, 0.3)",
   },
   secondaryBtn: {
     flex: 1,
     background: colors.paper,
     color: colors.navy,
     border: `1px solid ${colors.hairline}`,
-    borderRadius: borderRadius.md,
-    padding: "12px 16px",
+    borderRadius: borderRadius.lg,
+    padding: "14px 16px",
     fontWeight: 600,
     cursor: "pointer",
   },

@@ -272,6 +272,7 @@ export default function Scanner({
         <p style={styles.subtitle}>
           A conversational French learning companion
         </p>
+        <div style={styles.heroRule} />
         <p style={styles.description}>
           VueVocale helps you level up your French speaking skills by engaging
           in spontaneous conversations about the world around you. Capture an
@@ -367,6 +368,12 @@ const styles: Record<string, React.CSSProperties> = {
     fontStyle: "italic",
     marginTop: 4,
   },
+  heroRule: {
+    width: "min(70%, 220px)",
+    height: 1,
+    background: colors.brass,
+    margin: "14px auto 0",
+  },
   description: {
     fontSize: "clamp(1.0rem, 4vw, 1.2rem)",
     color: colors.textMuted,
@@ -384,7 +391,8 @@ const styles: Record<string, React.CSSProperties> = {
     aspectRatio: "3 / 4",
     flexShrink: 0,
     marginBottom: "min(8rem, 100px)",
-    // border: '4px solid ' + '#000',
+    background: "#EAF8FF",
+    border: "1px solid #BDEBFF",
   },
 
   video: {
