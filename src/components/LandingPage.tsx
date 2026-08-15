@@ -47,6 +47,8 @@ const FEATURES = [
   },
 ];
 
+const PAGE_MAX_WIDTH = 1312;
+
 export default function LandingPage() {
   return (
     <div
@@ -59,7 +61,7 @@ export default function LandingPage() {
       {/* Nav */}
       <header
         style={{
-          maxWidth: 1100,
+          maxWidth: PAGE_MAX_WIDTH,
           margin: "0 auto",
           padding: `${spacing.lg}px ${spacing.lg}px`,
           display: "flex",
@@ -82,13 +84,26 @@ export default function LandingPage() {
         </div>
         <nav style={{ display: "flex", alignItems: "center", gap: 28 }}>
           <a href="#how-it-works" className="lp-nav-link">
-            How it works
+            Method
           </a>
           <a href="#features" className="lp-nav-link">
-            Features
+            Practice
           </a>
-          <Link href="/app" className="lp-btn lp-btn-primary" style={{ padding: "10px 20px", fontSize: 15 }}>
-            Launch App
+          <a href="#cta" className="lp-nav-link">
+            Progress
+          </a>
+          <Link
+            href="/app"
+            className="lp-btn"
+            style={{
+              background: "#2F65F6",
+              color: "#fff",
+              borderRadius: 16,
+              padding: "10px 20px",
+              fontSize: 15,
+            }}
+          >
+            Launch
           </Link>
         </nav>
       </header>
@@ -96,11 +111,11 @@ export default function LandingPage() {
       {/* Hero */}
       <section
         style={{
-          maxWidth: 1100,
+          maxWidth: PAGE_MAX_WIDTH,
           margin: "0 auto",
           padding: `${spacing.xl}px ${spacing.lg}px ${spacing.xl * 2}px`,
           display: "grid",
-          gridTemplateColumns: "1.1fr 0.9fr",
+          gridTemplateColumns: "1.5fr 1fr",
           gap: 48,
           alignItems: "center",
         }}
@@ -109,67 +124,76 @@ export default function LandingPage() {
           <span
             style={{
               display: "inline-block",
-              fontSize: 13,
+              fontFamily: typography.header.fontFamily,
+              fontSize: 12,
               fontWeight: 600,
               letterSpacing: 0.4,
-              color: colors.electric,
-              background: "rgba(49, 104, 255, 0.1)",
-              borderRadius: 999,
-              padding: "6px 14px",
-              marginBottom: 20,
+              color: colors.paper,
+              background: colors.navy,
+              borderRadius: 8,
+              padding: "8px 16px",
+              marginBottom: 24,
             }}
           >
-            AI-powered spoken French practice
+            PARISIAN AI PRACTICE
           </span>
           <h1
             style={{
               fontFamily: typography.display.fontFamily,
               fontWeight: 400,
-              fontSize: "clamp(32px, 4vw, 52px)",
-              lineHeight: 1.15,
+              fontSize: "clamp(32px, 4.6vw, 68px)",
+              lineHeight: 1.06,
               margin: 0,
               color: colors.navy,
             }}
           >
-            Point your camera.
+            Capture the room.
             <br />
-            Say what you see.
+            Name it in French.
             <br />
-            Actually speak French.
+            Speak with confidence.
           </h1>
+          <div
+            style={{
+              width: "100%",
+              maxWidth: 500,
+              height: 1,
+              background: colors.brass,
+              margin: `${spacing.xl - 4}px 0 ${spacing.lg}px`,
+            }}
+          />
           <p
             style={{
               fontFamily: typography.body.fontFamily,
-              fontSize: 18,
+              fontSize: 20,
               lineHeight: 1.6,
-              color: colors.textMuted,
-              marginTop: 20,
-              maxWidth: 480,
+              color: "#4F5B6F",
+              margin: 0,
+              maxWidth: 560,
             }}
           >
-            VueVocale turns everyday objects into conversation starters, then lets
-            you practice speaking naturally with an AI companion — no vocab lists,
-            no multiple choice.
+            VueVocale turns the objects around you into short, guided
+            conversations with instant pronunciation feedback. It feels
+            polished, but it behaves like a serious AI learning tool.
           </p>
-          <div style={{ display: "flex", gap: 14, marginTop: 32, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 20, marginTop: 32, flexWrap: "wrap" }}>
             <Link href="/app" className="lp-btn lp-btn-primary">
-              Launch App
+              Start speaking
             </Link>
             <a href="#how-it-works" className="lp-btn lp-btn-secondary">
-              See how it works
+              See method
             </a>
+            <span
+              style={{
+                fontFamily: typography.display.fontFamily,
+                fontStyle: "italic",
+                fontSize: 17,
+                color: colors.brass,
+              }}
+            >
+              avec nuance
+            </span>
           </div>
-          <p
-            style={{
-              fontFamily: typography.display.fontFamily,
-              fontStyle: "italic",
-              fontSize: 17,
-              color: colors.brass,
-              marginTop: 18,
-            }}
-          >
-            avec nuance
-          </p>
         </div>
 
         <PhoneMockup />
@@ -282,6 +306,7 @@ export default function LandingPage() {
 
       {/* CTA band */}
       <section
+        id="cta"
         style={{
           maxWidth: 1100,
           margin: "0 auto",
@@ -389,91 +414,88 @@ function PhoneMockup() {
     >
       <div
         style={{
-          width: 280,
-          borderRadius: 36,
+          width: 300,
+          borderRadius: 38,
           background: colors.paper,
           border: `1px solid ${colors.hairline}`,
           boxShadow: "0 30px 60px rgba(17, 27, 63, 0.14)",
-          padding: 14,
+          padding: 16,
         }}
       >
         <div
           style={{
-            display: "flex",
-            justifyContent: "center",
-            marginBottom: 10,
+            borderRadius: 24,
+            height: 198,
+            background: colors.mist,
+            border: `1px solid ${colors.hairline}`,
+            position: "relative",
+            overflow: "hidden",
+            marginBottom: 16,
           }}
         >
           <div
             style={{
-              width: 60,
-              height: 5,
-              borderRadius: 999,
-              background: colors.hairline,
+              position: "absolute",
+              left: 0,
+              right: 0,
+              bottom: 0,
+              height: 73,
+              background: colors.skyAI,
             }}
           />
-        </div>
-
-        <div
-          style={{
-            borderRadius: 20,
-            height: 140,
-            background: "linear-gradient(135deg, #FDE68A, #F97316)",
-            position: "relative",
-            overflow: "hidden",
-            marginBottom: 12,
-          }}
-        >
           <span
             style={{
               position: "absolute",
-              bottom: 10,
-              left: 10,
+              left: 22,
+              bottom: 47,
               background: colors.navy,
-              color: "#fff",
+              color: colors.paper,
               fontFamily: typography.body.fontFamily,
-              fontSize: 13,
+              fontSize: 14,
               fontWeight: 600,
               borderRadius: 999,
-              padding: "5px 10px",
+              padding: "6px 13px",
             }}
           >
-            🍊 orange
+            une orange
           </span>
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           <div
             className="lp-bubble"
             style={{
               alignSelf: "flex-end",
-              maxWidth: "80%",
+              maxWidth: "82%",
               background: colors.electric,
               color: "#fff",
-              borderRadius: "16px 16px 4px 16px",
-              padding: "9px 13px",
+              borderRadius: 20,
+              padding: "11px 16px",
               fontFamily: typography.body.fontFamily,
-              fontSize: 13.5,
+              fontWeight: 500,
+              fontSize: 15,
               animationDelay: "0.1s",
             }}
           >
-            C&apos;est sucré et un peu acide, non&nbsp;?
+            C&apos;est acidulé&nbsp;?
           </div>
           <div
             className="lp-bubble"
             style={{
               alignSelf: "flex-start",
-              maxWidth: "85%",
-              background: colors.mist,
+              maxWidth: "90%",
+              background: "#F4F0FF",
+              border: "1px solid #D8D0FF",
               color: colors.navy,
-              borderRadius: "16px 16px 16px 4px",
-              padding: "9px 13px",
+              borderRadius: 20,
+              padding: "11px 16px",
               fontFamily: typography.body.fontFamily,
-              fontSize: 13.5,
+              fontSize: 14,
+              lineHeight: 1.5,
               animationDelay: "0.35s",
             }}
           >
-            Exactement&nbsp;! Tu en manges souvent le matin&nbsp;?
+            Oui. Plus naturel&nbsp;: «&nbsp;une orange acidulée&nbsp;».
           </div>
         </div>
       </div>
