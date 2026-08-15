@@ -64,17 +64,25 @@ export default function App({ user }: { user: AuthedUser }) {
           }}
         >
           {/* These wrappers exist only for the ARIA tabpanel relationship —
-              they must pass the parent's height straight through (flex:1,
-              minHeight:0, full flex column) or Chat's internal height:100%
-              scroll container collapses to content height instead of the
-              viewport, breaking its fixed header/input positioning and
-              auto-scroll. */}
+              the active one must pass the parent's height straight through
+              (flex:1, minHeight:0, full flex column) or Chat's internal
+              height:100% scroll container collapses to content height
+              instead of the viewport. The inactive one must be
+              display:none — an inline style always wins over the browser's
+              own [hidden]{display:none} UA rule, so setting flex:1 (even
+              unconditionally, even though `hidden` is also set) kept both
+              panels occupying flex space and splitting the viewport in
+              half between them, one on top of the other. */}
           <div
             role="tabpanel"
             id="panel-scanner"
             aria-labelledby="tab-scanner"
             hidden={activeTab !== "scanner"}
-            style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}
+            style={
+              activeTab === "scanner"
+                ? { display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }
+                : { display: "none" }
+            }
           >
             {activeTab === "scanner" && (
               <Scanner
@@ -92,7 +100,11 @@ export default function App({ user }: { user: AuthedUser }) {
             id="panel-chat"
             aria-labelledby="tab-chat"
             hidden={activeTab !== "chat"}
-            style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}
+            style={
+              activeTab === "chat"
+                ? { display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }
+                : { display: "none" }
+            }
           >
             {activeTab === "chat" && (
               <Chat
