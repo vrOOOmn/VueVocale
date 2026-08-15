@@ -677,11 +677,10 @@ textarea:focus {
 
 /* Scanner's camera box and PhotoPreviewSection's photo frame share this
    exact width so confirming a photo doesn't visibly resize the frame it's
-   sitting in. The mobile clamp intentionally runs large (88vw) to fill
-   phone viewports, but on desktop that clamp's max (30rem/480px, ~640px
-   tall at the 3:4 aspect ratio) reads as oversized against the rest of the
-   page — shrink it well below that once there's real desktop width to work
-   with instead of relying on scroll to reach the controls beneath it. */
+   sitting in. .scan-intro (the instruction card) shares the same mobile
+   value so the two line up edge-to-edge on phones — but NOT the same
+   desktop value: at desktop width, matching them made both look cramped,
+   so .scan-intro gets its own, wider, desktop-only value. */
 .scan-frame,
 .scan-intro {
   width: clamp(18rem, 88vw, 30rem);
@@ -689,8 +688,37 @@ textarea:focus {
 
 @media (min-width: 768px) {
   /* 30% bigger than the original 20rem desktop cap. */
-  .scan-frame,
-  .scan-intro {
+  .scan-frame {
     width: 26rem;
+  }
+
+  .scan-intro {
+    width: 34rem;
+  }
+}
+
+/* Mode Scanner" eyebrow — decorative only, dropped on phones to keep the
+   intro card from feeling crowded with the icon+title row now sitting
+   right below it. */
+.scan-intro-eyebrow {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .scan-intro-eyebrow {
+    display: block;
+  }
+}
+
+/* Single source of truth for "the tab bar's own internal padding" so the
+   Scanner page's outer horizontal padding can match it exactly instead of
+   two independently-tuned numbers drifting apart. */
+:root {
+  --scan-nav-padding: 9px;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --scan-nav-padding: 6px;
   }
 }

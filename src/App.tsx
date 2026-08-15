@@ -136,7 +136,7 @@ export default function App({ user }: { user: AuthedUser }) {
             display: "flex",
             alignItems: "center",
             gap: 6,
-            padding: 6,
+            padding: "var(--scan-nav-padding)",
             marginBottom: 10,
             zIndex: 99,
           }}
