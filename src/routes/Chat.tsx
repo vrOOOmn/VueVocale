@@ -2,7 +2,7 @@
 
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { IoSend, IoMic, IoStopSharp, IoTrashOutline } from "react-icons/io5";
+import { IoSend, IoMic, IoMicOutline, IoStopSharp, IoTrashOutline } from "react-icons/io5";
 import { colors, spacing, borderRadius, typography } from "../theme";
 import { generateTextResponse, fixGrammar } from "../lib/primaryAgent";
 import { useRecorder } from "../lib/audio/useRecorder";
@@ -369,7 +369,7 @@ export default function Chat({
             <IoTrashOutline size={16} />
           </button>
           <button type="button" onClick={() => setHistoryOpen(true)} style={styles.historyButton}>
-            🕘 Historique
+            🕘 <span className="chat-header-label">Historique</span>
           </button>
         </div>
         <div style={styles.headerRight}>
@@ -423,10 +423,16 @@ export default function Chat({
             onClick={() => setMicMenuOpen((open) => !open)}
             disabled={recording}
             title={`Selected mic: ${selectedMicLabel}`}
+            className="mic-picker-btn"
             style={styles.micPickerButton}
           >
-            <span style={styles.micPickerLabel}>{selectedMicLabel}</span>
-            <span style={styles.micPickerCaret}>▾</span>
+            <IoMicOutline size={16} style={{ flexShrink: 0 }} />
+            <span className="chat-header-label" style={styles.micPickerLabel}>
+              {selectedMicLabel}
+            </span>
+            <span className="chat-header-label" style={styles.micPickerCaret}>
+              ▾
+            </span>
           </button>
 
           {micMenuOpen && (
@@ -542,7 +548,12 @@ const styles: Record<string, React.CSSProperties> = {
     left: 0,
     right: 0,
     display: "grid",
-    gridTemplateColumns: "1fr auto 1fr",
+    // minmax(0, 1fr), not plain 1fr — a plain 1fr track's automatic minimum
+    // is its content's min-content size, which for nowrap text is its full
+    // width, so the Contexte pill was overflowing into the center column
+    // instead of actually shrinking. minmax(0, 1fr) forces the track's
+    // floor to 0 so the ellipsis/overflow rules below can actually apply.
+    gridTemplateColumns: "minmax(0, 1fr) auto minmax(0, 1fr)",
     alignItems: "center",
     gap: 8,
     // Right padding clears the fixed account icon (40px circle at
@@ -554,6 +565,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: "flex",
     justifySelf: "start",
     minWidth: 0,
+    overflow: "hidden",
   },
   headerCenter: {
     display: "flex",
@@ -578,7 +590,7 @@ const styles: Record<string, React.CSSProperties> = {
     whiteSpace: "nowrap",
     overflow: "hidden",
     textOverflow: "ellipsis",
-    maxWidth: "45vw",
+    maxWidth: "100%",
   },
   streakBadge: {
     display: "flex",
@@ -679,15 +691,14 @@ const styles: Record<string, React.CSSProperties> = {
   },
   micPickerButton: {
     height: 44,
-    minWidth: 116,
     borderRadius: 20,
     border: "1px solid rgba(59,107,243,0.16)",
     background: "rgba(255,255,255,0.92)",
     color: colors.navy,
     display: "flex",
     alignItems: "center",
-    justifyContent: "space-between",
-    gap: 8,
+    justifyContent: "center",
+    gap: 6,
     padding: "0 12px",
     marginRight: 8,
     fontSize: 12,

@@ -343,20 +343,20 @@ const styles: Record<string, React.CSSProperties> = {
     width: "clamp(15rem, 80vw, 50rem)",
     display: "flex",
     flexDirection: "column" as const,
-    gap: 14,
+    gap: 18,
   },
   heroHeader: {
     display: "flex",
     alignItems: "center",
     justifyContent: "flex-start",
-    gap: 10,
+    gap: 12,
   },
   logo: {
-    width: 30,
-    height: 30,
+    width: 38,
+    height: 38,
   },
   title: {
-    fontSize: 21,
+    fontSize: 25,
     fontWeight: 700,
     color: colors.navy,
     margin: 0, // reset
@@ -365,7 +365,7 @@ const styles: Record<string, React.CSSProperties> = {
     background: colors.paper,
     border: `1px solid ${colors.hairline}`,
     borderRadius: borderRadius.xl,
-    padding: "18px 20px",
+    padding: "22px 22px",
   },
   introTitle: {
     fontSize: "clamp(1.15rem, 4.4vw, 1.4rem)",
@@ -380,13 +380,16 @@ const styles: Record<string, React.CSSProperties> = {
     lineHeight: 1.55,
   },
   cameraBox: {
-    width: "clamp(15rem, 70vw, 23rem)",
+    // Noticeably bigger — the old clamp left a lot of dead space below the
+    // camera on tall phone viewports since height only ever derived from
+    // this width via the aspect ratio.
+    width: "clamp(18rem, 88vw, 30rem)",
     position: "relative" as const,
     borderRadius: borderRadius.lg,
     overflow: "hidden",
     aspectRatio: "3 / 4",
     flexShrink: 0,
-    marginBottom: "min(8rem, 100px)",
+    marginBottom: spacing.xxl,
     background: "#EAF8FF",
     border: "1px solid #BDEBFF",
   },

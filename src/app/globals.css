@@ -508,3 +508,27 @@ textarea:focus {
     display: inline-flex;
   }
 }
+
+/* Chat header/input-bar: on narrow phones the Historique label and the mic
+   picker's device-name label are the biggest fixed-width space users of the
+   header/input row — drop them below ~480px so the textarea and the
+   Contexte pill actually have room, keep icons/carets so the controls are
+   still identifiable and tappable. */
+.chat-header-label {
+  display: none;
+}
+
+.mic-picker-btn {
+  min-width: 40px;
+}
+
+@media (min-width: 480px) {
+  .chat-header-label {
+    display: inline;
+  }
+
+  .mic-picker-btn {
+    min-width: 116px;
+    justify-content: space-between;
+  }
+}

@@ -52,12 +52,14 @@ export default function PhotoPreviewSection({
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
-    width: "clamp(15rem, 70vw, 23rem)",
+    // Matches Scanner's cameraBox exactly so confirming a photo doesn't
+    // visibly resize the frame it's sitting in.
+    width: "clamp(18rem, 88vw, 30rem)",
     position: "relative" as const,
     borderRadius: borderRadius.lg,
     overflow: "hidden",
     aspectRatio: "3 / 4",
-    marginBottom: "min(8rem, 100px)",
+    marginBottom: spacing.xxl,
     border: "1px solid #BDEBFF",
     flexShrink: 0,
   },
