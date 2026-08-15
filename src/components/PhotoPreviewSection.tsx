@@ -1,5 +1,5 @@
 import React from "react";
-import { IoRepeat } from "react-icons/io5";
+import { IoArrowUndoOutline } from "react-icons/io5";
 import { colors, spacing, borderRadius, typography } from "../theme";
 
 type Props = {
@@ -42,7 +42,7 @@ export default function PhotoPreviewSection({
             title="Reprendre la photo / Retake photo"
             style={styles.retakeBtn}
           >
-            <IoRepeat size={24} color={colors.textLight} />
+            <IoArrowUndoOutline size={22} color={colors.textLight} />
           </button>
         </div>
       )}

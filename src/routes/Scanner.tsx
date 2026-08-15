@@ -332,9 +332,10 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: "column" as const,
     alignItems: "center",
     justifyContent: "flex-start",
-    padding: "5px 5px",
+    // Symmetric side padding matching Chat's header inset, and enough top
+    // clearance to roughly line up with the fixed account avatar (top:16).
+    padding: "20px 16px",
     gap: "24px",
-    // border: '4px solid ' + '#000',
     background: "transparent",
   },
   hero: {

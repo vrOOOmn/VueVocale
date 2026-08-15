@@ -106,6 +106,13 @@ export default function Chat({
 
   const displayMessages = mergeAudioState(messages);
 
+  // `topic` only reflects a fresh scan→chat handoff this session — it's
+  // empty after a reload even though the conversation still has a subject.
+  // Fall back to the most recent persisted object_label so the context pill
+  // survives a refresh.
+  const persistedTopic = [...messages].reverse().find((m) => m.objectLabel)?.objectLabel;
+  const contextLabel = topic || persistedTopic;
+
   const { data: streak = 0 } = useQuery({
     queryKey: ["streak"],
     queryFn: async () => computeStreak(await fetchActiveDates()),
@@ -344,12 +351,10 @@ export default function Chat({
   return (
     <main style={styles.container}>
       <div style={styles.header}>
-        {topic ? (
-          <span style={styles.contextPill}>Contexte · {topic}</span>
-        ) : (
-          <span />
-        )}
-        <div style={styles.headerActions}>
+        <div style={styles.headerLeft}>
+          {contextLabel && <span style={styles.contextPill}>Contexte · {contextLabel}</span>}
+        </div>
+        <div style={styles.headerCenter}>
           <button
             type="button"
             onClick={clearChat}
@@ -363,10 +368,12 @@ export default function Chat({
           >
             <IoTrashOutline size={16} />
           </button>
-          {streak > 0 && <span style={styles.streakBadge}>🔥 {streak}</span>}
           <button type="button" onClick={() => setHistoryOpen(true)} style={styles.historyButton}>
             🕘 Historique
           </button>
+        </div>
+        <div style={styles.headerRight}>
+          {streak > 0 && <span style={styles.streakBadge}>🔥 {streak}</span>}
         </div>
       </div>
 
@@ -526,18 +533,37 @@ const styles: Record<string, React.CSSProperties> = {
     position: "relative",
   },
   header: {
-    display: "flex",
+    // Fixed like the input bar below — a normal in-flow header can end up
+    // scrolling away with the message list on mobile browsers where the
+    // 100%-height flex containment doesn't reliably hold (100svh/inner-scroll
+    // quirks), even though it looks contained in desktop devtools.
+    position: "fixed",
+    top: 0,
+    left: 0,
+    right: 0,
+    display: "grid",
+    gridTemplateColumns: "1fr auto 1fr",
     alignItems: "center",
-    justifyContent: "space-between",
     gap: 8,
     // Right padding clears the fixed account icon (40px circle at
     // top:16/right:16) so header buttons never sit underneath it.
-    padding: `${spacing.sm}px 64px 0 ${spacing.md}px`,
+    padding: `${spacing.md}px 64px ${spacing.sm}px ${spacing.md}px`,
+    zIndex: 100,
   },
-  headerActions: {
+  headerLeft: {
+    display: "flex",
+    justifySelf: "start",
+    minWidth: 0,
+  },
+  headerCenter: {
     display: "flex",
     alignItems: "center",
     gap: 8,
+    justifySelf: "center",
+  },
+  headerRight: {
+    display: "flex",
+    justifySelf: "end",
   },
   contextPill: {
     fontSize: 13.5,
@@ -595,6 +621,7 @@ const styles: Record<string, React.CSSProperties> = {
     flex: 1,
     overflowY: "auto",
     padding: spacing.md,
+    paddingTop: 88,
     paddingBottom: 160,
     display: "flex",
     flexDirection: "column",
