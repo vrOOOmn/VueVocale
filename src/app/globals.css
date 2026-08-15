@@ -624,3 +624,53 @@ textarea:focus {
     justify-content: space-between;
   }
 }
+
+/* Chat header: fixed like the input bar below — a normal in-flow header can
+   end up scrolling away with the message list on mobile browsers where the
+   100%-height flex containment doesn't reliably hold (100svh/inner-scroll
+   quirks), even though it looks contained in desktop devtools.
+   Desktop keeps everything on one row; below 768px the Historique pill (now
+   shown at full width, label always visible) drops to its own row so it
+   stops competing with Contexte/delete/streak for horizontal space. */
+.chat-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: grid;
+  align-items: center;
+  gap: 8px;
+  /* Right padding clears the fixed account icon (40px circle at
+     top:16/right:16) so header buttons never sit underneath it. */
+  padding: 16px 64px 8px 16px;
+  z-index: 100;
+  /* minmax(0, 1fr), not plain 1fr — a plain 1fr track's automatic minimum
+     is its content's min-content size, which for nowrap text is its full
+     width, so the Contexte pill was overflowing into the next column
+     instead of actually shrinking. */
+  grid-template-columns: minmax(0, 1fr) auto auto minmax(0, 1fr);
+  grid-template-areas: "context delete historique streak";
+}
+
+@media (max-width: 767px) {
+  .chat-header {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      "context delete streak"
+      "historique historique historique";
+    row-gap: 8px;
+    padding-bottom: 12px;
+  }
+}
+
+/* Clearance for the fixed .chat-header above — taller on mobile where the
+   header wraps to two rows. */
+.chat-messages {
+  padding-top: 88px;
+}
+
+@media (max-width: 767px) {
+  .chat-messages {
+    padding-top: 140px;
+  }
+}

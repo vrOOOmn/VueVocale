@@ -361,7 +361,15 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: "flex-start",
     // Symmetric side padding matching Chat's header inset, and enough top
     // clearance to roughly line up with the fixed account avatar (top:16).
-    padding: "20px 16px",
+    paddingTop: 20,
+    paddingLeft: 16,
+    paddingRight: 16,
+    // The bottom nav is position:fixed (68px tall + 10px bottom margin) and
+    // floats over whatever's scrolled beneath it — without this clearance
+    // the camera box's bottom edge (and its capture button) ends up
+    // permanently hidden under the nav once the camera is large enough to
+    // reach the bottom of the viewport, which happens routinely on desktop.
+    paddingBottom: 110,
     gap: "24px",
     background: "transparent",
   },

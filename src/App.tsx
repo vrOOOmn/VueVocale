@@ -50,10 +50,25 @@ export default function App({ user }: { user: AuthedUser }) {
           style={{
             width: "100%",
             flex: 1,
+            minHeight: 0,
+            display: "flex",
+            flexDirection: "column",
             overflow: "visible",
           }}
         >
-          <div role="tabpanel" id="panel-scanner" aria-labelledby="tab-scanner" hidden={activeTab !== "scanner"}>
+          {/* These wrappers exist only for the ARIA tabpanel relationship —
+              they must pass the parent's height straight through (flex:1,
+              minHeight:0, full flex column) or Chat's internal height:100%
+              scroll container collapses to content height instead of the
+              viewport, breaking its fixed header/input positioning and
+              auto-scroll. */}
+          <div
+            role="tabpanel"
+            id="panel-scanner"
+            aria-labelledby="tab-scanner"
+            hidden={activeTab !== "scanner"}
+            style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}
+          >
             {activeTab === "scanner" && (
               <Scanner
                 user={user}
@@ -65,7 +80,13 @@ export default function App({ user }: { user: AuthedUser }) {
             )}
           </div>
 
-          <div role="tabpanel" id="panel-chat" aria-labelledby="tab-chat" hidden={activeTab !== "chat"}>
+          <div
+            role="tabpanel"
+            id="panel-chat"
+            aria-labelledby="tab-chat"
+            hidden={activeTab !== "chat"}
+            style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}
+          >
             {activeTab === "chat" && (
               <Chat
                 topic={chatContext.label}

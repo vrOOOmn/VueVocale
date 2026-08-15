@@ -1,5 +1,5 @@
 import React from "react";
-import { IoArrowUndoOutline, IoWarningOutline } from "react-icons/io5";
+import { IoReloadOutline, IoWarningOutline } from "react-icons/io5";
 import { colors, spacing, borderRadius, typography } from "../theme";
 
 type Props = {
@@ -27,11 +27,16 @@ export default function PhotoPreviewSection({
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={photoDataUrl} alt="Camera preview" style={styles.preview} />
 
-      {/* Detected-object chip, overlaid on the photo like the landing page's
-          "une orange" chip — matches the app-wide dark-chip convention. */}
+      {/* Detected-object card, overlaid on the photo — dark chip convention,
+          scaled up into a proper eyebrow/word/translation card. */}
       {detectedLabel && (
-        <div style={styles.chip}>
-          {detectedLabel} / {englishLabel}
+        <div style={styles.detectionCard}>
+          <div style={styles.detectionEyebrowRow}>
+            <span style={styles.detectionDot} />
+            <span style={styles.detectionEyebrow}>Sujet détecté</span>
+          </div>
+          <div style={styles.detectionMain}>{detectedLabel}</div>
+          {englishLabel && <div style={styles.detectionSub}>{englishLabel}</div>}
         </div>
       )}
 
@@ -58,7 +63,7 @@ export default function PhotoPreviewSection({
               title="Reprendre la photo / Retake photo"
               style={styles.retakeBtn}
             >
-              <IoArrowUndoOutline size={22} color={colors.textLight} />
+              <IoReloadOutline size={22} color={colors.textLight} />
             </button>
           </div>
         </div>
@@ -87,18 +92,50 @@ const styles: Record<string, React.CSSProperties> = {
     display: "block",
     background: "#000",
   },
-  chip: {
+  detectionCard: {
     position: "absolute",
     top: spacing.md,
     left: spacing.md,
+    maxWidth: "calc(100% - 32px)",
     background: colors.navy,
+    borderRadius: borderRadius.lg,
+    padding: "16px 20px",
+    boxShadow: "0 12px 30px rgba(17, 27, 63, 0.35)",
+  },
+  detectionEyebrowRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 6,
+  },
+  detectionDot: {
+    width: 6,
+    height: 6,
+    flexShrink: 0,
+    borderRadius: "50%",
+    background: colors.skyAI,
+  },
+  detectionEyebrow: {
+    fontFamily: typography.label.fontFamily,
+    fontSize: 11,
+    fontWeight: 700,
+    letterSpacing: "0.08em",
+    textTransform: "uppercase" as const,
+    color: colors.skyAI,
+  },
+  detectionMain: {
+    fontFamily: typography.header.fontFamily,
+    fontSize: 22,
+    fontWeight: 700,
     color: colors.textLight,
+    lineHeight: 1.2,
+    overflowWrap: "break-word" as const,
+  },
+  detectionSub: {
     fontFamily: typography.body.fontFamily,
-    fontSize: 14,
-    fontWeight: 600,
-    borderRadius: borderRadius.round,
-    padding: "8px 14px",
-    boxShadow: "0 4px 14px rgba(17, 27, 63, 0.25)",
+    fontSize: 13,
+    color: "rgba(255,255,255,0.6)",
+    marginTop: 2,
   },
   dialogOverlay: {
     position: "absolute",

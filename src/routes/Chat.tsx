@@ -217,7 +217,12 @@ export default function Chat({
   // --- Scroll to bottom ---
   useLayoutEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [displayMessages.length, sendTextMutation.isPending, photoReplyPending]);
+  }, [
+    displayMessages.length,
+    sendTextMutation.isPending,
+    photoReplyPending,
+    retryReplyMutation.isPending,
+  ]);
 
   useLayoutEffect(() => {
     const handleNewPhoto = async () => {
@@ -376,40 +381,47 @@ export default function Chat({
 
   return (
     <main style={styles.container}>
-      <div style={styles.header}>
-        <div style={styles.headerLeft}>
-          {contextLabel && <span style={styles.contextPill}>Contexte · {contextLabel}</span>}
+      <div className="chat-header">
+        <div style={{ ...styles.headerLeft, gridArea: "context" }}>
+          {contextLabel && (
+            <span style={styles.contextPill}>
+              <span style={styles.liveDot} />
+              Contexte · {contextLabel}
+            </span>
+          )}
         </div>
-        <div style={styles.headerCenter}>
-          <button
-            type="button"
-            onClick={clearChat}
-            disabled={messages.length === 0}
-            title="Effacer la conversation"
-            aria-label="Effacer la conversation / Clear conversation"
-            style={{
-              ...styles.clearButton,
-              opacity: messages.length === 0 ? 0.4 : 1,
-              cursor: messages.length === 0 ? "default" : "pointer",
-            }}
-          >
-            <IoTrashOutline size={16} />
-          </button>
-          <button
-            type="button"
-            onClick={() => setHistoryOpen(true)}
-            aria-label="Historique / History"
-            style={styles.historyButton}
-          >
-            🕘 <span className="chat-header-label">Historique</span>
-          </button>
-        </div>
-        <div style={styles.headerRight}>
+
+        <button
+          type="button"
+          onClick={clearChat}
+          disabled={messages.length === 0}
+          title="Effacer la conversation"
+          aria-label="Effacer la conversation / Clear conversation"
+          style={{
+            ...styles.clearButton,
+            gridArea: "delete",
+            opacity: messages.length === 0 ? 0.4 : 1,
+            cursor: messages.length === 0 ? "default" : "pointer",
+          }}
+        >
+          <IoTrashOutline size={16} />
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setHistoryOpen(true)}
+          aria-label="Historique / History"
+          style={{ ...styles.historyButton, gridArea: "historique" }}
+        >
+          🕘 <span>Historique</span>
+        </button>
+
+        <div style={{ ...styles.headerRight, gridArea: "streak" }}>
           {streak > 0 && <span style={styles.streakBadge}>🔥 {streak}</span>}
         </div>
       </div>
 
-      <div style={styles.messages}>
+      <div className="chat-messages" style={styles.messages}>
         {messagesPending ? (
           <>
             <div className="skeleton" style={styles.skeletonBot} />
@@ -607,46 +619,24 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: "column",
     position: "relative",
   },
-  header: {
-    // Fixed like the input bar below — a normal in-flow header can end up
-    // scrolling away with the message list on mobile browsers where the
-    // 100%-height flex containment doesn't reliably hold (100svh/inner-scroll
-    // quirks), even though it looks contained in desktop devtools.
-    position: "fixed",
-    top: 0,
-    left: 0,
-    right: 0,
-    display: "grid",
-    // minmax(0, 1fr), not plain 1fr — a plain 1fr track's automatic minimum
-    // is its content's min-content size, which for nowrap text is its full
-    // width, so the Contexte pill was overflowing into the center column
-    // instead of actually shrinking. minmax(0, 1fr) forces the track's
-    // floor to 0 so the ellipsis/overflow rules below can actually apply.
-    gridTemplateColumns: "minmax(0, 1fr) auto minmax(0, 1fr)",
-    alignItems: "center",
-    gap: 8,
-    // Right padding clears the fixed account icon (40px circle at
-    // top:16/right:16) so header buttons never sit underneath it.
-    padding: `${spacing.md}px 64px ${spacing.sm}px ${spacing.md}px`,
-    zIndex: 100,
-  },
   headerLeft: {
     display: "flex",
     justifySelf: "start",
     minWidth: 0,
-    overflow: "hidden",
-  },
-  headerCenter: {
-    display: "flex",
-    alignItems: "center",
-    gap: 8,
-    justifySelf: "center",
+    // Deliberately no overflow:hidden here — box-shadow is part of the
+    // pill's own rendered box, and clipping this wrapper clipped the
+    // shadow too, leaving a hard rectangular seam around the pill instead
+    // of a smooth fade. minWidth:0 alone is what the grid track needs to
+    // shrink correctly; contextPill's own overflow:hidden handles ellipsis.
   },
   headerRight: {
     display: "flex",
     justifySelf: "end",
   },
   contextPill: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 6,
     fontSize: 13.5,
     fontWeight: 600,
     color: colors.navy,
@@ -661,6 +651,14 @@ const styles: Record<string, React.CSSProperties> = {
     textOverflow: "ellipsis",
     maxWidth: "100%",
   },
+  liveDot: {
+    width: 7,
+    height: 7,
+    flexShrink: 0,
+    borderRadius: "50%",
+    background: colors.mint,
+    boxShadow: `0 0 0 3px rgba(30, 167, 131, 0.18)`,
+  },
   streakBadge: {
     display: "flex",
     alignItems: "center",
@@ -673,6 +671,10 @@ const styles: Record<string, React.CSSProperties> = {
     boxShadow: "0 8px 20px rgba(184, 134, 58, 0.35)",
   },
   historyButton: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
     fontSize: 13.5,
     fontWeight: 600,
     color: colors.navy,
@@ -702,7 +704,9 @@ const styles: Record<string, React.CSSProperties> = {
     flex: 1,
     overflowY: "auto",
     padding: spacing.md,
-    paddingTop: 88,
+    // paddingTop is set in CSS (.chat-messages) — it has to be taller on
+    // mobile where the header wraps to two rows (Contexte/delete/streak,
+    // then a full-width Historique row) versus desktop's single row.
     paddingBottom: 160,
     display: "flex",
     flexDirection: "column",
