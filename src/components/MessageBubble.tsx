@@ -118,10 +118,6 @@ export default function MessageBubble({
                     Échec de la vérification.
                   </span>
                 )}
-
-                {m.grammarStatus === "ok" && (
-                  <span style={{ fontSize: 12, color: "white", opacity: 0.7 }}>✓ Bien !</span>
-                )}
               </div>
             )}
 
@@ -192,6 +188,25 @@ export default function MessageBubble({
           }}
         >
           ➡ {m.grammarFix}
+        </div>
+      )}
+
+      {m.grammarStatus === "ok" && (
+        // Same shape as the correction card above — green instead of rouge,
+        // since nothing needed fixing.
+        <div
+          style={{
+            marginTop: 6,
+            padding: "10px 14px",
+            borderRadius: borderRadius.md,
+            background: "rgba(30, 167, 131, 0.08)",
+            border: `1px solid ${colors.mint}`,
+            fontSize: 13,
+            color: colors.mint,
+            fontWeight: 600,
+          }}
+        >
+          ✓ Bien !
         </div>
       )}
       </div>

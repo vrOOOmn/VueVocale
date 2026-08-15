@@ -1,4 +1,5 @@
 import React from "react";
+import { IoRepeat } from "react-icons/io5";
 import { colors, spacing, borderRadius, typography } from "../theme";
 
 type Props = {
@@ -28,27 +29,21 @@ export default function PhotoPreviewSection({
         </div>
       )}
 
-      {/* Confirm/retake card */}
+      {/* Confirm/retake — two buttons, no question. */}
       {detectedLabel && (
         <div style={styles.dialogOverlay}>
-          <div style={styles.dialogCard}>
-            <p style={styles.subtitle}>
-              Souhaitez-vous en parler en français ? / Do you want to talk about
-              it in French?
-            </p>
-            <div style={styles.buttonRow}>
-              <button className="photo-preview-btn" onClick={onChat} style={styles.primaryBtn}>
-                Oui, parlons-en / Yes, let&apos;s talk
-              </button>
-              <button
-                className="photo-preview-btn"
-                onClick={handleRetakePhoto}
-                style={styles.secondaryBtn}
-              >
-                Reprendre la photo / Retake Photo
-              </button>
-            </div>
-          </div>
+          <button className="photo-preview-btn" onClick={onChat} style={styles.primaryBtn}>
+            Oui, parlons-en / Yes, let&apos;s talk
+          </button>
+          <button
+            className="photo-preview-btn round-btn"
+            onClick={handleRetakePhoto}
+            aria-label="Reprendre la photo / Retake photo"
+            title="Reprendre la photo / Retake photo"
+            style={styles.retakeBtn}
+          >
+            <IoRepeat size={24} color={colors.textLight} />
+          </button>
         </div>
       )}
     </div>
@@ -88,34 +83,14 @@ const styles: Record<string, React.CSSProperties> = {
   },
   dialogOverlay: {
     position: "absolute",
-    inset: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     display: "flex",
-    justifyContent: "center",
-    alignItems: "flex-end",
-    paddingBottom: spacing.lg,
-    background: "rgba(0,0,0,0.0)", // no dark overlay
-  },
-  dialogCard: {
-    background: "rgba(255,255,255,0.92)",
-    backdropFilter: "blur(8px)",
-    borderRadius: borderRadius.lg,
-    boxShadow: "0 8px 20px rgba(0,0,0,0.15)",
-    padding: spacing.lg,
-    textAlign: "center",
-    width: "90%",
-    maxWidth: 400,
-    animation: "fadeIn 0.3s ease-out",
-  },
-  subtitle: {
-    ...typography.message,
-    color: colors.navy,
-    margin: 0,
-    marginBottom: spacing.sm,
-  },
-  buttonRow: {
-    display: "flex",
+    alignItems: "center",
     gap: spacing.sm,
-    justifyContent: "center",
+    padding: spacing.lg,
+    animation: "fadeIn 0.3s ease-out",
   },
   primaryBtn: {
     flex: 1,
@@ -123,19 +98,22 @@ const styles: Record<string, React.CSSProperties> = {
     color: colors.textLight,
     border: "none",
     borderRadius: borderRadius.lg,
-    padding: "14px 16px",
+    padding: "16px 16px",
     fontWeight: 600,
     cursor: "pointer",
     boxShadow: "0 8px 20px rgba(49, 104, 255, 0.3)",
   },
-  secondaryBtn: {
-    flex: 1,
-    background: colors.paper,
-    color: colors.navy,
-    border: `1px solid ${colors.hairline}`,
-    borderRadius: borderRadius.lg,
-    padding: "14px 16px",
-    fontWeight: 600,
+  retakeBtn: {
+    flexShrink: 0,
+    width: 52,
+    height: 52,
+    borderRadius: borderRadius.round,
+    background: colors.navy,
+    border: "none",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
     cursor: "pointer",
+    boxShadow: "0 8px 20px rgba(17, 27, 63, 0.3)",
   },
 };

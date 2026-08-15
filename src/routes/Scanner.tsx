@@ -269,15 +269,13 @@ export default function Scanner({
           <h1 style={styles.title}>VueVocale</h1>
         </div>
 
-        <p style={styles.subtitle}>
-          A conversational French learning companion
-        </p>
-        <div style={styles.heroRule} />
-        <p style={styles.description}>
-          VueVocale helps you level up your French speaking skills by engaging
-          in spontaneous conversations about the world around you. Capture an
-          object, and your AI companion will start chatting with you naturally!
-        </p>
+        <div style={styles.introCard}>
+          <h2 style={styles.introTitle}>Find something to talk about.</h2>
+          <p style={styles.introSubtitle}>
+            Point your camera at an object. VueVocale finds the French word
+            and starts a conversation about it.
+          </p>
+        </div>
       </div>
 
       {photoDataUrl ? (
@@ -340,48 +338,45 @@ const styles: Record<string, React.CSSProperties> = {
     background: "transparent",
   },
   hero: {
-    textAlign: "center" as const,
-    // border: '4px solid ' + '#000',
+    textAlign: "left" as const,
     width: "clamp(15rem, 80vw, 50rem)",
+    display: "flex",
+    flexDirection: "column" as const,
+    gap: 14,
   },
   heroHeader: {
     display: "flex",
     alignItems: "center",
-    justifyContent: "center",
-    gap: "min(5%, 20px)",
-    padding: ".8em",
-    // border: '4px solid ' + '#000',
+    justifyContent: "flex-start",
+    gap: 10,
   },
   logo: {
-    width: "min(13vw, 4.3rem)",
-    height: "auto",
+    width: 30,
+    height: 30,
   },
   title: {
-    fontSize: "min(9vw, 3.1rem)",
+    fontSize: 21,
     fontWeight: 700,
-    color: colors.electric,
+    color: colors.navy,
     margin: 0, // reset
   },
-  subtitle: {
-    fontSize: "clamp(.9rem, 3.6vw, 1.1rem)",
-    color: colors.textMuted,
-    fontStyle: "italic",
-    marginTop: 4,
+  introCard: {
+    background: colors.paper,
+    border: `1px solid ${colors.hairline}`,
+    borderRadius: borderRadius.xl,
+    padding: "18px 20px",
   },
-  heroRule: {
-    width: "min(70%, 220px)",
-    height: 1,
-    background: colors.brass,
-    margin: "14px auto 0",
+  introTitle: {
+    fontSize: "clamp(1.15rem, 4.4vw, 1.4rem)",
+    fontWeight: 700,
+    color: colors.navy,
+    margin: 0,
   },
-  description: {
-    fontSize: "clamp(1.0rem, 4vw, 1.2rem)",
+  introSubtitle: {
+    fontSize: "clamp(0.9rem, 3.6vw, 1rem)",
     color: colors.textMuted,
-    marginTop: 10,
-    lineHeight: 1.6,
-    backgroundColor: colors.paper,
-    padding: 14,
-    borderRadius: 16,
+    marginTop: 8,
+    lineHeight: 1.55,
   },
   cameraBox: {
     width: "clamp(15rem, 70vw, 23rem)",
