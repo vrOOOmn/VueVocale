@@ -20,7 +20,7 @@ export default function PhotoPreviewSection({
   onChat,
 }: Props) {
   return (
-    <div style={styles.container}>
+    <div className="scan-frame" style={styles.container}>
       {/* Plain <img>, deliberately not next/image: this is a client-generated
           data: URL from a canvas capture, not a fetchable asset — there's no
           network request for next/image to optimize away. */}
@@ -74,9 +74,9 @@ export default function PhotoPreviewSection({
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
-    // Matches Scanner's cameraBox exactly so confirming a photo doesn't
-    // visibly resize the frame it's sitting in.
-    width: "clamp(18rem, 88vw, 30rem)",
+    // Width comes from the .scan-frame class (shared with Scanner's
+    // cameraBox) — not set here, since an inline style would silently win
+    // over the class's desktop media query.
     position: "relative" as const,
     borderRadius: borderRadius.lg,
     overflow: "hidden",

@@ -36,7 +36,14 @@ export default function App({ user }: { user: AuthedUser }) {
       <UserMenu user={user} />
       <div
         style={{
-          minHeight: "100svh", // ✅ allow page to grow and scroll
+          // height, not minHeight: Chat's internal .chat-messages scroll
+          // container only actually scrolls if this ancestor's height is
+          // capped rather than a floor — a minHeight lets the box keep
+          // growing to fit content instead, which silently turns off every
+          // percentage/flex height below it (including Chat's height:100%),
+          // collapsing the "internal scroll" story into "nothing scrolls."
+          // Scanner still gets the same visual result on its own overflow.
+          height: "100svh",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",

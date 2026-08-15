@@ -318,7 +318,7 @@ export default function Scanner({
           }}
         />
       ) : (
-        <div style={styles.cameraBox}>
+        <div className="scan-frame" style={styles.cameraBox}>
           <video
             ref={videoRef}
             style={styles.video}
@@ -415,10 +415,9 @@ const styles: Record<string, React.CSSProperties> = {
     lineHeight: 1.55,
   },
   cameraBox: {
-    // Noticeably bigger — the old clamp left a lot of dead space below the
-    // camera on tall phone viewports since height only ever derived from
-    // this width via the aspect ratio.
-    width: "clamp(18rem, 88vw, 30rem)",
+    // Width comes from the .scan-frame class (shared with
+    // PhotoPreviewSection, shrinks on desktop) — not set here, since an
+    // inline style would silently win over the class's media query.
     position: "relative" as const,
     borderRadius: borderRadius.lg,
     overflow: "hidden",

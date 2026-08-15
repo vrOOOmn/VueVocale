@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   IoSend,
   IoMic,
-  IoMicOutline,
+  IoOptionsOutline,
   IoStopSharp,
   IoTrashOutline,
   IoWarningOutline,
@@ -55,7 +55,7 @@ export default function Chat({
   const textRef = useRef<HTMLTextAreaElement | null>(null);
   const lastPhotoRef = useRef<string | null>(null);
 
-  const bottomRef = useRef<HTMLDivElement | null>(null);
+  const messagesContainerRef = useRef<HTMLDivElement | null>(null);
 
   const { playingId, togglePlay, mergeAudioState } = useMessageAudioPlayback(user.id);
 
@@ -215,10 +215,30 @@ export default function Chat({
   });
 
   // --- Scroll to bottom ---
+  // Photo messages load their <img> asynchronously — scrollHeight measured
+  // right when this effect runs doesn't yet include an image that hasn't
+  // decoded, so a single scroll-then-done can land short with nothing to
+  // correct it once the image actually finishes loading. Re-applying the
+  // same instant scrollTop a few more times over the following second
+  // catches that without needing to track every possible cause of a height
+  // change individually (a ResizeObserver on the content wrapper was tried
+  // here first — in practice its callback never fired for this skeleton-to-
+  // real-content swap, for reasons not fully pinned down — so this simpler,
+  // empirically-verified approach replaced it).
   useLayoutEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    const scrollToBottom = () => {
+      container.scrollTop = container.scrollHeight;
+    };
+
+    scrollToBottom();
+    const timers = [50, 200, 600, 1500].map((delay) => setTimeout(scrollToBottom, delay));
+    return () => timers.forEach(clearTimeout);
   }, [
     displayMessages.length,
+    messagesPending,
     sendTextMutation.isPending,
     photoReplyPending,
     retryReplyMutation.isPending,
@@ -421,7 +441,7 @@ export default function Chat({
         </div>
       </div>
 
-      <div className="chat-messages" style={styles.messages}>
+      <div ref={messagesContainerRef} className="chat-messages" style={styles.messages}>
         {messagesPending ? (
           <>
             <div className="skeleton" style={styles.skeletonBot} />
@@ -472,7 +492,6 @@ export default function Chat({
               </button>
             </div>
           )}
-        <div ref={bottomRef} />
       </div>
 
       <form
@@ -501,7 +520,7 @@ export default function Chat({
             className="mic-picker-btn"
             style={styles.micPickerButton}
           >
-            <IoMicOutline size={16} style={{ flexShrink: 0 }} />
+            <IoOptionsOutline size={16} style={{ flexShrink: 0 }} />
             <span className="chat-header-label" style={styles.micPickerLabel}>
               {selectedMicLabel}
             </span>
@@ -671,6 +690,11 @@ const styles: Record<string, React.CSSProperties> = {
     boxShadow: "0 8px 20px rgba(184, 134, 58, 0.35)",
   },
   historyButton: {
+    // Grid items stretch to fill their area by default — historique's area
+    // spans the full row width on mobile (its own dedicated row), which
+    // stretched the button edge-to-edge instead of hugging its content like
+    // every other header pill. justifySelf:start opts back out of that.
+    justifySelf: "start",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -711,7 +735,6 @@ const styles: Record<string, React.CSSProperties> = {
     display: "flex",
     flexDirection: "column",
     gap: spacing.md,
-    scrollBehavior: "smooth",
   },
   message: {
     padding: "10px 14px",

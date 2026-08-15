@@ -674,3 +674,20 @@ textarea:focus {
     padding-top: 140px;
   }
 }
+
+/* Scanner's camera box and PhotoPreviewSection's photo frame share this
+   exact width so confirming a photo doesn't visibly resize the frame it's
+   sitting in. The mobile clamp intentionally runs large (88vw) to fill
+   phone viewports, but on desktop that clamp's max (30rem/480px, ~640px
+   tall at the 3:4 aspect ratio) reads as oversized against the rest of the
+   page — shrink it well below that once there's real desktop width to work
+   with instead of relying on scroll to reach the controls beneath it. */
+.scan-frame {
+  width: clamp(18rem, 88vw, 30rem);
+}
+
+@media (min-width: 768px) {
+  .scan-frame {
+    width: 20rem;
+  }
+}
