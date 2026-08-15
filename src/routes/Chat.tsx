@@ -450,7 +450,10 @@ export default function Chat({
           disabled={!conversationId || messagesPending}
           style={{
             ...styles.micButton,
-            background: recording ? colors.error : colors.accent,
+            // "Blue means action or listening" — an active recording is
+            // listening, so it takes electric, not rouge (rouge is reserved
+            // for corrections/destructive actions only).
+            background: recording ? colors.electric : colors.brass,
           }}
         >
           <div
@@ -527,7 +530,7 @@ const styles: Record<string, React.CSSProperties> = {
   streakBadge: {
     fontSize: 12.5,
     fontWeight: 700,
-    color: colors.secondary,
+    color: colors.navy,
     background: "rgba(184, 134, 58, 0.18)",
     border: "1px solid rgba(184, 134, 58, 0.4)",
     borderRadius: borderRadius.round,
@@ -536,9 +539,9 @@ const styles: Record<string, React.CSSProperties> = {
   historyButton: {
     fontSize: 12.5,
     fontWeight: 600,
-    color: colors.secondary,
+    color: colors.navy,
     background: "rgba(255,255,255,0.7)",
-    border: `1px solid ${colors.borderSubtle}`,
+    border: `1px solid ${colors.hairline}`,
     borderRadius: borderRadius.round,
     padding: "6px 12px",
     cursor: "pointer",
@@ -549,9 +552,9 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: "center",
     width: 30,
     height: 30,
-    color: colors.error,
+    color: colors.rouge,
     background: "rgba(255,255,255,0.7)",
-    border: `1px solid ${colors.borderSubtle}`,
+    border: `1px solid ${colors.hairline}`,
     borderRadius: borderRadius.round,
     padding: 0,
   },
@@ -606,7 +609,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontFamily: typography.message.fontFamily,
     lineHeight: 1.4,
     outline: "none",
-    color: colors.text,
+    color: colors.navy,
   },
   micControlGroup: {
     position: "relative",
@@ -619,7 +622,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: 20,
     border: "1px solid rgba(59,107,243,0.16)",
     background: "rgba(255,255,255,0.92)",
-    color: colors.text,
+    color: colors.navy,
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
@@ -663,7 +666,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: 12,
     padding: "9px 10px",
     background: "transparent",
-    color: colors.text,
+    color: colors.navy,
     textAlign: "left",
     fontSize: 13,
     cursor: "pointer",
@@ -673,7 +676,7 @@ const styles: Record<string, React.CSSProperties> = {
     height: 44,
     borderRadius: "50%",
     border: "none",
-    background: colors.primary,
+    background: colors.electric,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",

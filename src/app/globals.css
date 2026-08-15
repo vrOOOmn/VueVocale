@@ -1,26 +1,31 @@
-/* Global styles */
+/* Global styles — mirrors the subset of src/theme.ts consumed by CSS class
+   selectors below. Full source of truth for component styling is theme.ts,
+   which itself mirrors the Figma "VueVocale Unified UI System" file. */
 :root {
-  --color-primary: #1b3a8c;
-  --color-primary-gradient: linear-gradient(135deg, #4a63c7, #1b3a8c);
-  --color-secondary: #2e2a24;
-  --color-accent: #b8863a;
-  --color-bg: #faf6ef;
-  --color-surface: #ffffff;
-  --color-text: #211e1a;
+  --color-navy: #111b3f;
+  --color-ivory: #faf4ea;
+  --color-paper: #fffdf9;
+  --color-limestone: #e8e1d6;
+  --color-electric: #3168ff;
+  --color-brass: #b98a3d;
+  --color-rouge: #b94a48;
+  --color-hairline: #d9d1c4;
+  --color-text-muted: #687080;
   --color-text-light: #ffffff;
-  --color-error: #c1432e;
-  --color-border: #e4dccb;
 
   --space-xs: 4px;
   --space-sm: 8px;
+  --space-smd: 12px;
   --space-md: 16px;
   --space-lg: 24px;
   --space-xl: 32px;
+  --space-xxl: 48px;
 
+  /* 12px plaques, 18px controls, 28px panels — per Figma design rules. */
   --radius-sm: 8px;
   --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 24px;
+  --radius-lg: 18px;
+  --radius-xl: 28px;
   --radius-round: 9999px;
 }
 
@@ -40,10 +45,10 @@ html {
 
 body {
   margin: 0;
-  background: var(--color-bg);
-  color: var(--color-text);
+  background: var(--color-ivory);
+  color: var(--color-navy);
   font-family:
-    "DM Sans",
+    Inter,
     system-ui,
     -apple-system,
     Segoe UI,
@@ -62,9 +67,9 @@ a {
 
 button {
   font: inherit;
-  background: var(--color-surface);
-  color: var(--color-text);
-  border: 1px solid var(--color-border);
+  background: var(--color-paper);
+  color: var(--color-navy);
+  border: 1px solid var(--color-hairline);
   border-radius: var(--radius-md);
   padding: 10px 16px;
   cursor: pointer;
@@ -73,11 +78,11 @@ button {
 
 button:hover {
   transform: translateY(-1px);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 6px rgba(17, 27, 63, 0.08);
 }
 
 button:focus {
-  outline: 2px solid var(--color-primary);
+  outline: 2px solid var(--color-electric);
   outline-offset: 2px;
 }
 
@@ -86,8 +91,8 @@ textarea {
 }
 
 textarea:focus {
-  box-shadow: 0 0 0 2px rgba(27, 58, 138, 0.25);
-  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(49, 104, 255, 0.25);
+  border-color: var(--color-electric);
 }
 
 .container {
@@ -97,11 +102,11 @@ textarea:focus {
 }
 
 .card {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  background: var(--color-paper);
+  border: 1px solid var(--color-hairline);
   border-radius: var(--radius-lg);
   padding: var(--space-md);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 3px rgba(17, 27, 63, 0.08);
   transition:
     box-shadow 0.2s ease,
     transform 0.2s ease;
@@ -109,7 +114,7 @@ textarea:focus {
 
 .card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 12px rgba(17, 27, 63, 0.08);
 }
 
 @keyframes typingBounce {
@@ -128,7 +133,7 @@ textarea:focus {
 .typing-dots span {
   width: 10px;
   height: 10px;
-  background: var(--color-primary);
+  background: var(--color-electric);
   border-radius: 50%;
   animation: typingBounce 1.4s infinite ease-in-out both;
 }
@@ -139,6 +144,17 @@ textarea:focus {
 
 .typing-dots span:nth-child(2) {
   animation-delay: -0.16s;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Landing page */
@@ -162,31 +178,31 @@ textarea:focus {
 }
 
 .lp-btn-primary {
-  background: var(--color-primary-gradient);
+  background: var(--color-electric);
   color: #fff;
-  box-shadow: 0 10px 30px rgba(27, 58, 138, 0.35);
+  box-shadow: 0 10px 30px rgba(49, 104, 255, 0.3);
 }
 
 .lp-btn-primary:hover {
-  box-shadow: 0 14px 36px rgba(27, 58, 138, 0.45);
+  box-shadow: 0 14px 36px rgba(49, 104, 255, 0.4);
 }
 
 .lp-btn-secondary {
-  background: #fff;
-  color: var(--color-secondary);
-  border: 1px solid var(--color-border);
+  background: var(--color-paper);
+  color: var(--color-navy);
+  border: 1px solid var(--color-hairline);
   box-shadow: none;
 }
 
 .lp-btn-secondary:hover {
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 14px rgba(17, 27, 63, 0.08);
 }
 
 .lp-nav-link {
-  color: var(--color-secondary);
+  color: var(--color-navy);
   font-weight: 500;
   font-size: 15px;
-  opacity: 0.8;
+  opacity: 0.75;
   transition: opacity 0.2s ease;
 }
 
@@ -195,8 +211,8 @@ textarea:focus {
 }
 
 .lp-feature-card {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  background: var(--color-paper);
+  border: 1px solid var(--color-hairline);
   border-radius: var(--radius-xl);
   padding: 24px;
   transition:
@@ -206,15 +222,23 @@ textarea:focus {
 
 .lp-feature-card:hover {
   transform: translateY(-3px);
-  box-shadow: 0 12px 28px rgba(27, 58, 138, 0.12);
+  box-shadow: 0 12px 28px rgba(17, 27, 63, 0.1);
 }
 
 .lp-step-card {
   position: relative;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  background: var(--color-paper);
+  border: 1px solid var(--color-hairline);
   border-radius: var(--radius-xl);
   padding: 28px 24px;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.lp-step-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px rgba(17, 27, 63, 0.1);
 }
 
 @keyframes lp-bubble-in {
@@ -230,4 +254,31 @@ textarea:focus {
 
 .lp-bubble {
   animation: lp-bubble-in 0.5s ease both;
+}
+
+/* Round icon buttons (scanner shutter/flip, photo preview actions) —
+   working :hover/:active, since inline React styles can't express them. */
+.round-btn {
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.round-btn:hover {
+  transform: scale(1.06);
+}
+
+.round-btn:active {
+  transform: scale(0.96);
+}
+
+.photo-preview-btn {
+  transition:
+    transform 0.2s ease,
+    filter 0.2s ease;
+}
+
+.photo-preview-btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.04);
 }

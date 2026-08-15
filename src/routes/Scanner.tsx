@@ -237,7 +237,7 @@ export default function Scanner({
   if (streamError && !permissionGranted) {
     return (
       <div style={styles.permissionContainer}>
-        <IoWarningOutline size={32} color={colors.secondary} />
+        <IoWarningOutline size={32} color={colors.navy} />
         <p style={styles.permissionText}>{streamError}</p>
         <button style={styles.permissionButton} onClick={() => startStream()}>
           Grant Permission
@@ -304,12 +304,19 @@ export default function Scanner({
           <canvas ref={canvasRef} style={{ display: "none" }} />
           <div style={styles.controls}>
             <button
+              className="round-btn"
               style={styles.roundBtnSecondary}
               onClick={toggleCameraFacing}
+              aria-label="Changer de caméra"
             >
               <IoRepeat size={24} color={colors.textLight} />
             </button>
-            <button style={styles.roundBtnPrimary} onClick={handleTakePhoto}>
+            <button
+              className="round-btn"
+              style={styles.roundBtnPrimary}
+              onClick={handleTakePhoto}
+              aria-label="Prendre une photo"
+            >
               <IoCamera size={28} color={colors.textLight} />
             </button>
           </div>
@@ -351,21 +358,21 @@ const styles: Record<string, React.CSSProperties> = {
   title: {
     fontSize: "min(9vw, 3.1rem)",
     fontWeight: 700,
-    color: colors.primarySolid,
+    color: colors.electric,
     margin: 0, // reset
   },
   subtitle: {
     fontSize: "clamp(.9rem, 3.6vw, 1.1rem)",
-    color: colors.textSubtle,
+    color: colors.textMuted,
     fontStyle: "italic",
     marginTop: 4,
   },
   description: {
     fontSize: "clamp(1.0rem, 4vw, 1.2rem)",
-    color: colors.textSubtle,
+    color: colors.textMuted,
     marginTop: 10,
     lineHeight: 1.6,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.paper,
     padding: 14,
     borderRadius: 16,
   },
@@ -405,7 +412,7 @@ const styles: Record<string, React.CSSProperties> = {
   roundBtnSecondary: {
     padding: "clamp(8px, 3vw, 12px)", // responsive size
     borderRadius: borderRadius.round,
-    background: colors.secondary,
+    background: colors.navy,
     border: "none",
     display: "flex",
     alignItems: "center",
@@ -416,7 +423,7 @@ const styles: Record<string, React.CSSProperties> = {
   roundBtnPrimary: {
     padding: "clamp(14px, 4vw, 18px)",
     borderRadius: borderRadius.round,
-    background: colors.primary,
+    background: colors.electric,
     border: "none",
     display: "flex",
     alignItems: "center",
@@ -431,7 +438,7 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: "center",
     justifyContent: "center",
     background: "transparent",
-    color: colors.text,
+    color: colors.navy,
     paddingRight: spacing.lg,
     paddingLeft: spacing.lg,
     textAlign: "center" as const,
@@ -445,9 +452,9 @@ const styles: Record<string, React.CSSProperties> = {
     textAlign: "center" as const,
     gap: spacing.md,
   },
-  permissionText: { ...typography.body, color: colors.text, margin: 0 },
+  permissionText: { ...typography.body, color: colors.navy, margin: 0 },
   permissionButton: {
-    background: colors.primary,
+    background: colors.electric,
     color: colors.textLight,
     border: "none",
     borderRadius: borderRadius.md,

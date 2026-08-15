@@ -22,8 +22,8 @@ export default function ArchivedDayCard({
         gap: 6,
         width: "100%",
         textAlign: "left",
-        background: colors.surface,
-        border: `1px solid ${colors.borderSubtle}`,
+        background: colors.paper,
+        border: `1px solid ${colors.hairline}`,
         borderRadius: borderRadius.lg,
         padding: "14px 16px",
         cursor: "pointer",
@@ -34,7 +34,7 @@ export default function ArchivedDayCard({
           fontFamily: typography.header.fontFamily,
           fontWeight: 700,
           fontSize: 14,
-          color: colors.secondary,
+          color: colors.navy,
           textTransform: "capitalize",
         }}
       >
@@ -46,7 +46,7 @@ export default function ArchivedDayCard({
           style={{
             fontFamily: typography.body.fontFamily,
             fontSize: 13.5,
-            color: colors.textSubtle,
+            color: colors.textMuted,
             lineHeight: 1.4,
           }}
         >
@@ -54,7 +54,7 @@ export default function ArchivedDayCard({
         </span>
       )}
 
-      <span style={{ fontFamily: typography.body.fontFamily, fontSize: 12, color: colors.textFaint }}>
+      <span style={{ fontFamily: typography.body.fontFamily, fontSize: 12, color: colors.textMuted }}>
         {conversation.messageCount} messages · {conversation.grammarCorrectionCount} corrections
       </span>
     </button>
