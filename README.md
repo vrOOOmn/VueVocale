@@ -16,32 +16,61 @@ VueVocale is meant to feel less like a lesson and more like chatting with a supp
 
 ## **⚙️ App Architecture**
 
-`api/                         # Vercel serverless functions`  
-`├── chat.ts                  # Text conversation (gpt-4.1-nano)`  
-`├── grammar.ts               # Grammar check (gpt-4.1-nano)`  
-`├── stt.ts                   # Speech → text (gpt-4o-mini-transcribe)`  
-`├── tts.ts                   # Text → speech (gpt-4o-mini-tts)`  
-`└── vision.ts                # Object detection + translation`
+Built on **Next.js 15 (App Router)**, deployed on Vercel, with **Supabase** for auth, Postgres persistence, and file storage.
 
-`src/                         # Vite React frontend`  
-`├── main.tsx                 # App entry`  
-`├── App.tsx                  # Tab container (Chat / Scanner)`  
-`├── App.css                  # Global styles`  
-`├── theme.ts                 # Design tokens`  
-`├── routes/`  
-`│   ├── Chat.tsx             # Conversation UI (text + voice)`  
-`│   └── Scanner.tsx          # Camera + vision trigger`  
-`├── components/`  
-`│   └── PhotoPreviewSection.tsx  # Image preview / retake`  
-`└── lib/`  
-    `├── primaryAgent.ts      # /api/chat + /api/grammar client`  
-    `├── supabaseClient.ts    # Supabase init (storage/logs)`  
-    `├── audio/`  
-    `│   ├── useRecorder.ts   # Mic recording hook`  
-    `│   ├── transcribeSTT.ts # /api/stt client`  
-    `│   └── generateTTS.ts   # /api/tts client`  
-    `└── vision/`  
-        `└── detectObject.ts  # /api/vision client`
+```
+src/
+├── app/
+│   ├── page.tsx                # Public landing page
+│   ├── login/                  # Google OAuth sign-in (Supabase Auth)
+│   ├── auth/callback/          # OAuth code-exchange route
+│   ├── app/page.tsx            # Gated entry point — server-fetches the user, renders <App>
+│   └── api/                    # Route handlers (OpenAI calls live server-side only)
+│       ├── chat/                     # Text conversation (gpt-4.1-nano)
+│       ├── grammar/                  # Grammar check (gpt-4.1-nano)
+│       ├── stt/                      # Speech → text (gpt-4o-mini-transcribe)
+│       ├── tts/                      # Text → speech (gpt-4o-mini-tts)
+│       ├── vision/                   # Object detection + translation (gpt-4.1-nano, multimodal)
+│       └── conversations/ensure-active/  # Day-rollover + LLM-summarized archival
+├── middleware.ts                # Supabase session refresh, protects /app
+├── App.tsx                      # Tab container (Scanner / Chat) + user menu
+├── theme.ts                     # Design tokens ("Parisian Tech" system, see below)
+├── routes/
+│   ├── Scanner.tsx              # Camera capture + object detection
+│   └── Chat.tsx                 # Conversation UI (text + voice), daily session model
+├── components/
+│   ├── MessageBubble.tsx        # Shared message rendering (live + read-only)
+│   ├── ArchivedDaysPanel.tsx    # Read-only history of past days' conversations
+│   ├── PhotoPreviewSection.tsx  # Captured-photo confirm/retake
+│   └── UserMenu.tsx             # Account menu, sign out
+└── lib/
+    ├── supabase/                # Browser / server / middleware Supabase clients
+    ├── data/conversations.ts    # Supabase-backed data layer (messages, conversations)
+    ├── conversations/archiveConversation.ts  # Day-end LLM summary generation
+    ├── audio/                   # Recording, STT/TTS clients, playback hook
+    └── vision/detectObject.ts   # /api/vision client
+
+supabase/migrations/             # Numbered, idempotent SQL migrations (source of truth for schema)
+```
+
+---
+
+## **🔐 Auth & Data Model**
+
+- **Auth:** Supabase Auth with Google OAuth. `middleware.ts` protects everything under `/app`; the public landing page and `/login` are open.
+- **Sessions are daily, not per-chat.** Each user has exactly one *active* conversation at a time (enforced by a DB-level partial unique index), representing "today." On the next visit after a day boundary, that conversation is automatically archived — an LLM generates a short summary and topic tags — and a fresh one starts. There's no "New Chat" button by design; history is browsed read-only via the "Historique" panel, not managed as separate chats.
+- **Persistence:** messages, scanned photos (Supabase Storage), and generated TTS audio (also Storage, cached after first generation) all survive reloads. A streak counter tracks consecutive days with real activity, backed by a durable flag set on first message insert so clearing a day's chat doesn't reset it.
+- **Row Level Security** on every table, scoped to `auth.uid()`.
+
+---
+
+## **🎨 Design System**
+
+Visual identity ("Parisian Tech") is maintained in a companion Figma file and mirrored in `src/theme.ts` as the single source of truth for color/spacing/typography tokens — components consume tokens, not raw hex values.
+
+- **Typography:** DM Serif Display for brand/hero moments, Inter for everything else.
+- **Palette:** Navy, Ivory, Paper, Limestone, Electric (primary action), Brass, Rouge, Mint, Mist, Hairline — plus a five-color "tech accent layer" for AI/status UI.
+- **Rules:** Electric means action or listening; Rouge is reserved for corrections and destructive actions only; recognized objects get dark (Navy) chips; AI messages sit on Mist, user messages on Electric.
 
 ---
 
@@ -49,34 +78,57 @@ VueVocale is meant to feel less like a lesson and more like chatting with a supp
 
 ### **Scanner**
 
-In the Scanner tab, users capture an image using the device camera. VueVocale identifies a single primary object in the image and provides its French equivalent, giving users a clear visual and linguistic reference. This object then serves as context for conversation, helping ground interaction in something familiar rather than starting from abstract prompts.
+In the Scanner tab, users capture an image using the device camera. VueVocale identifies a single primary object in the image and provides its French equivalent, giving users a clear visual and linguistic reference. This object then serves as context for conversation, helping ground interaction in something familiar rather than starting from abstract prompts. The captured photo persists to Supabase Storage so it survives reload.
 
 ### **Conversation**
 
-The Conversation tab transitions users into a casual, French-only dialogue with an AI companion centered on the detected object or prior context. Users can interact using text or voice and receive responses as readable text or optional audio playback. The AI uses intermediate-level, conversational French and treats spoken input as natural speech rather than formal writing, encouraging free expression. Grammar feedback is available on demand, keeping the focus on communication while offering corrective support when needed.
+The Chat tab is a casual, French-only dialogue with an AI companion centered on the detected object or prior context. Users can interact using text or voice and receive responses as readable text or optional audio playback. The AI uses intermediate-level, conversational French and treats spoken input as natural speech rather than formal writing, encouraging free expression. Grammar feedback is available on demand, keeping the focus on communication while offering corrective support when needed.
 
 ---
 
 ## **💡 Key Features**
 
-* Camera-based object detection as conversation starters  
-* Context-aware French conversation for intermediate learners  
-* Speech-to-text input for hands-free interaction  
-* On-demand text-to-speech playback for listening practice  
-* Grammar validation for spoken and written text  
-* Mobile-first UI designed for frequent, lightweight use
+* Camera-based object detection as conversation starters
+* Context-aware French conversation for intermediate learners
+* Speech-to-text input for hands-free interaction
+* On-demand text-to-speech playback for listening practice, cached after first generation
+* Grammar validation for spoken and written text
+* Daily practice sessions with automatic day-end archival and LLM-generated summaries
+* Streak tracking and read-only conversation history
+* Google sign-in, per-user persistence, mobile-first UI
 
 ---
 
 ## **🧰 Tech Stack**
 
-* **Frontend:** React \+ TypeScript \+ Vite  
-* **Backend:** Vercel Serverless Functions  
-* **AI Platform:** OpenAI APIs  
-* **Audio:** Browser Media APIs for recording and playback  
-* **Deployment:** Vercel and Cloudflare
+* **Framework:** Next.js 15 (App Router) + TypeScript
+* **Auth & Data:** Supabase (Auth, Postgres, Storage), React Query for client-side data state
+* **AI Platform:** OpenAI APIs
+* **Audio:** Browser Media APIs for recording and playback
+* **Deployment:** Vercel
 
-The stack is chosen to keep latency low, isolate AI responsibilities, and allow fast iteration without coupling frontend logic to model behavior.
+---
+
+## **🚀 Getting Started**
+
+```bash
+npm install
+```
+
+Create `.env.local` with:
+
+```
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+OPENAI_API_KEY=
+```
+
+Run the migrations in `supabase/migrations/` (in order) against your Supabase project via the SQL editor, then set up Google as an auth provider in the Supabase dashboard (Authentication → Providers) using a Google Cloud OAuth client.
+
+```bash
+npm run dev
+```
 
 ---
 
@@ -84,13 +136,13 @@ The stack is chosen to keep latency low, isolate AI responsibilities, and allow 
 
 ### **Vision (Object Identification \+ Translation)**
 
-* **Model:** `gpt-4.1-nano` (multimodal)  
-* **Input:**  
-  * Single user-captured image  
-  * Low-detail image processing  
-* **Output:**  
-  * One English noun  
-  * One French equivalent  
+* **Model:** `gpt-4.1-nano` (multimodal)
+* **Input:**
+  * Single user-captured image
+  * Low-detail image processing
+* **Output:**
+  * One English noun
+  * One French equivalent
   * Strict JSON schema (no extra text, no articles)
 
 The vision system is intentionally constrained to return a single, unambiguous object. This keeps visual context lightweight and ensures the output can be immediately used as a conversational reference.
@@ -111,8 +163,8 @@ Text-based Conversation Model
 
 Text-to-Speech (TTS)
 
-* **STT:** `gpt-4o-mini-transcribe`  
-* **Conversation:** `gpt-4.1-nano`  
+* **STT:** `gpt-4o-mini-transcribe`
+* **Conversation:** `gpt-4.1-nano`
 * **TTS:** `gpt-4o-mini-tts`
 
 Each stage is handled by a model specialized for that task, allowing speech recognition, reasoning, and audio generation to be optimized independently. All conversational reasoning happens in text, keeping behavior predictable and consistent across typed and spoken input, while speech is treated strictly as an input and output layer, making the system more cost-efficient than a real-time multimodal API by invoking audio models only when needed and relying on a lightweight text model for most interactions.
@@ -121,9 +173,9 @@ Each stage is handled by a model specialized for that task, allowing speech reco
 
 ### **Speech-to-Text (STT)**
 
-* **Model:** `gpt-4o-mini-transcribe`  
-* **Input:** Browser-recorded audio (`webm`)  
-* **Language:** French  
+* **Model:** `gpt-4o-mini-transcribe`
+* **Input:** Browser-recorded audio (`webm`)
+* **Language:** French
 * **Behavior:** Exact transcription only, no additions or rephrasing
 
 Spoken input is transcribed directly into conversational text, preserving informal phrasing and natural speech patterns.
@@ -132,12 +184,12 @@ Spoken input is transcribed directly into conversational text, preserving inform
 
 ### **Text-to-Speech (TTS)**
 
-* **Model:** `gpt-4o-mini-tts`  
-* **Voice:** `marin`  
-* **Trigger:** User-initiated playback  
-* **Behavior:**  
-  * Generated once per message  
-  * Cached and reused on subsequent plays
+* **Model:** `gpt-4o-mini-tts`
+* **Voice:** `marin`
+* **Trigger:** User-initiated playback
+* **Behavior:**
+  * Generated once per message
+  * Uploaded to Supabase Storage and reused on every subsequent play — including after a reload — never regenerated
 
 Audio output is designed to sound like casual, supportive spoken French rather than instructional narration.
 
@@ -145,14 +197,14 @@ Audio output is designed to sound like casual, supportive spoken French rather t
 
 ### **Grammar Validation**
 
-* **Model:** `gpt-4.1-nano`  
-* **Invocation:** Explicit user action  
-* **Evaluation rules:**  
-  * Input treated as spoken French  
-  * Ignores punctuation, capitalization, tone, and partial sentence structures  
-* **Outputs:**  
-  * `OK`  
-  * Fully corrected French text  
+* **Model:** `gpt-4.1-nano`
+* **Invocation:** Explicit user action
+* **Evaluation rules:**
+  * Input treated as spoken French
+  * Ignores punctuation, capitalization, tone, and partial sentence structures
+* **Outputs:**
+  * `OK`
+  * Fully corrected French text
   * No explanations or commentary
 
-Grammar checking runs independently of the conversation flow, allowing users to request accuracy feedback without interrupting interaction.
+Grammar checking runs independently of the conversation flow, allowing users to request accuracy feedback without interrupting interaction. Results persist per-message, so revisiting a conversation (including in the read-only archive) shows the same correction without re-calling the model.
