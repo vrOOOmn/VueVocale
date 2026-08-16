@@ -1,4 +1,4 @@
-import { colors, borderRadius, typography } from "../theme";
+import { colors, borderRadius, typography, shadows } from "../theme";
 import type { ArchivedConversation } from "../lib/data/conversations";
 
 function formatDate(isoDate: string): string {
@@ -24,6 +24,7 @@ export default function ArchivedDayCard({
         textAlign: "left",
         background: colors.paper,
         border: `1px solid ${colors.hairline}`,
+        boxShadow: shadows.card,
         borderRadius: borderRadius.lg,
         padding: "14px 16px",
         cursor: "pointer",

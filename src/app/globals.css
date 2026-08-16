@@ -10,6 +10,7 @@
   --color-brass: #b98a3d;
   --color-rouge: #b94a48;
   --color-hairline: #d9d1c4;
+  --color-hairline-translucent: rgba(217, 209, 196, 0.5);
   --color-text-muted: #687080;
   --color-text-light: #ffffff;
   --color-citrus: #f6b44b;
@@ -28,6 +29,13 @@
   --radius-lg: 18px;
   --radius-xl: 28px;
   --radius-round: 9999px;
+
+  --internal-element-pad: 9px;
+
+  /* Two elevation tiers, applied consistently across every white/paper
+     card and pill instead of each one carrying its own bespoke value. */
+  --shadow-card: 0 8px 20px rgba(17, 27, 63, 0.08);
+  --shadow-overlay: 0 20px 50px rgba(17, 27, 63, 0.16);
 }
 
 * {
@@ -159,11 +167,12 @@ textarea:focus {
 .archived-panel {
   width: min(560px, 100%);
   background: var(--color-paper);
+  border: 1px solid var(--color-hairline);
   border-radius: 0 0 28px 28px;
   max-height: 85vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-overlay);
   outline: none;
   animation: archivedPanelDropIn 0.25s ease-out;
 }
@@ -285,7 +294,7 @@ textarea:focus {
   background: var(--color-paper);
   color: var(--color-navy);
   border: 1px solid var(--color-hairline);
-  box-shadow: none;
+  box-shadow: var(--shadow-card);
 }
 
 .lp-btn-secondary:hover {
@@ -309,6 +318,7 @@ textarea:focus {
   border: 1px solid var(--color-hairline);
   border-radius: var(--radius-xl);
   padding: 24px;
+  box-shadow: var(--shadow-card);
   transition:
     transform 0.2s ease,
     box-shadow 0.2s ease;
@@ -380,7 +390,7 @@ textarea:focus {
 /* "How it works" interactive module — steps / phone preview / live state. */
 .lp-how-body {
   display: grid;
-  grid-template-columns: minmax(260px, 0.85fr) minmax(220px, 0.62fr) minmax(260px, 0.82fr);
+  grid-template-columns: minmax(250px, 0.72fr) minmax(280px, 0.78fr) minmax(250px, 0.7fr);
   gap: clamp(32px, 4vw, 52px);
   align-items: center;
 }
@@ -403,6 +413,7 @@ textarea:focus {
   border-radius: 16px;
   padding: 20px 22px;
   cursor: pointer;
+  box-shadow: var(--shadow-card);
   transition:
     transform 0.2s ease,
     box-shadow 0.2s ease,
@@ -542,6 +553,7 @@ textarea:focus {
   border-radius: var(--radius-md);
   background: var(--color-paper);
   border: 1px solid var(--color-hairline);
+  box-shadow: var(--shadow-card);
   color: var(--color-navy);
 }
 
@@ -559,7 +571,7 @@ textarea:focus {
   background: var(--color-paper);
   border: 1px solid var(--color-hairline);
   border-radius: var(--radius-lg);
-  box-shadow: 0 16px 32px rgba(17, 27, 63, 0.14);
+  box-shadow: var(--shadow-overlay);
   z-index: 20;
 }
 
@@ -624,3 +636,89 @@ textarea:focus {
     justify-content: space-between;
   }
 }
+
+/* Chat header: fixed like the input bar below — a normal in-flow header can
+   end up scrolling away with the message list on mobile browsers where the
+   100%-height flex containment doesn't reliably hold (100svh/inner-scroll
+   quirks), even though it looks contained in desktop devtools.
+   Desktop keeps everything on one row; below 768px the Historique pill (now
+   shown at full width, label always visible) drops to its own row so it
+   stops competing with Contexte/delete/streak for horizontal space. */
+.chat-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: grid;
+  align-items: center;
+  gap: 8px;
+  /* Right padding clears the fixed account icon (40px circle at
+     top:16/right:16) so header buttons never sit underneath it. */
+  padding: 16px 64px 8px 16px;
+  z-index: 100;
+  /* minmax(0, 1fr), not plain 1fr — a plain 1fr track's automatic minimum
+     is its content's min-content size, which for nowrap text is its full
+     width, so the Contexte pill was overflowing into the next column
+     instead of actually shrinking. */
+  grid-template-columns: minmax(0, 1fr) auto auto minmax(0, 1fr);
+  grid-template-areas: "context delete historique streak";
+}
+
+@media (max-width: 767px) {
+  .chat-header {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      "context delete streak"
+      "historique historique historique";
+    row-gap: 8px;
+    padding-bottom: 12px;
+  }
+}
+
+/* Clearance for the fixed .chat-header above — taller on mobile where the
+   header wraps to two rows. */
+.chat-messages {
+  padding-top: 88px;
+}
+
+@media (max-width: 767px) {
+  .chat-messages {
+    padding-top: 140px;
+  }
+}
+
+/* Scanner's camera box and PhotoPreviewSection's photo frame share this
+   exact width so confirming a photo doesn't visibly resize the frame it's
+   sitting in. .scan-intro (the instruction card) shares the same mobile
+   value so the two line up edge-to-edge on phones — but NOT the same
+   desktop value: at desktop width, matching them made both look cramped,
+   so .scan-intro gets its own, wider, desktop-only value. */
+.scan-frame,
+.scan-intro {
+  width: 88vw;
+}
+
+@media (min-width: 768px) {
+  /* 30% bigger than the original 20rem desktop cap. */
+  .scan-frame {
+    width: 26rem;
+  }
+
+  .scan-intro {
+    width: 38rem;
+  }
+}
+
+/* Mode Scanner" eyebrow — decorative only, dropped on phones to keep the
+   intro card from feeling crowded with the icon+title row now sitting
+   right below it. */
+.scan-intro-eyebrow {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .scan-intro-eyebrow {
+    display: block;
+  }
+}
+

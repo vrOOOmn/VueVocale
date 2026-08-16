@@ -1,6 +1,6 @@
 import React from "react";
-import { IoArrowUndoOutline, IoWarningOutline } from "react-icons/io5";
-import { colors, spacing, borderRadius, typography } from "../theme";
+import { IoReloadOutline, IoWarningOutline } from "react-icons/io5";
+import { colors, spacing, borderRadius, typography, shadows } from "../theme";
 
 type Props = {
   photoDataUrl: string;
@@ -20,18 +20,23 @@ export default function PhotoPreviewSection({
   onChat,
 }: Props) {
   return (
-    <div style={styles.container}>
+    <div className="scan-frame" style={styles.container}>
       {/* Plain <img>, deliberately not next/image: this is a client-generated
           data: URL from a canvas capture, not a fetchable asset — there's no
           network request for next/image to optimize away. */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={photoDataUrl} alt="Camera preview" style={styles.preview} />
 
-      {/* Detected-object chip, overlaid on the photo like the landing page's
-          "une orange" chip — matches the app-wide dark-chip convention. */}
+      {/* Detected-object card, overlaid on the photo — dark chip convention,
+          scaled up into a proper eyebrow/word/translation card. */}
       {detectedLabel && (
-        <div style={styles.chip}>
-          {detectedLabel} / {englishLabel}
+        <div style={styles.detectionCard}>
+          <div style={styles.detectionEyebrowRow}>
+            <span style={styles.detectionDot} />
+            <span style={styles.detectionEyebrow}>Sujet détecté</span>
+          </div>
+          <div style={styles.detectionMain}>{detectedLabel}</div>
+          {englishLabel && <div style={styles.detectionSub}>{englishLabel}</div>}
         </div>
       )}
 
@@ -58,7 +63,7 @@ export default function PhotoPreviewSection({
               title="Reprendre la photo / Retake photo"
               style={styles.retakeBtn}
             >
-              <IoArrowUndoOutline size={22} color={colors.textLight} />
+              <IoReloadOutline size={22} color={colors.textLight} />
             </button>
           </div>
         </div>
@@ -69,9 +74,9 @@ export default function PhotoPreviewSection({
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
-    // Matches Scanner's cameraBox exactly so confirming a photo doesn't
-    // visibly resize the frame it's sitting in.
-    width: "clamp(18rem, 88vw, 30rem)",
+    // Width comes from the .scan-frame class (shared with Scanner's
+    // cameraBox) — not set here, since an inline style would silently win
+    // over the class's desktop media query.
     position: "relative" as const,
     borderRadius: borderRadius.lg,
     overflow: "hidden",
@@ -87,18 +92,50 @@ const styles: Record<string, React.CSSProperties> = {
     display: "block",
     background: "#000",
   },
-  chip: {
+  detectionCard: {
     position: "absolute",
     top: spacing.md,
     left: spacing.md,
+    maxWidth: "calc(100% - 32px)",
     background: colors.navy,
+    borderRadius: borderRadius.lg,
+    padding: "16px 20px",
+    boxShadow: "0 12px 30px rgba(17, 27, 63, 0.35)",
+  },
+  detectionEyebrowRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 6,
+  },
+  detectionDot: {
+    width: 6,
+    height: 6,
+    flexShrink: 0,
+    borderRadius: "50%",
+    background: colors.skyAI,
+  },
+  detectionEyebrow: {
+    fontFamily: typography.label.fontFamily,
+    fontSize: 11,
+    fontWeight: 700,
+    letterSpacing: "0.08em",
+    textTransform: "uppercase" as const,
+    color: colors.skyAI,
+  },
+  detectionMain: {
+    fontFamily: typography.header.fontFamily,
+    fontSize: 22,
+    fontWeight: 700,
     color: colors.textLight,
+    lineHeight: 1.2,
+    overflowWrap: "break-word" as const,
+  },
+  detectionSub: {
     fontFamily: typography.body.fontFamily,
-    fontSize: 14,
-    fontWeight: 600,
-    borderRadius: borderRadius.round,
-    padding: "8px 14px",
-    boxShadow: "0 4px 14px rgba(17, 27, 63, 0.25)",
+    fontSize: 13,
+    color: "rgba(255,255,255,0.6)",
+    marginTop: 2,
   },
   dialogOverlay: {
     position: "absolute",
@@ -117,12 +154,14 @@ const styles: Record<string, React.CSSProperties> = {
     gap: 6,
     alignSelf: "flex-start",
     background: "rgba(255,255,255,0.92)",
+    border: `1px solid ${colors.hairlineTranslucent}`,
     color: colors.navy,
     fontFamily: typography.body.fontFamily,
     fontSize: 12,
     fontWeight: 600,
     borderRadius: borderRadius.md,
     padding: "6px 10px",
+    boxShadow: shadows.card,
   },
   buttonRow: {
     display: "flex",

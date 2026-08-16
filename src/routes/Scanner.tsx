@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import Image from "next/image";
-import { IoCamera, IoRepeat, IoWarningOutline } from "react-icons/io5";
+import { IoCamera, IoLocateOutline, IoRepeat, IoWarningOutline } from "react-icons/io5";
+import BrandMark from "../components/BrandMark";
 import PhotoPreviewSection from "../components/PhotoPreviewSection";
-import { colors, spacing, borderRadius, typography } from "../theme";
+import { colors, spacing, borderRadius, typography, shadows } from "../theme";
 import { createClient } from "../lib/supabase/client";
 import { detectAndTranslateFR } from "../lib/vision/detectObject";
 import type { AuthedUser } from "../components/UserMenu";
@@ -288,19 +288,22 @@ export default function Scanner({
 
   return (
     <div style={styles.container}>
-      {/* Hero section moved inside */}
-      <div style={styles.hero}>
-        <div style={styles.heroHeader}>
-          <Image src="/vuevocale.svg" alt="VueVocale logo" width={38} height={38} style={styles.logo} />
-          <h1 style={styles.title}>VueVocale</h1>
-        </div>
+      {/* Fixed like UserMenu's top-right avatar, so the brand mark stays
+          put instead of scrolling away with the page on tall content. */}
+      <BrandMark logoSize={32} style={styles.brandMark} textStyle={styles.brandTitle} />
 
-        <div style={styles.introCard}>
-          <h2 style={styles.introTitle}>Find something to talk about.</h2>
-          <p style={styles.introSubtitle}>
-            Point your camera at an object. VueVocale finds the French word
-            and starts a conversation about it.
-          </p>
+      <div className="scan-intro" style={styles.introCard}>
+        <div style={styles.introIconChip}>
+          <IoLocateOutline size={23} color={colors.electric} />
+        </div>
+        <div style={styles.introTextColumn}>
+          <span className="scan-intro-eyebrow" style={styles.introEyebrow}>
+            Scanner Mode
+          </span>
+          <p style={styles.introTitle}>Scan a nearby object</p>
+          <span style={styles.introSubtitle}>
+            Capture something in your surroundings that intrigues you. Then launch into conversation with your French companion.
+          </span>
         </div>
       </div>
 
@@ -318,7 +321,7 @@ export default function Scanner({
           }}
         />
       ) : (
-        <div style={styles.cameraBox}>
+        <div className="scan-frame" style={styles.cameraBox}>
           <video
             ref={videoRef}
             style={styles.video}
@@ -359,66 +362,92 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: "column" as const,
     alignItems: "center",
     justifyContent: "flex-start",
-    // Symmetric side padding matching Chat's header inset, and enough top
-    // clearance to roughly line up with the fixed account avatar (top:16).
-    padding: "20px 16px",
+    // Matches the tab bar's own internal padding (--scan-nav-padding) so
+    // the page's outer inset and the nav's inset read as one consistent
+    // margin, per the reference mockup.
+    paddingLeft: "var(--internal-element-pad)",
+    paddingRight: "var(--internal-element-pad)",
+    // Clears the fixed brandMark (top:16 + ~32px tall) above it, same idea
+    // as Chat's header clearance on .chat-messages.
+    paddingTop: 72,
+    // The bottom nav is position:fixed (68px tall + 10px bottom margin) and
+    // floats over whatever's scrolled beneath it — without this clearance
+    // the camera box's bottom edge (and its capture button) ends up
+    // permanently hidden under the nav once the camera is large enough to
+    // reach the bottom of the viewport, which happens routinely on desktop.
+    paddingBottom: 112,
     gap: "24px",
     background: "transparent",
   },
-  hero: {
-    textAlign: "left" as const,
-    width: "clamp(15rem, 80vw, 50rem)",
-    display: "flex",
-    flexDirection: "column" as const,
-    gap: 18,
+  brandMark: {
+    position: "fixed" as const,
+    top: 16,
+    left: 16,
+    zIndex: 100,
   },
-  heroHeader: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "flex-start",
-    gap: 12,
-  },
-  logo: {
-    width: 38,
-    height: 38,
-  },
-  title: {
-    fontSize: 25,
+  brandTitle: {
+    fontSize: 21,
     fontWeight: 700,
     color: colors.navy,
-    margin: 0, // reset
   },
   introCard: {
+    display: "flex",
+    flexDirection: "row" as const,
+    alignItems: "center",
+    gap: spacing.md,
     background: colors.paper,
     border: `1px solid ${colors.hairline}`,
     borderRadius: borderRadius.xl,
-    padding: "22px 22px",
+    padding: spacing.md,
+    boxShadow: shadows.card,
+  },
+  introIconChip: {
+    width: 47,
+    height: 47,
+    flexShrink: 0,
+    borderRadius: borderRadius.md,
+    background: "rgba(49, 104, 255, 0.12)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  introTextColumn: {
+    display: "flex",
+    flexDirection: "column" as const,
+    gap: 4,
+    minWidth: 0,
+  },
+  introEyebrow: {
+    fontSize: 11,
+    fontWeight: 700,
+    letterSpacing: "0.08em",
+    textTransform: "uppercase" as const,
+    color: colors.brass,
   },
   introTitle: {
+    margin: 0, // <p> has a browser default block margin — reset it.
     fontSize: "clamp(1.15rem, 4.4vw, 1.4rem)",
     fontWeight: 700,
     color: colors.navy,
-    margin: 0,
   },
   introSubtitle: {
+    display: "block",
     fontSize: "clamp(0.9rem, 3.6vw, 1rem)",
     color: colors.textMuted,
-    marginTop: 8,
     lineHeight: 1.55,
   },
   cameraBox: {
-    // Noticeably bigger — the old clamp left a lot of dead space below the
-    // camera on tall phone viewports since height only ever derived from
-    // this width via the aspect ratio.
-    width: "clamp(18rem, 88vw, 30rem)",
+    // Width comes from the .scan-frame class (shared with
+    // PhotoPreviewSection, shrinks on desktop) — not set here, since an
+    // inline style would silently win over the class's media query.
     position: "relative" as const,
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.xl,
     overflow: "hidden",
     aspectRatio: "3 / 4",
     flexShrink: 0,
     marginBottom: spacing.xxl,
     background: "#EAF8FF",
-    border: "1px solid #BDEBFF",
+    border: "9px solid rgba(255, 253, 249, 0.92)",
   },
 
   video: {

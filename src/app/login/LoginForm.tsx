@@ -4,7 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { FcGoogle } from "react-icons/fc";
 import { createClient } from "../../lib/supabase/client";
-import { colors, typography } from "../../theme";
+import { colors, typography, shadows } from "../../theme";
 
 export default function LoginForm({
   next,
@@ -50,9 +50,10 @@ export default function LoginForm({
         style={{
           width: "min(400px, 100%)",
           background: colors.paper,
+          border: `1px solid ${colors.hairline}`,
           borderRadius: 32,
           padding: "40px 32px",
-          boxShadow: "0 20px 50px rgba(17, 27, 63, 0.1)",
+          boxShadow: shadows.overlay,
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
@@ -95,7 +96,8 @@ export default function LoginForm({
             padding: "13px 16px",
             borderRadius: 14,
             border: `1px solid ${colors.hairline}`,
-            background: "#fff",
+            background: colors.paper,
+            boxShadow: shadows.card,
             fontFamily: typography.button.fontFamily,
             fontSize: 15,
             fontWeight: 600,

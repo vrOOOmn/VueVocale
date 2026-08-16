@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
-import { IoCloseOutline, IoMenuOutline } from "react-icons/io5";
+import { IoCheckmarkCircle, IoCloseOutline, IoMenuOutline, IoMic, IoMicOutline, IoVolumeHighOutline } from "react-icons/io5";
+import BrandMark from "./BrandMark";
 import { colors, spacing, typography } from "../theme";
 
 // Grounded in the real product (src/routes/Scanner.tsx, Chat.tsx,
@@ -18,10 +18,11 @@ const HOW_IT_WORKS_STEPS = [
     dotColor: colors.citrusObject,
     state: {
       title: "Scan step active",
-      body: "One photo is enough. VueVocale names it in French and English — no bounding boxes, no live scanning required.",
-      tiles: [
-        { value: "FR + EN", label: "word given in both" },
-        { value: "1 tap", label: "confirm to start chatting" },
+      body: "One photo is enough. VueVocale's vision model names what you're looking at in French and English — no bounding boxes, no live scanning.",
+      highlights: [
+        "Identifies the object in your photo",
+        "Names it in French and English",
+        "One tap hands it straight to your AI companion",
       ],
     },
   },
@@ -29,14 +30,15 @@ const HOW_IT_WORKS_STEPS = [
     id: "converse",
     number: "02",
     title: "Converse",
-    subtitle: "The AI opens with a real question about your photo",
+    subtitle: "Your AI French companion opens the conversation",
     dotColor: colors.skyAI,
     state: {
       title: "Converse step active",
-      body: "Replies stay grounded in what you scanned, short, and always in French — one question at a time.",
-      tiles: [
-        { value: "≤3 phrases", label: "per AI reply" },
-        { value: "Français", label: "always, not English" },
+      body: "Talk it out loud or type — your AI French companion replies in natural spoken French, grounded in what you just scanned, one question at a time.",
+      highlights: [
+        "Speaks every reply aloud in French",
+        "Stays grounded in your photo, not a generic drill",
+        "Answers your voice, not just your typing",
       ],
     },
   },
@@ -48,10 +50,11 @@ const HOW_IT_WORKS_STEPS = [
     dotColor: colors.rouge,
     state: {
       title: "Refine step active",
-      body: "Correction is opt-in — one button under any message. Never automatic, never interrupts the chat.",
-      tiles: [
-        { value: "On demand", label: "never automatic" },
-        { value: "1 tap", label: "“Corriger la grammaire”" },
+      body: "Correction is opt-in — one button under any message. Never automatic, never interrupts the conversation.",
+      highlights: [
+        "One tap: “Corriger la grammaire”",
+        "Skip it and keep talking, no penalty",
+        "Never automatic, never a pop-up",
       ],
     },
   },
@@ -63,7 +66,7 @@ const PAGE_MAX_WIDTH = 1312;
 const SECTION_PAD_Y = "clamp(56px, 7.5vw, 96px)";
 // The nav is compact by nature, so the gap into the hero should read
 // noticeably tighter than the rhythm between the sections below it.
-const HERO_TOP_PAD = "clamp(28px, 4vw, 48px)";
+const HERO_TOP_PAD = "clamp(8px, 1.2vw, 16px)";
 // Side margins that grow with viewport width instead of a fixed 24px everywhere.
 const SIDE_PAD = "clamp(24px, 6vw, 80px)";
 // Every section header (How it works / Features / CTA) shares this exact size.
@@ -96,25 +99,22 @@ export default function LandingPage() {
           position: "relative",
           maxWidth: PAGE_MAX_WIDTH,
           margin: "0 auto",
-          padding: `${spacing.lg + 8}px ${SIDE_PAD}`,
+          padding: `${spacing.md}px ${SIDE_PAD}`,
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <Image src="/vuevocale.svg" alt="" width={34} height={34} priority />
-          <span
-            className="lp-brand"
-            style={{
-              fontFamily: typography.header.fontFamily,
-              fontWeight: 700,
-              color: colors.navy,
-            }}
-          >
-            VueVocale
-          </span>
-        </div>
+        <BrandMark
+          logoSize={34}
+          style={{ gap: 12 }}
+          textClassName="lp-brand"
+          textStyle={{
+            fontFamily: typography.header.fontFamily,
+            fontWeight: 700,
+            color: colors.navy,
+          }}
+        />
         <nav className="lp-nav-links">
           <a href="#how-it-works" className="lp-nav-link">
             Method
@@ -209,7 +209,7 @@ export default function LandingPage() {
             style={{
               fontFamily: typography.display.fontFamily,
               fontWeight: 400,
-              fontSize: "clamp(32px, 5vw, 76px)",
+              fontSize: "clamp(24px, 3.75vw, 57px)",
               lineHeight: 1.12,
               margin: 0,
               color: colors.navy,
@@ -233,16 +233,17 @@ export default function LandingPage() {
           <p
             style={{
               fontFamily: typography.body.fontFamily,
-              fontSize: "clamp(17px, 4.4vw, 22px)",
+              fontSize: "clamp(15px, 4vw, 20px)",
               lineHeight: 1.65,
               color: "#4F5B6F",
               margin: 0,
               maxWidth: 580,
             }}
           >
-            VueVocale turns the objects around you into short, guided
-            conversations with instant pronunciation feedback. It feels
-            polished, but it behaves like a serious AI learning tool.
+            VueVocale turns the objects around you into short French
+            conversations — like chatting with a local at a café abroad,
+            minus the plane ticket. Grammar correction is there when you tap
+            for it, never automatic.
           </p>
           <div style={{ display: "flex", alignItems: "center", gap: 28, marginTop: 44, flexWrap: "wrap" }}>
             <Link href="/app" className="lp-btn lp-btn-primary">
@@ -320,7 +321,8 @@ export default function LandingPage() {
                 marginTop: 16,
               }}
             >
-              Three real steps, not a slideshow — pick one to see exactly what happens in the app.
+              Three real steps, not a slideshow — pick one to see exactly what your AI French companion
+              does.
             </p>
           </div>
 
@@ -391,35 +393,34 @@ export default function LandingPage() {
               >
                 {HOW_IT_WORKS_STEPS[activeStep].state.body}
               </p>
-              <div style={{ display: "flex", gap: 18, marginTop: 8, flexWrap: "wrap" }}>
-                {HOW_IT_WORKS_STEPS[activeStep].state.tiles.map((tile) => (
-                  <div
-                    key={tile.label}
+              <ul
+                style={{
+                  listStyle: "none",
+                  margin: 0,
+                  padding: 0,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 12,
+                  marginTop: 4,
+                }}
+              >
+                {HOW_IT_WORKS_STEPS[activeStep].state.highlights.map((item) => (
+                  <li
+                    key={item}
                     style={{
-                      flex: "1 1 110px",
-                      background: "rgba(80, 112, 255, 0.16)",
-                      border: "1px solid rgba(126, 150, 255, 0.25)",
-                      borderRadius: 14,
-                      padding: 18,
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: 10,
+                      fontSize: 14,
+                      lineHeight: 1.4,
+                      color: "rgba(255,255,255,0.85)",
                     }}
                   >
-                    <strong
-                      style={{
-                        display: "block",
-                        color: colors.skyAI,
-                        fontSize: 23,
-                        lineHeight: 1.15,
-                        marginBottom: 6,
-                      }}
-                    >
-                      {tile.value}
-                    </strong>
-                    <span style={{ color: "rgba(255,255,255,0.76)", fontSize: 12, fontWeight: 600 }}>
-                      {tile.label}
-                    </span>
-                  </div>
+                    <IoCheckmarkCircle size={18} color={colors.skyAI} style={{ flexShrink: 0, marginTop: 1 }} />
+                    {item}
+                  </li>
                 ))}
-              </div>
+              </ul>
             </aside>
           </div>
         </div>
@@ -448,7 +449,7 @@ export default function LandingPage() {
               style={{
                 borderRadius: 16,
                 height: 80,
-                background: colors.mist,
+                background: "rgba(246, 180, 75, 0.16)",
                 border: `1px solid ${colors.hairline}`,
                 position: "relative",
                 overflow: "hidden",
@@ -475,10 +476,10 @@ export default function LandingPage() {
 
           <article className="lp-feature-card lp-fragment" style={{ gridColumn: "span 2" }}>
             <div>
-              <h3 className="lp-fragment-title">Grounded, not generic</h3>
+              <h3 className="lp-fragment-title">Your AI companion, not a script</h3>
               <p className="lp-fragment-body">
-                The AI opens with a real question about your photo — always in French, one question at a
-                time.
+                It opens with a real, spoken question about your photo — always in French, one question at
+                a time.
               </p>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -516,9 +517,10 @@ export default function LandingPage() {
 
           <article className="lp-feature-card lp-fragment" style={{ gridColumn: "span 2" }}>
             <div>
-              <h3 className="lp-fragment-title">Talk instead of type</h3>
+              <h3 className="lp-fragment-title">Hear your companion talk back</h3>
               <p className="lp-fragment-body">
-                Pick your microphone, tap to record, and hear every reply spoken aloud whenever you want.
+                Pick your microphone, tap to record, and hear every reply spoken aloud in natural French —
+                a real conversation, not a transcript.
               </p>
             </div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 80 }}>
@@ -533,7 +535,7 @@ export default function LandingPage() {
                   justifyContent: "center",
                 }}
               >
-                <div style={{ width: 16, height: 24, borderRadius: 8, background: "#fff" }} />
+                <IoMic size={24} color="#fff" />
               </div>
             </div>
             <div style={{ height: 5, borderRadius: 999, background: colors.electric, marginTop: 20 }} />
@@ -711,21 +713,47 @@ function PhoneMockup() {
         justifyContent: "center",
       }}
     >
-      <div
-        style={{
-          width: 330,
-          borderRadius: 40,
-          background: colors.paper,
-          border: `1px solid ${colors.hairline}`,
-          boxShadow: "0 30px 60px rgba(17, 27, 63, 0.14)",
-          padding: 18,
-        }}
-      >
+      <div style={{ position: "relative" }}>
+        {/* Speaker/mic accents — this is a spoken-conversation app, not a
+            texting app, so the phone mockup should read that way at a
+            glance. */}
+        <IoVolumeHighOutline
+          size={56}
+          color={colors.electric}
+          style={{
+            position: "absolute",
+            top: -30,
+            right: -38,
+            transform: "rotate(8deg)",
+            opacity: 0.8,
+          }}
+        />
+        <IoMicOutline
+          size={46}
+          color={colors.electric}
+          style={{
+            position: "absolute",
+            bottom: -18,
+            left: -30,
+            transform: "rotate(-10deg)",
+            opacity: 0.8,
+          }}
+        />
+        <div
+          style={{
+            width: 330,
+            borderRadius: 40,
+            background: colors.paper,
+            border: `1px solid ${colors.hairline}`,
+            boxShadow: "0 30px 60px rgba(17, 27, 63, 0.14)",
+            padding: 18,
+          }}
+        >
         <div
           style={{
             borderRadius: 26,
             height: 212,
-            background: colors.mist,
+            background: "rgba(246, 180, 75, 0.16)",
             border: `1px solid ${colors.hairline}`,
             position: "relative",
             overflow: "hidden",
@@ -739,7 +767,7 @@ function PhoneMockup() {
               right: 0,
               bottom: 0,
               height: 78,
-              background: colors.skyAI,
+              background: colors.citrusObject,
             }}
           />
           <span
@@ -798,6 +826,7 @@ function PhoneMockup() {
           </div>
         </div>
       </div>
+      </div>
     </div>
   );
 }
@@ -807,7 +836,7 @@ function StepPhonePreview({ stepId }: { stepId: (typeof HOW_IT_WORKS_STEPS)[numb
     <div style={{ display: "flex", justifyContent: "center" }}>
       <div
         style={{
-          width: 240,
+          width: 300,
           borderRadius: 32,
           background: colors.paper,
           border: `1px solid ${colors.hairline}`,
@@ -839,7 +868,7 @@ function ScanPreview() {
         style={{
           borderRadius: 20,
           height: 120,
-          background: colors.mist,
+          background: "rgba(246, 180, 75, 0.16)",
           border: `1px solid ${colors.hairline}`,
           position: "relative",
           overflow: "hidden",

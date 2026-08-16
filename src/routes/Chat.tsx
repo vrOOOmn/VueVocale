@@ -5,12 +5,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   IoSend,
   IoMic,
-  IoMicOutline,
+  IoOptionsOutline,
   IoStopSharp,
   IoTrashOutline,
   IoWarningOutline,
 } from "react-icons/io5";
-import { colors, spacing, borderRadius, typography } from "../theme";
+import { colors, spacing, borderRadius, typography, shadows } from "../theme";
 import { generateTextResponse, fixGrammar } from "../lib/primaryAgent";
 import { useRecorder } from "../lib/audio/useRecorder";
 import { transcribeSTT } from "../lib/audio/transcribeSTT";
@@ -55,7 +55,7 @@ export default function Chat({
   const textRef = useRef<HTMLTextAreaElement | null>(null);
   const lastPhotoRef = useRef<string | null>(null);
 
-  const bottomRef = useRef<HTMLDivElement | null>(null);
+  const messagesContainerRef = useRef<HTMLDivElement | null>(null);
 
   const { playingId, togglePlay, mergeAudioState } = useMessageAudioPlayback(user.id);
 
@@ -215,9 +215,34 @@ export default function Chat({
   });
 
   // --- Scroll to bottom ---
+  // Photo messages load their <img> asynchronously — scrollHeight measured
+  // right when this effect runs doesn't yet include an image that hasn't
+  // decoded, so a single scroll-then-done can land short with nothing to
+  // correct it once the image actually finishes loading. Re-applying the
+  // same instant scrollTop a few more times over the following second
+  // catches that without needing to track every possible cause of a height
+  // change individually (a ResizeObserver on the content wrapper was tried
+  // here first — in practice its callback never fired for this skeleton-to-
+  // real-content swap, for reasons not fully pinned down — so this simpler,
+  // empirically-verified approach replaced it).
   useLayoutEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [displayMessages.length, sendTextMutation.isPending, photoReplyPending]);
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    const scrollToBottom = () => {
+      container.scrollTop = container.scrollHeight;
+    };
+
+    scrollToBottom();
+    const timers = [50, 200, 600, 1500].map((delay) => setTimeout(scrollToBottom, delay));
+    return () => timers.forEach(clearTimeout);
+  }, [
+    displayMessages.length,
+    messagesPending,
+    sendTextMutation.isPending,
+    photoReplyPending,
+    retryReplyMutation.isPending,
+  ]);
 
   useLayoutEffect(() => {
     const handleNewPhoto = async () => {
@@ -376,40 +401,47 @@ export default function Chat({
 
   return (
     <main style={styles.container}>
-      <div style={styles.header}>
-        <div style={styles.headerLeft}>
-          {contextLabel && <span style={styles.contextPill}>Contexte · {contextLabel}</span>}
+      <div className="chat-header">
+        <div style={{ ...styles.headerLeft, gridArea: "context" }}>
+          {contextLabel && (
+            <span style={styles.contextPill}>
+              <span style={styles.liveDot} />
+              Contexte · {contextLabel}
+            </span>
+          )}
         </div>
-        <div style={styles.headerCenter}>
-          <button
-            type="button"
-            onClick={clearChat}
-            disabled={messages.length === 0}
-            title="Effacer la conversation"
-            aria-label="Effacer la conversation / Clear conversation"
-            style={{
-              ...styles.clearButton,
-              opacity: messages.length === 0 ? 0.4 : 1,
-              cursor: messages.length === 0 ? "default" : "pointer",
-            }}
-          >
-            <IoTrashOutline size={16} />
-          </button>
-          <button
-            type="button"
-            onClick={() => setHistoryOpen(true)}
-            aria-label="Historique / History"
-            style={styles.historyButton}
-          >
-            🕘 <span className="chat-header-label">Historique</span>
-          </button>
-        </div>
-        <div style={styles.headerRight}>
+
+        <button
+          type="button"
+          onClick={clearChat}
+          disabled={messages.length === 0}
+          title="Effacer la conversation"
+          aria-label="Effacer la conversation / Clear conversation"
+          style={{
+            ...styles.clearButton,
+            gridArea: "delete",
+            opacity: messages.length === 0 ? 0.4 : 1,
+            cursor: messages.length === 0 ? "default" : "pointer",
+          }}
+        >
+          <IoTrashOutline size={16} />
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setHistoryOpen(true)}
+          aria-label="Historique / History"
+          style={{ ...styles.historyButton, gridArea: "historique" }}
+        >
+          🕘 <span>Historique</span>
+        </button>
+
+        <div style={{ ...styles.headerRight, gridArea: "streak" }}>
           {streak > 0 && <span style={styles.streakBadge}>🔥 {streak}</span>}
         </div>
       </div>
 
-      <div style={styles.messages}>
+      <div ref={messagesContainerRef} className="chat-messages" style={styles.messages}>
         {messagesPending ? (
           <>
             <div className="skeleton" style={styles.skeletonBot} />
@@ -460,7 +492,6 @@ export default function Chat({
               </button>
             </div>
           )}
-        <div ref={bottomRef} />
       </div>
 
       <form
@@ -489,7 +520,7 @@ export default function Chat({
             className="mic-picker-btn"
             style={styles.micPickerButton}
           >
-            <IoMicOutline size={16} style={{ flexShrink: 0 }} />
+            <IoOptionsOutline size={16} style={{ flexShrink: 0 }} />
             <span className="chat-header-label" style={styles.micPickerLabel}>
               {selectedMicLabel}
             </span>
@@ -607,59 +638,45 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: "column",
     position: "relative",
   },
-  header: {
-    // Fixed like the input bar below — a normal in-flow header can end up
-    // scrolling away with the message list on mobile browsers where the
-    // 100%-height flex containment doesn't reliably hold (100svh/inner-scroll
-    // quirks), even though it looks contained in desktop devtools.
-    position: "fixed",
-    top: 0,
-    left: 0,
-    right: 0,
-    display: "grid",
-    // minmax(0, 1fr), not plain 1fr — a plain 1fr track's automatic minimum
-    // is its content's min-content size, which for nowrap text is its full
-    // width, so the Contexte pill was overflowing into the center column
-    // instead of actually shrinking. minmax(0, 1fr) forces the track's
-    // floor to 0 so the ellipsis/overflow rules below can actually apply.
-    gridTemplateColumns: "minmax(0, 1fr) auto minmax(0, 1fr)",
-    alignItems: "center",
-    gap: 8,
-    // Right padding clears the fixed account icon (40px circle at
-    // top:16/right:16) so header buttons never sit underneath it.
-    padding: `${spacing.md}px 64px ${spacing.sm}px ${spacing.md}px`,
-    zIndex: 100,
-  },
   headerLeft: {
     display: "flex",
     justifySelf: "start",
     minWidth: 0,
-    overflow: "hidden",
-  },
-  headerCenter: {
-    display: "flex",
-    alignItems: "center",
-    gap: 8,
-    justifySelf: "center",
+    // Deliberately no overflow:hidden here — box-shadow is part of the
+    // pill's own rendered box, and clipping this wrapper clipped the
+    // shadow too, leaving a hard rectangular seam around the pill instead
+    // of a smooth fade. minWidth:0 alone is what the grid track needs to
+    // shrink correctly; contextPill's own overflow:hidden handles ellipsis.
   },
   headerRight: {
     display: "flex",
     justifySelf: "end",
   },
   contextPill: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 6,
     fontSize: 13.5,
     fontWeight: 600,
     color: colors.navy,
     background: "rgba(255,255,255,0.85)",
     backdropFilter: "blur(12px)",
-    border: "1px solid rgba(0,0,0,0.06)",
+    border: `1px solid ${colors.hairlineTranslucent}`,
     borderRadius: borderRadius.round,
     padding: "10px 18px",
-    boxShadow: "0 8px 20px rgba(17, 27, 63, 0.08)",
+    boxShadow: shadows.card,
     whiteSpace: "nowrap",
     overflow: "hidden",
     textOverflow: "ellipsis",
     maxWidth: "100%",
+  },
+  liveDot: {
+    width: 7,
+    height: 7,
+    flexShrink: 0,
+    borderRadius: "50%",
+    background: colors.mint,
+    boxShadow: `0 0 0 3px rgba(30, 167, 131, 0.18)`,
   },
   streakBadge: {
     display: "flex",
@@ -673,15 +690,24 @@ const styles: Record<string, React.CSSProperties> = {
     boxShadow: "0 8px 20px rgba(184, 134, 58, 0.35)",
   },
   historyButton: {
+    // Grid items stretch to fill their area by default — historique's area
+    // spans the full row width on mobile (its own dedicated row), which
+    // stretched the button edge-to-edge instead of hugging its content like
+    // every other header pill. justifySelf:start opts back out of that.
+    justifySelf: "start",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
     fontSize: 13.5,
     fontWeight: 600,
     color: colors.navy,
     background: "rgba(255,255,255,0.85)",
     backdropFilter: "blur(12px)",
-    border: "1px solid rgba(0,0,0,0.06)",
+    border: `1px solid ${colors.hairlineTranslucent}`,
     borderRadius: borderRadius.round,
     padding: "10px 18px",
-    boxShadow: "0 8px 20px rgba(17, 27, 63, 0.08)",
+    boxShadow: shadows.card,
     cursor: "pointer",
   },
   clearButton: {
@@ -693,21 +719,22 @@ const styles: Record<string, React.CSSProperties> = {
     color: colors.rouge,
     background: "rgba(255,255,255,0.85)",
     backdropFilter: "blur(12px)",
-    border: "1px solid rgba(0,0,0,0.06)",
+    border: `1px solid ${colors.hairlineTranslucent}`,
     borderRadius: borderRadius.round,
-    boxShadow: "0 8px 20px rgba(17, 27, 63, 0.08)",
+    boxShadow: shadows.card,
     padding: 0,
   },
   messages: {
     flex: 1,
     overflowY: "auto",
     padding: spacing.md,
-    paddingTop: 88,
+    // paddingTop is set in CSS (.chat-messages) — it has to be taller on
+    // mobile where the header wraps to two rows (Contexte/delete/streak,
+    // then a full-width Historique row) versus desktop's single row.
     paddingBottom: 160,
     display: "flex",
     flexDirection: "column",
     gap: spacing.md,
-    scrollBehavior: "smooth",
   },
   message: {
     padding: "10px 14px",
@@ -771,9 +798,9 @@ const styles: Record<string, React.CSSProperties> = {
     padding: "8px 10px 8px 16px",
     background: "rgba(255,255,255,0.85)",
     backdropFilter: "blur(12px)",
-    border: "1px solid rgba(0,0,0,0.06)",
+    border: `1px solid ${colors.hairlineTranslucent}`,
     borderRadius: 28,
-    boxShadow: "0 8px 24px rgba(0,0,0,0.06)",
+    boxShadow: shadows.card,
     zIndex: 100,
   },
   textInput: {
@@ -799,7 +826,7 @@ const styles: Record<string, React.CSSProperties> = {
   micPickerButton: {
     height: 44,
     borderRadius: 20,
-    border: "1px solid rgba(59,107,243,0.16)",
+    border: `1px solid ${colors.hairlineTranslucent}`,
     background: "rgba(255,255,255,0.92)",
     color: colors.navy,
     display: "flex",
@@ -811,7 +838,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 12,
     fontWeight: 600,
     cursor: "pointer",
-    boxShadow: "0 2px 6px rgba(0,0,0,0.06)",
+    boxShadow: shadows.card,
   },
   micPickerLabel: {
     maxWidth: 76,
@@ -835,8 +862,8 @@ const styles: Record<string, React.CSSProperties> = {
     padding: 6,
     borderRadius: 16,
     background: "rgba(255,255,255,0.98)",
-    border: "1px solid rgba(0,0,0,0.08)",
-    boxShadow: "0 12px 32px rgba(0,0,0,0.14)",
+    border: `1px solid ${colors.hairline}`,
+    boxShadow: shadows.overlay,
     zIndex: 120,
   },
   micDropdownItem: {
