@@ -246,8 +246,7 @@ export default function LandingPage() {
               maxWidth: 580,
             }}
           >
-            You can study French for years and still go quiet when it is
-            your turn to speak. VueVocale turns everyday moments into opportunities to practice what lessons can&apos;t teach: the back-and-forth of a real conversation.
+            You can study French for years and still struggle when it&apos;s time to speak to native. VueVocale turns everyday moments into opportunities to practice what lessons can&apos;t teach: the back-and-forth of a real conversation.
           </p>
           <div style={{ display: "flex", alignItems: "center", gap: 28, marginTop: 44, flexWrap: "wrap" }}>
             <Link href="/app" className="lp-btn lp-btn-primary">
