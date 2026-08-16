@@ -209,7 +209,7 @@ export default function LandingPage() {
               marginBottom: 32,
             }}
           >
-            START WITH WHAT YOU SEE
+            CONVERSATION-BASED FRENCH LEARNING
           </span>
           <h1
             style={{
@@ -221,11 +221,11 @@ export default function LandingPage() {
               color: colors.navy,
             }}
           >
-            Anything around you
+            Turn what&apos;s around you
             <br />
-            can start a French
+            into a conversation
             <br />
-            conversation.
+            in French.
           </h1>
           <div
             style={{
@@ -247,8 +247,7 @@ export default function LandingPage() {
             }}
           >
             You can study French for years and still go quiet when it is
-            your turn to speak. VueVocale gives you somewhere to begin:
-            whatever is already around you.
+            your turn to speak. VueVocale turns everyday moments into opportunities to practice what lessons can&apos;t teach: the back-and-forth of a real conversation.
           </p>
           <div style={{ display: "flex", alignItems: "center", gap: 28, marginTop: 44, flexWrap: "wrap" }}>
             <Link href="/app" className="lp-btn lp-btn-primary">
