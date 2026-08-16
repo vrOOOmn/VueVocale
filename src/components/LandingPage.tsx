@@ -16,15 +16,15 @@ const HOW_IT_WORKS_STEPS = [
     id: "scan",
     number: "01",
     title: "Scan",
-    subtitle: "Notice something, take the picture",
+    subtitle: "Notice something. Take a picture.",
     dotColor: colors.citrusObject,
     state: {
-      title: "Start with something you can see",
-      body: "Point the camera at whatever is nearby and VueVocale gives you its French name. The word is not the lesson. It is what gets you past the empty chat.",
+      title: "Give the conversation a starting point",
+      body: "Point the camera at something nearby and VueVocale gives you the French word for it. You have a subject, a word, and somewhere to begin.",
       highlights: [
-        "The French word and its English meaning",
-        "Your surroundings pick the subject",
-        "One tap carries it into the chat",
+        "French word and English meaning",
+        "No topic to invent",
+        "One tap takes it into the chat",
       ],
     },
   },
@@ -32,15 +32,15 @@ const HOW_IT_WORKS_STEPS = [
     id: "converse",
     number: "02",
     title: "Converse",
-    subtitle: "Talk about it in French",
+    subtitle: "Start talking in French",
     dotColor: colors.skyAI,
     state: {
-      title: "The photo starts it, your answers steer it",
-      body: "It asks about what you just showed it. Say you eat an orange most mornings and the talk can move to breakfast, then to how your mornings usually go.",
+      title: "The photo starts it. Your answers take it further.",
+      body: "VueVocale opens with what you scanned, then follows what you say. An orange can lead to breakfast, your morning routine, or somewhere else entirely.",
       highlights: [
-        "It answers what you said, not a script",
-        "Type it out or say it into the mic",
-        "The subject is free to drift",
+        "Replies to what you said",
+        "Type your answer or say it aloud",
+        "Let the conversation move naturally",
       ],
     },
   },
@@ -48,15 +48,15 @@ const HOW_IT_WORKS_STEPS = [
     id: "refine",
     number: "03",
     title: "Refine",
-    subtitle: "Ask for the correction when you want it",
+    subtitle: "Check a sentence when you want to",
     dotColor: colors.rouge,
     state: {
       title: "Say it first, fix it after",
-      body: "Nothing is graded as you type and nothing interrupts you. When a sentence bothers you, tap the correction under it and see what you should have said.",
+      body: "VueVocale does not stop to correct every sentence. Keep talking, and ask for a correction only when you want to look more closely.",
       highlights: [
-        "Sits under your message as “Corriger la grammaire”",
-        "Tells you when there was nothing to fix",
-        "Keep talking now, look closer later",
+        "Correction is always optional",
+        "Nothing to fix? It tells you that too",
+        "See the corrected sentence",
       ],
     },
   },
@@ -247,10 +247,8 @@ export default function LandingPage() {
             }}
           >
             You can study French for years and still go quiet when it is
-            your turn to speak. VueVocale gives that moment somewhere to
-            start: point your camera at the orange on your desk and it comes
-            back with <em>une orange</em>, then asks whether you eat them
-            often. You answer, and you are already in a conversation.
+            your turn to speak. VueVocale gives you somewhere to begin:
+            whatever is already around you.
           </p>
           <div style={{ display: "flex", alignItems: "center", gap: 28, marginTop: 44, flexWrap: "wrap" }}>
             <Link href="/app" className="lp-btn lp-btn-primary">
@@ -318,8 +316,7 @@ export default function LandingPage() {
                 marginTop: 16,
               }}
             >
-              One conversation, from the moment you notice something to the moment you decide you
-              want the French checked. Pick a step to follow it through.
+              Follow one conversation from the first photo to the moment you decide to check a sentence.
             </p>
           </div>
 
@@ -432,14 +429,14 @@ export default function LandingPage() {
           padding: `${SECTION_PAD_Y} ${SIDE_PAD}`,
         }}
       >
-        <SectionHeading eyebrow="Inside the app" title="What the conversation actually feels like" />
+        <SectionHeading eyebrow="Inside the app" title="What the conve feels like" />
         <div className="lp-feature-grid" style={{ marginTop: 48 }}>
           <article className="lp-feature-card lp-fragment" style={{ gridColumn: "span 2" }}>
             <div>
-              <h3 className="lp-fragment-title">The world gives you the first word</h3>
+              <h3 className="lp-fragment-title">Vocabulary from your own life</h3>
               <p className="lp-fragment-body">
-                Whatever caught your eye is enough. Take the picture and the vocabulary arrives attached to
-                something you actually looked at, instead of a list somebody handed you.
+                The French you learn is attached to someth noticed, instead of a list someone chose for
+                you. Your own day supplies the vocabulary.
               </p>
             </div>
             <div
@@ -473,10 +470,10 @@ export default function LandingPage() {
 
           <article className="lp-feature-card lp-fragment" style={{ gridColumn: "span 2" }}>
             <div>
-              <h3 className="lp-fragment-title">One word turns into a conversation</h3>
+              <h3 className="lp-fragment-title">There is no fixed script</h3>
               <p className="lp-fragment-body">
-                VueVocale asks about your photo, you answer, and it replies to what you actually said. A few
-                turns later you may be talking about something else entirely.
+                VueVocale starts with your photo, then responds to what you say. A few turns later, you may be
+                talking about something else entirely.
               </p>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -516,8 +513,8 @@ export default function LandingPage() {
             <div>
               <h3 className="lp-fragment-title">French you hear and say</h3>
               <p className="lp-fragment-body">
-                Type it when you need to think it through, or hold the mic and say it out loud. Tap any
-                reply to hear how the French is supposed to sound.
+                Type when you need a moment to think, use the mic when you want to speak, and tap a reply to
+                hear the French aloud.
               </p>
             </div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 80 }}>
@@ -540,10 +537,10 @@ export default function LandingPage() {
 
           <article className="lp-feature-card lp-fragment" style={{ gridColumn: "span 3" }}>
             <div>
-              <h3 className="lp-fragment-title">Mistakes do not end the conversation</h3>
+              <h3 className="lp-fragment-title">Correction waits for you</h3>
               <p className="lp-fragment-body">
-                Imperfect French still works here. Keep going, and when a sentence bothers you, the
-                correction is already sitting underneath it waiting to be asked.
+                Your French does not have to be perfect for the conversation to continue. Ask for a correction
+                when you want to look more closely.
               </p>
             </div>
             <div style={{ display: "flex", gap: 14, alignItems: "center", flexWrap: "wrap" }}>
@@ -579,10 +576,10 @@ export default function LandingPage() {
 
           <article className="lp-feature-card lp-fragment" style={{ gridColumn: "span 3" }}>
             <div>
-              <h3 className="lp-fragment-title">Tomorrow, something else entirely</h3>
+              <h3 className="lp-fragment-title">A re using French</h3>
               <p className="lp-fragment-body">
-                Today it was breakfast. Tomorrow it might be your headphones. Each day&apos;s chat moves
-                into your Historique, so what builds up is a record of what you have talked about.
+                Today&apos;s chat moves into your Historique when the day ends. Over time, you build a record
+                of the things y talked about in French.
               </p>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -654,14 +651,14 @@ export default function LandingPage() {
               margin: "0 0 36px",
             }}
           >
-            Look up from this page. Whatever you notice first is enough to begin.
+            Look around. Whatever you notice first is enough to begin.
           </p>
           <Link
             href="/app"
             className="lp-btn"
             style={{ background: "#fff", color: colors.electric, padding: "16px 34px", fontSize: 16 }}
           >
-            Launch App
+            Start a conversation
           </Link>
         </div>
       </section>
