@@ -449,7 +449,7 @@ export default function LandingPage() {
               style={{
                 borderRadius: 16,
                 height: 80,
-                background: colors.mist,
+                background: "rgba(246, 180, 75, 0.16)",
                 border: `1px solid ${colors.hairline}`,
                 position: "relative",
                 overflow: "hidden",
@@ -753,7 +753,7 @@ function PhoneMockup() {
           style={{
             borderRadius: 26,
             height: 212,
-            background: colors.mist,
+            background: "rgba(246, 180, 75, 0.16)",
             border: `1px solid ${colors.hairline}`,
             position: "relative",
             overflow: "hidden",
@@ -767,7 +767,7 @@ function PhoneMockup() {
               right: 0,
               bottom: 0,
               height: 78,
-              background: colors.skyAI,
+              background: colors.citrusObject,
             }}
           />
           <span
@@ -868,7 +868,7 @@ function ScanPreview() {
         style={{
           borderRadius: 20,
           height: 120,
-          background: colors.mist,
+          background: "rgba(246, 180, 75, 0.16)",
           border: `1px solid ${colors.hairline}`,
           position: "relative",
           overflow: "hidden",
