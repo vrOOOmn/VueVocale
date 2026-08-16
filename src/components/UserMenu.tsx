@@ -37,8 +37,8 @@ export default function UserMenu({ user }: { user: AuthedUser }) {
           width: 40,
           height: 40,
           borderRadius: "50%",
-          border: "1px solid rgba(148, 163, 184, 0.4)",
-          background: user.avatarUrl ? "transparent" : colors.primary,
+          border: `1px solid ${colors.hairline}`,
+          background: user.avatarUrl ? "transparent" : colors.electric,
           padding: 0,
           overflow: "hidden",
           display: "flex",
@@ -70,7 +70,7 @@ export default function UserMenu({ user }: { user: AuthedUser }) {
             top: 48,
             right: 0,
             minWidth: 200,
-            background: colors.surface,
+            background: colors.paper,
             borderRadius: 16,
             boxShadow: "0 12px 30px rgba(0,0,0,0.12)",
             padding: 12,
@@ -83,7 +83,7 @@ export default function UserMenu({ user }: { user: AuthedUser }) {
             style={{
               fontFamily: typography.body.fontFamily,
               fontSize: 13,
-              color: "#5A6472",
+              color: colors.textMuted,
               padding: "0 4px",
               overflow: "hidden",
               textOverflow: "ellipsis",
@@ -104,7 +104,7 @@ export default function UserMenu({ user }: { user: AuthedUser }) {
               fontFamily: typography.body.fontFamily,
               fontSize: 14,
               fontWeight: 600,
-              color: colors.error,
+              color: colors.rouge,
               cursor: signingOut ? "wait" : "pointer",
             }}
           >

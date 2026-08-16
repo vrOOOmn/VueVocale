@@ -35,10 +35,14 @@ export default function PhotoPreviewSection({
               it in French?
             </p>
             <div style={styles.buttonRow}>
-              <button onClick={onChat} style={styles.primaryBtn}>
+              <button className="photo-preview-btn" onClick={onChat} style={styles.primaryBtn}>
                 Oui, parlons-en / Yes, let&apos;s talk
               </button>
-              <button onClick={handleRetakePhoto} style={styles.secondaryBtn}>
+              <button
+                className="photo-preview-btn"
+                onClick={handleRetakePhoto}
+                style={styles.secondaryBtn}
+              >
                 Reprendre la photo / Retake Photo
               </button>
             </div>
@@ -89,12 +93,12 @@ const styles: Record<string, React.CSSProperties> = {
   },
   title: {
     ...typography.body,
-    color: colors.text,
+    color: colors.navy,
     margin: 0,
   },
   subtitle: {
     ...typography.message,
-    color: colors.secondary,
+    color: colors.textMuted,
     marginTop: spacing.xs,
     marginBottom: spacing.sm,
   },
@@ -105,24 +109,22 @@ const styles: Record<string, React.CSSProperties> = {
   },
   primaryBtn: {
     flex: 1,
-    background: colors.primary,
+    background: colors.electric,
     color: colors.textLight,
     border: "none",
     borderRadius: borderRadius.md,
     padding: "12px 16px",
     fontWeight: 600,
     cursor: "pointer",
-    transition: "0.3s ease",
   },
   secondaryBtn: {
     flex: 1,
-    background: "transparent",
-    color: colors.primary,
-    border: `1.5px solid ${colors.primary}`,
+    background: colors.paper,
+    color: colors.navy,
+    border: `1px solid ${colors.hairline}`,
     borderRadius: borderRadius.md,
     padding: "12px 16px",
     fontWeight: 600,
     cursor: "pointer",
-    transition: "0.3s ease",
   },
 };

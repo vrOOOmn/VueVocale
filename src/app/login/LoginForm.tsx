@@ -37,18 +37,17 @@ export default function LoginForm({
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background:
-          "linear-gradient(180deg, #F6F8FF 0%, #EEF2FF 45%, #F8FAFF 100%)",
+        background: colors.ivory,
         padding: 24,
       }}
     >
       <div
         style={{
           width: "min(400px, 100%)",
-          background: colors.surface,
+          background: colors.paper,
           borderRadius: 32,
           padding: "40px 32px",
-          boxShadow: "0 20px 50px rgba(51, 105, 214, 0.12)",
+          boxShadow: "0 20px 50px rgba(17, 27, 63, 0.1)",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
@@ -61,7 +60,7 @@ export default function LoginForm({
             fontFamily: typography.header.fontFamily,
             fontWeight: 700,
             fontSize: 24,
-            color: colors.secondary,
+            color: colors.navy,
             margin: "18px 0 6px",
           }}
         >
@@ -71,7 +70,7 @@ export default function LoginForm({
           style={{
             fontFamily: typography.body.fontFamily,
             fontSize: 15,
-            color: "#5A6472",
+            color: colors.textMuted,
             margin: "0 0 28px",
             lineHeight: 1.5,
           }}
@@ -90,12 +89,12 @@ export default function LoginForm({
             width: "100%",
             padding: "13px 16px",
             borderRadius: 14,
-            border: "1px solid rgba(148, 163, 184, 0.5)",
+            border: `1px solid ${colors.hairline}`,
             background: "#fff",
             fontFamily: typography.button.fontFamily,
             fontSize: 15,
             fontWeight: 600,
-            color: colors.secondary,
+            color: colors.navy,
             cursor: loading ? "wait" : "pointer",
           }}
         >
@@ -108,7 +107,7 @@ export default function LoginForm({
             style={{
               marginTop: 16,
               fontSize: 13.5,
-              color: colors.error,
+              color: colors.rouge,
               fontFamily: typography.body.fontFamily,
             }}
           >

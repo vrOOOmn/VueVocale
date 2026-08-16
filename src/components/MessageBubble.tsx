@@ -43,8 +43,8 @@ export default function MessageBubble({
           background: m.image
             ? "transparent"
             : m.sender === "user"
-            ? "linear-gradient(135deg, #4A90E2, #357ABD)"
-            : "#fff",
+            ? colors.electric
+            : colors.paper,
           borderRadius: borderRadius.lg,
           maxWidth: m.image ? "min(280px, 70%)" : "75%",
         }}
@@ -67,7 +67,7 @@ export default function MessageBubble({
               style={{
                 ...typography.message,
                 margin: 0,
-                color: m.sender === "user" ? colors.textLight : colors.text,
+                color: m.sender === "user" ? colors.textLight : colors.navy,
                 whiteSpace: "pre-wrap",
               }}
             >
@@ -111,15 +111,16 @@ export default function MessageBubble({
             )}
 
             {m.grammarStatus === "fixed" && m.grammarFix && (
+              // Rouge only corrects — this is the one element on screen that
+              // actually is a correction, so it's the one place rouge shows up.
               <div
                 style={{
                   marginTop: 6,
                   padding: "6px 10px",
                   borderRadius: 10,
-                  background: "rgba(255,255,255,0.15)",
+                  background: "rgba(185, 74, 72, 0.25)",
                   fontSize: 13,
                   color: "white",
-                  opacity: 0.9,
                 }}
               >
                 ➡ {m.grammarFix}
@@ -144,10 +145,10 @@ export default function MessageBubble({
                     boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
                     background:
                       m.audioState === "error"
-                        ? colors.error
+                        ? colors.rouge
                         : isPlaying
-                        ? colors.border
-                        : colors.secondary,
+                        ? colors.hairline
+                        : colors.navy,
                     opacity: m.audioState === "loading" ? 0.8 : 1,
                   }}
                 >

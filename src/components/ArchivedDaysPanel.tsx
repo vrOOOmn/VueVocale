@@ -49,7 +49,7 @@ export default function ArchivedDaysPanel({
         position: "fixed",
         inset: 0,
         zIndex: 200,
-        background: "rgba(15, 23, 42, 0.35)",
+        background: "rgba(17, 27, 63, 0.4)",
         display: "flex",
         justifyContent: "center",
       }}
@@ -59,7 +59,7 @@ export default function ArchivedDaysPanel({
         onClick={(e) => e.stopPropagation()}
         style={{
           width: "min(560px, 100%)",
-          background: colors.background,
+          background: colors.paper,
           borderRadius: "0 0 28px 28px",
           maxHeight: "85vh",
           display: "flex",
@@ -75,14 +75,14 @@ export default function ArchivedDaysPanel({
                 alignItems: "center",
                 gap: 8,
                 padding: `${spacing.md}px ${spacing.lg}px`,
-                borderBottom: "1px solid rgba(148, 163, 184, 0.25)",
+                borderBottom: `1px solid ${colors.hairline}`,
               }}
             >
               <button
                 onClick={() => setSelectedId(null)}
                 style={{ background: "transparent", border: "none", cursor: "pointer", padding: 4 }}
               >
-                <IoChevronBack size={20} color={colors.secondary} />
+                <IoChevronBack size={20} color={colors.navy} />
               </button>
               <div style={{ display: "flex", flexDirection: "column" }}>
                 <span
@@ -90,13 +90,13 @@ export default function ArchivedDaysPanel({
                     fontFamily: typography.header.fontFamily,
                     fontWeight: 700,
                     fontSize: 15,
-                    color: colors.secondary,
+                    color: colors.navy,
                     textTransform: "capitalize",
                   }}
                 >
                   {selectedConversation ? formatDate(selectedConversation.conversationDate) : ""}
                 </span>
-                <span style={{ fontFamily: typography.body.fontFamily, fontSize: 12, color: "#9AA4B2" }}>
+                <span style={{ fontFamily: typography.body.fontFamily, fontSize: 12, color: colors.textMuted }}>
                   Lecture seule
                 </span>
               </div>
@@ -131,7 +131,7 @@ export default function ArchivedDaysPanel({
                 alignItems: "center",
                 justifyContent: "space-between",
                 padding: `${spacing.md}px ${spacing.lg}px`,
-                borderBottom: "1px solid rgba(148, 163, 184, 0.25)",
+                borderBottom: `1px solid ${colors.hairline}`,
               }}
             >
               <span
@@ -139,7 +139,7 @@ export default function ArchivedDaysPanel({
                   fontFamily: typography.header.fontFamily,
                   fontWeight: 700,
                   fontSize: 16,
-                  color: colors.secondary,
+                  color: colors.navy,
                 }}
               >
                 Historique
@@ -148,7 +148,7 @@ export default function ArchivedDaysPanel({
                 onClick={onClose}
                 style={{ background: "transparent", border: "none", cursor: "pointer", padding: 4 }}
               >
-                <IoClose size={20} color={colors.secondary} />
+                <IoClose size={20} color={colors.navy} />
               </button>
             </div>
 
@@ -167,7 +167,7 @@ export default function ArchivedDaysPanel({
                   style={{
                     fontFamily: typography.body.fontFamily,
                     fontSize: 14,
-                    color: "#9AA4B2",
+                    color: colors.textMuted,
                     textAlign: "center",
                     marginTop: spacing.xl,
                   }}

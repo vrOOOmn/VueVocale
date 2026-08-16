@@ -52,9 +52,8 @@ export default function LandingPage() {
     <div
       style={{
         minHeight: "100svh",
-        background:
-          "linear-gradient(180deg, #F6F8FF 0%, #EEF2FF 45%, #F8FAFF 100%)",
-        color: colors.text,
+        background: colors.ivory,
+        color: colors.navy,
       }}
     >
       {/* Nav */}
@@ -75,7 +74,7 @@ export default function LandingPage() {
               fontFamily: typography.header.fontFamily,
               fontWeight: 700,
               fontSize: 19,
-              color: colors.secondary,
+              color: colors.navy,
             }}
           >
             VueVocale
@@ -113,8 +112,8 @@ export default function LandingPage() {
               fontSize: 13,
               fontWeight: 600,
               letterSpacing: 0.4,
-              color: "#3369D6",
-              background: "rgba(79, 141, 253, 0.12)",
+              color: colors.electric,
+              background: "rgba(49, 104, 255, 0.1)",
               borderRadius: 999,
               padding: "6px 14px",
               marginBottom: 20,
@@ -124,12 +123,12 @@ export default function LandingPage() {
           </span>
           <h1
             style={{
-              fontFamily: typography.header.fontFamily,
-              fontWeight: 700,
-              fontSize: "clamp(32px, 4vw, 48px)",
+              fontFamily: typography.display.fontFamily,
+              fontWeight: 400,
+              fontSize: "clamp(32px, 4vw, 52px)",
               lineHeight: 1.15,
               margin: 0,
-              color: colors.secondary,
+              color: colors.navy,
             }}
           >
             Point your camera.
@@ -143,7 +142,7 @@ export default function LandingPage() {
               fontFamily: typography.body.fontFamily,
               fontSize: 18,
               lineHeight: 1.6,
-              color: "#5A6472",
+              color: colors.textMuted,
               marginTop: 20,
               maxWidth: 480,
             }}
@@ -160,6 +159,17 @@ export default function LandingPage() {
               See how it works
             </a>
           </div>
+          <p
+            style={{
+              fontFamily: typography.display.fontFamily,
+              fontStyle: "italic",
+              fontSize: 17,
+              color: colors.brass,
+              marginTop: 18,
+            }}
+          >
+            avec nuance
+          </p>
         </div>
 
         <PhoneMockup />
@@ -190,7 +200,7 @@ export default function LandingPage() {
                   fontFamily: typography.header.fontFamily,
                   fontWeight: 700,
                   fontSize: 14,
-                  color: "#9BB4F0",
+                  color: "rgba(49, 104, 255, 0.35)",
                   letterSpacing: 1,
                 }}
               >
@@ -202,7 +212,7 @@ export default function LandingPage() {
                   fontWeight: 700,
                   fontSize: 20,
                   margin: "10px 0 8px",
-                  color: colors.secondary,
+                  color: colors.navy,
                 }}
               >
                 {step.title}
@@ -212,7 +222,7 @@ export default function LandingPage() {
                   fontFamily: typography.body.fontFamily,
                   fontSize: 15,
                   lineHeight: 1.55,
-                  color: "#5A6472",
+                  color: colors.textMuted,
                   margin: 0,
                 }}
               >
@@ -249,7 +259,7 @@ export default function LandingPage() {
                   fontWeight: 700,
                   fontSize: 17,
                   margin: "0 0 8px",
-                  color: colors.secondary,
+                  color: colors.navy,
                 }}
               >
                 {feature.title}
@@ -259,7 +269,7 @@ export default function LandingPage() {
                   fontFamily: typography.body.fontFamily,
                   fontSize: 14.5,
                   lineHeight: 1.55,
-                  color: "#5A6472",
+                  color: colors.textMuted,
                   margin: 0,
                 }}
               >
@@ -280,18 +290,18 @@ export default function LandingPage() {
       >
         <div
           style={{
-            borderRadius: 32,
+            borderRadius: borderRadiusXl,
             padding: "48px 32px",
             textAlign: "center",
-            background: "linear-gradient(135deg, #4F8DFD, #3369D6)",
-            boxShadow: "0 20px 50px rgba(51, 105, 214, 0.3)",
+            background: colors.electric,
+            boxShadow: "0 20px 50px rgba(49, 104, 255, 0.3)",
           }}
         >
           <h2
             style={{
-              fontFamily: typography.header.fontFamily,
-              fontWeight: 700,
-              fontSize: "clamp(24px, 3vw, 32px)",
+              fontFamily: typography.display.fontFamily,
+              fontWeight: 400,
+              fontSize: "clamp(24px, 3vw, 36px)",
               color: "#fff",
               margin: "0 0 12px",
             }}
@@ -311,7 +321,7 @@ export default function LandingPage() {
           <Link
             href="/app"
             className="lp-btn"
-            style={{ background: "#fff", color: "#3369D6", padding: "14px 30px" }}
+            style={{ background: "#fff", color: colors.electric, padding: "14px 30px" }}
           >
             Launch App
           </Link>
@@ -327,7 +337,7 @@ export default function LandingPage() {
           textAlign: "center",
           fontFamily: typography.body.fontFamily,
           fontSize: 13,
-          color: "#9AA4B2",
+          color: colors.textMuted,
         }}
       >
         VueVocale — built by Varun Narayanan
@@ -335,6 +345,8 @@ export default function LandingPage() {
     </div>
   );
 }
+
+const borderRadiusXl = 28;
 
 function SectionHeading({ eyebrow, title }: { eyebrow: string; title: string }) {
   return (
@@ -346,7 +358,7 @@ function SectionHeading({ eyebrow, title }: { eyebrow: string; title: string }) 
           fontWeight: 600,
           letterSpacing: 0.6,
           textTransform: "uppercase",
-          color: "#3369D6",
+          color: colors.brass,
           marginBottom: 8,
         }}
       >
@@ -354,11 +366,11 @@ function SectionHeading({ eyebrow, title }: { eyebrow: string; title: string }) 
       </span>
       <h2
         style={{
-          fontFamily: typography.header.fontFamily,
-          fontWeight: 700,
-          fontSize: "clamp(22px, 3vw, 30px)",
+          fontFamily: typography.display.fontFamily,
+          fontWeight: 400,
+          fontSize: "clamp(22px, 3vw, 34px)",
           margin: 0,
-          color: colors.secondary,
+          color: colors.navy,
         }}
       >
         {title}
@@ -379,9 +391,9 @@ function PhoneMockup() {
         style={{
           width: 280,
           borderRadius: 36,
-          background: "#fff",
-          border: "1px solid rgba(148, 163, 184, 0.35)",
-          boxShadow: "0 30px 60px rgba(51, 105, 214, 0.18)",
+          background: colors.paper,
+          border: `1px solid ${colors.hairline}`,
+          boxShadow: "0 30px 60px rgba(17, 27, 63, 0.14)",
           padding: 14,
         }}
       >
@@ -397,7 +409,7 @@ function PhoneMockup() {
               width: 60,
               height: 5,
               borderRadius: 999,
-              background: "rgba(148, 163, 184, 0.4)",
+              background: colors.hairline,
             }}
           />
         </div>
@@ -417,7 +429,7 @@ function PhoneMockup() {
               position: "absolute",
               bottom: 10,
               left: 10,
-              background: "rgba(0,0,0,0.55)",
+              background: colors.navy,
               color: "#fff",
               fontFamily: typography.body.fontFamily,
               fontSize: 13,
@@ -436,7 +448,7 @@ function PhoneMockup() {
             style={{
               alignSelf: "flex-end",
               maxWidth: "80%",
-              background: "linear-gradient(135deg, #4F8DFD, #3369D6)",
+              background: colors.electric,
               color: "#fff",
               borderRadius: "16px 16px 4px 16px",
               padding: "9px 13px",
@@ -452,8 +464,8 @@ function PhoneMockup() {
             style={{
               alignSelf: "flex-start",
               maxWidth: "85%",
-              background: "#F1F5F9",
-              color: "#1E293B",
+              background: colors.mist,
+              color: colors.navy,
               borderRadius: "16px 16px 16px 4px",
               padding: "9px 13px",
               fontFamily: typography.body.fontFamily,
