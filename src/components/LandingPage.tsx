@@ -1,53 +1,87 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { IoCloseOutline, IoMenuOutline } from "react-icons/io5";
 import { colors, spacing, typography } from "../theme";
 
-const STEPS = [
+// Grounded in the real product (src/routes/Scanner.tsx, Chat.tsx,
+// MessageBubble.tsx) — not marketing fluff. No bounding boxes, no
+// pronunciation score, no fabricated timing: those features don't exist.
+const HOW_IT_WORKS_STEPS = [
   {
+    id: "scan",
     number: "01",
     title: "Scan",
-    body: "Point your camera at anything around you. VueVocale identifies it and gives you the French word instantly.",
+    subtitle: "Snap a photo — get the word instantly",
+    dotColor: colors.citrusObject,
+    state: {
+      title: "Scan step active",
+      body: "One photo is enough. VueVocale names it in French and English — no bounding boxes, no live scanning required.",
+      tiles: [
+        { value: "FR + EN", label: "word given in both" },
+        { value: "1 tap", label: "confirm to start chatting" },
+      ],
+    },
   },
   {
+    id: "converse",
     number: "02",
     title: "Converse",
-    body: "Talk about it out loud or by text with an AI companion that replies in natural, conversational French.",
+    subtitle: "The AI opens with a real question about your photo",
+    dotColor: colors.skyAI,
+    state: {
+      title: "Converse step active",
+      body: "Replies stay grounded in what you scanned, short, and always in French — one question at a time.",
+      tiles: [
+        { value: "≤3 phrases", label: "per AI reply" },
+        { value: "Français", label: "always, not English" },
+      ],
+    },
   },
   {
+    id: "refine",
     number: "03",
-    title: "Improve",
-    body: "Ask for grammar feedback on demand and hear correct pronunciation with on-tap text-to-speech.",
+    title: "Refine",
+    subtitle: "Tap for a grammar check, only when you want one",
+    dotColor: colors.rouge,
+    state: {
+      title: "Refine step active",
+      body: "Correction is opt-in — one button under any message. Never automatic, never interrupts the chat.",
+      tiles: [
+        { value: "On demand", label: "never automatic" },
+        { value: "1 tap", label: "“Corriger la grammaire”" },
+      ],
+    },
   },
-];
+] as const;
 
-const FEATURES = [
-  {
-    title: "Camera-based object detection",
-    body: "Your surroundings become conversation starters instead of a static vocabulary list.",
-  },
-  {
-    title: "Context-aware conversation",
-    body: "The AI keeps the topic grounded in what you just scanned, so responses stay relevant.",
-  },
-  {
-    title: "Hands-free speech input",
-    body: "Speak naturally and let speech-to-text handle the rest — no typing required.",
-  },
-  {
-    title: "On-demand playback",
-    body: "Hear any reply spoken aloud to build listening comprehension alongside speaking.",
-  },
-  {
-    title: "Grammar feedback, on request",
-    body: "Correction is available whenever you want it, without interrupting the flow of conversation.",
-  },
-  {
-    title: "Mobile-first by design",
-    body: "Built for quick, frequent practice sessions on the device already in your pocket.",
-  },
-];
+const PAGE_MAX_WIDTH = 1312;
+// One consistent vertical rhythm for every major section — the page is
+// short enough to afford generous, uniform spacing rather than ad hoc values.
+const SECTION_PAD_Y = "clamp(56px, 7.5vw, 96px)";
+// The nav is compact by nature, so the gap into the hero should read
+// noticeably tighter than the rhythm between the sections below it.
+const HERO_TOP_PAD = "clamp(28px, 4vw, 48px)";
+// Side margins that grow with viewport width instead of a fixed 24px everywhere.
+const SIDE_PAD = "clamp(24px, 6vw, 80px)";
+// Every section header (How it works / Features / CTA) shares this exact size.
+const SECTION_TITLE_SIZE = "clamp(26px, 4vw, 42px)";
 
 export default function LandingPage() {
+  const [activeStep, setActiveStep] = useState(1);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMobileMenuOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [mobileMenuOpen]);
+
   return (
     <div
       style={{
@@ -59,177 +93,335 @@ export default function LandingPage() {
       {/* Nav */}
       <header
         style={{
-          maxWidth: 1100,
+          position: "relative",
+          maxWidth: PAGE_MAX_WIDTH,
           margin: "0 auto",
-          padding: `${spacing.lg}px ${spacing.lg}px`,
+          padding: `${spacing.lg + 8}px ${SIDE_PAD}`,
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <Image src="/vuevocale.svg" alt="" width={28} height={28} priority />
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <Image src="/vuevocale.svg" alt="" width={34} height={34} priority />
           <span
+            className="lp-brand"
             style={{
               fontFamily: typography.header.fontFamily,
               fontWeight: 700,
-              fontSize: 19,
               color: colors.navy,
             }}
           >
             VueVocale
           </span>
         </div>
-        <nav style={{ display: "flex", alignItems: "center", gap: 28 }}>
+        <nav className="lp-nav-links">
           <a href="#how-it-works" className="lp-nav-link">
-            How it works
+            Method
           </a>
           <a href="#features" className="lp-nav-link">
-            Features
+            Practice
           </a>
-          <Link href="/app" className="lp-btn lp-btn-primary" style={{ padding: "10px 20px", fontSize: 15 }}>
-            Launch App
+          <a href="#cta" className="lp-nav-link">
+            Progress
+          </a>
+          <Link
+            href="/app"
+            className="lp-btn"
+            style={{
+              background: "#2F65F6",
+              color: "#fff",
+              borderRadius: 16,
+              padding: "12px 22px",
+              fontSize: 16,
+            }}
+          >
+            Launch
           </Link>
         </nav>
+
+        <button
+          type="button"
+          className="lp-nav-toggle"
+          aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+          aria-expanded={mobileMenuOpen}
+          onClick={() => setMobileMenuOpen((open) => !open)}
+        >
+          {mobileMenuOpen ? <IoCloseOutline size={22} /> : <IoMenuOutline size={22} />}
+        </button>
+
+        {mobileMenuOpen && (
+          <nav className="lp-nav-mobile-panel" aria-label="Mobile">
+            <a href="#how-it-works" className="lp-nav-link" onClick={() => setMobileMenuOpen(false)}>
+              Method
+            </a>
+            <a href="#features" className="lp-nav-link" onClick={() => setMobileMenuOpen(false)}>
+              Practice
+            </a>
+            <a href="#cta" className="lp-nav-link" onClick={() => setMobileMenuOpen(false)}>
+              Progress
+            </a>
+            <Link
+              href="/app"
+              className="lp-btn"
+              style={{
+                background: "#2F65F6",
+                color: "#fff",
+                borderRadius: 16,
+                padding: "10px 20px",
+                fontSize: 15,
+              }}
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Launch
+            </Link>
+          </nav>
+        )}
       </header>
 
       {/* Hero */}
       <section
         style={{
-          maxWidth: 1100,
+          maxWidth: PAGE_MAX_WIDTH,
           margin: "0 auto",
-          padding: `${spacing.xl}px ${spacing.lg}px ${spacing.xl * 2}px`,
-          display: "grid",
-          gridTemplateColumns: "1.1fr 0.9fr",
-          gap: 48,
-          alignItems: "center",
+          padding: `${HERO_TOP_PAD} ${SIDE_PAD} ${SECTION_PAD_Y}`,
         }}
       >
+        <div className="lp-hero-grid">
         <div>
           <span
             style={{
               display: "inline-block",
+              fontFamily: typography.header.fontFamily,
               fontSize: 13,
               fontWeight: 600,
               letterSpacing: 0.4,
-              color: colors.electric,
-              background: "rgba(49, 104, 255, 0.1)",
-              borderRadius: 999,
-              padding: "6px 14px",
-              marginBottom: 20,
+              color: colors.paper,
+              background: colors.navy,
+              borderRadius: 8,
+              padding: "9px 18px",
+              marginBottom: 32,
             }}
           >
-            AI-powered spoken French practice
+            PARISIAN AI PRACTICE
           </span>
           <h1
             style={{
               fontFamily: typography.display.fontFamily,
               fontWeight: 400,
-              fontSize: "clamp(32px, 4vw, 52px)",
-              lineHeight: 1.15,
+              fontSize: "clamp(32px, 5vw, 76px)",
+              lineHeight: 1.12,
               margin: 0,
               color: colors.navy,
             }}
           >
-            Point your camera.
+            Capture the room.
             <br />
-            Say what you see.
+            Name it in French.
             <br />
-            Actually speak French.
+            Speak with confidence.
           </h1>
+          <div
+            style={{
+              width: "100%",
+              maxWidth: 500,
+              height: 1,
+              background: colors.brass,
+              margin: "40px 0 32px",
+            }}
+          />
           <p
             style={{
               fontFamily: typography.body.fontFamily,
-              fontSize: 18,
-              lineHeight: 1.6,
-              color: colors.textMuted,
-              marginTop: 20,
-              maxWidth: 480,
+              fontSize: "clamp(17px, 4.4vw, 22px)",
+              lineHeight: 1.65,
+              color: "#4F5B6F",
+              margin: 0,
+              maxWidth: 580,
             }}
           >
-            VueVocale turns everyday objects into conversation starters, then lets
-            you practice speaking naturally with an AI companion — no vocab lists,
-            no multiple choice.
+            VueVocale turns the objects around you into short, guided
+            conversations with instant pronunciation feedback. It feels
+            polished, but it behaves like a serious AI learning tool.
           </p>
-          <div style={{ display: "flex", gap: 14, marginTop: 32, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 28, marginTop: 44, flexWrap: "wrap" }}>
             <Link href="/app" className="lp-btn lp-btn-primary">
-              Launch App
+              Start speaking
             </Link>
             <a href="#how-it-works" className="lp-btn lp-btn-secondary">
-              See how it works
+              See method
             </a>
+            <span
+              style={{
+                fontFamily: typography.display.fontFamily,
+                fontStyle: "italic",
+                fontSize: 18,
+                color: colors.brass,
+              }}
+            >
+              avec nuance
+            </span>
           </div>
-          <p
-            style={{
-              fontFamily: typography.display.fontFamily,
-              fontStyle: "italic",
-              fontSize: 17,
-              color: colors.brass,
-              marginTop: 18,
-            }}
-          >
-            avec nuance
-          </p>
         </div>
 
-        <PhoneMockup />
+          <PhoneMockup />
+        </div>
       </section>
 
       {/* How it works */}
       <section
         id="how-it-works"
         style={{
-          maxWidth: 1100,
+          maxWidth: PAGE_MAX_WIDTH,
           margin: "0 auto",
-          padding: `${spacing.xl}px ${spacing.lg}px`,
+          padding: `${SECTION_PAD_Y} ${SIDE_PAD}`,
         }}
       >
-        <SectionHeading eyebrow="How it works" title="From a glance to a conversation" />
         <div
           style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-            gap: 20,
-            marginTop: 36,
+            background: colors.paper,
+            border: `1px solid ${colors.hairline}`,
+            borderRadius: borderRadiusXl,
+            padding: "clamp(32px, 6vw, 56px)",
+            boxShadow: "0 16px 42px rgba(24, 29, 48, 0.08)",
           }}
         >
-          {STEPS.map((step) => (
-            <div key={step.number} className="lp-step-card">
+          <div style={{ maxWidth: 640, marginBottom: 48 }}>
+            <span
+              style={{
+                display: "block",
+                fontSize: 14,
+                fontWeight: 600,
+                letterSpacing: 0.6,
+                textTransform: "uppercase",
+                color: colors.brass,
+                marginBottom: 12,
+              }}
+            >
+              How it works
+            </span>
+            <h2
+              style={{
+                fontFamily: typography.display.fontFamily,
+                fontWeight: 400,
+                fontSize: SECTION_TITLE_SIZE,
+                margin: 0,
+                color: colors.navy,
+              }}
+            >
+              From a glance to a conversation
+            </h2>
+            <p
+              style={{
+                fontFamily: typography.body.fontFamily,
+                fontSize: "clamp(15px, 3.6vw, 16.5px)",
+                lineHeight: 1.6,
+                color: colors.textMuted,
+                marginTop: 16,
+              }}
+            >
+              Three real steps, not a slideshow — pick one to see exactly what happens in the app.
+            </p>
+          </div>
+
+          <div className="lp-how-body">
+            <div className="lp-steps" role="group" aria-label="Practice steps">
+              {HOW_IT_WORKS_STEPS.map((step, index) => (
+                <button
+                  key={step.id}
+                  type="button"
+                  className="lp-step-btn"
+                  aria-pressed={activeStep === index}
+                  onClick={() => setActiveStep(index)}
+                >
+                  <span className="lp-step-num">{step.number}</span>
+                  <span>
+                    <strong className="lp-step-title">{step.title}</strong>
+                    <span className="lp-step-subtitle">{step.subtitle}</span>
+                  </span>
+                  <span className="lp-step-dot" style={{ background: step.dotColor }} />
+                </button>
+              ))}
+            </div>
+
+            <StepPhonePreview stepId={HOW_IT_WORKS_STEPS[activeStep].id} />
+
+            <aside
+              aria-label="Live product state"
+              style={{
+                background: colors.navy,
+                borderRadius: 22,
+                padding: 36,
+                color: "#fff",
+                display: "grid",
+                alignContent: "center",
+                gap: 20,
+              }}
+            >
               <span
                 style={{
-                  fontFamily: typography.header.fontFamily,
+                  fontSize: 13,
                   fontWeight: 700,
-                  fontSize: 14,
-                  color: "rgba(49, 104, 255, 0.35)",
-                  letterSpacing: 1,
+                  letterSpacing: 0.6,
+                  textTransform: "uppercase",
+                  color: colors.skyAI,
                 }}
               >
-                {step.number}
+                Live product state
               </span>
               <h3
                 style={{
                   fontFamily: typography.header.fontFamily,
                   fontWeight: 700,
-                  fontSize: 20,
-                  margin: "10px 0 8px",
-                  color: colors.navy,
+                  fontSize: "clamp(22px, 5vw, 27px)",
+                  lineHeight: 1.2,
+                  margin: 0,
                 }}
               >
-                {step.title}
+                {HOW_IT_WORKS_STEPS[activeStep].state.title}
               </h3>
               <p
                 style={{
                   fontFamily: typography.body.fontFamily,
-                  fontSize: 15,
-                  lineHeight: 1.55,
-                  color: colors.textMuted,
+                  fontSize: "clamp(14.5px, 3.6vw, 15.5px)",
+                  lineHeight: 1.6,
+                  color: "rgba(255,255,255,0.82)",
                   margin: 0,
                 }}
               >
-                {step.body}
+                {HOW_IT_WORKS_STEPS[activeStep].state.body}
               </p>
-            </div>
-          ))}
+              <div style={{ display: "flex", gap: 18, marginTop: 8, flexWrap: "wrap" }}>
+                {HOW_IT_WORKS_STEPS[activeStep].state.tiles.map((tile) => (
+                  <div
+                    key={tile.label}
+                    style={{
+                      flex: "1 1 110px",
+                      background: "rgba(80, 112, 255, 0.16)",
+                      border: "1px solid rgba(126, 150, 255, 0.25)",
+                      borderRadius: 14,
+                      padding: 18,
+                    }}
+                  >
+                    <strong
+                      style={{
+                        display: "block",
+                        color: colors.skyAI,
+                        fontSize: 23,
+                        lineHeight: 1.15,
+                        marginBottom: 6,
+                      }}
+                    >
+                      {tile.value}
+                    </strong>
+                    <span style={{ color: "rgba(255,255,255,0.76)", fontSize: 12, fontWeight: 600 }}>
+                      {tile.label}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </aside>
+          </div>
         </div>
       </section>
 
@@ -237,61 +429,208 @@ export default function LandingPage() {
       <section
         id="features"
         style={{
-          maxWidth: 1100,
+          maxWidth: PAGE_MAX_WIDTH,
           margin: "0 auto",
-          padding: `${spacing.xl}px ${spacing.lg}px`,
+          padding: `${SECTION_PAD_Y} ${SIDE_PAD}`,
         }}
       >
-        <SectionHeading eyebrow="Features" title="Built for real conversational practice" />
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-            gap: 18,
-            marginTop: 36,
-          }}
-        >
-          {FEATURES.map((feature) => (
-            <div key={feature.title} className="lp-feature-card">
-              <h3
-                style={{
-                  fontFamily: typography.header.fontFamily,
-                  fontWeight: 700,
-                  fontSize: 17,
-                  margin: "0 0 8px",
-                  color: colors.navy,
-                }}
-              >
-                {feature.title}
-              </h3>
-              <p
-                style={{
-                  fontFamily: typography.body.fontFamily,
-                  fontSize: 14.5,
-                  lineHeight: 1.55,
-                  color: colors.textMuted,
-                  margin: 0,
-                }}
-              >
-                {feature.body}
+        <SectionHeading eyebrow="Inside the app" title="Every feature is something you'll actually tap" />
+        <div className="lp-feature-grid" style={{ marginTop: 48 }}>
+          <article className="lp-feature-card lp-fragment" style={{ gridColumn: "span 2" }}>
+            <div>
+              <h3 className="lp-fragment-title">Snap a photo, get the word</h3>
+              <p className="lp-fragment-body">
+                A single photo is enough — no bounding boxes, no live scanning. Just the French word and its
+                English translation.
               </p>
             </div>
-          ))}
+            <div
+              style={{
+                borderRadius: 16,
+                height: 80,
+                background: colors.mist,
+                border: `1px solid ${colors.hairline}`,
+                position: "relative",
+                overflow: "hidden",
+              }}
+            >
+              <span
+                style={{
+                  position: "absolute",
+                  left: 12,
+                  bottom: 10,
+                  background: colors.navy,
+                  color: colors.paper,
+                  fontSize: 11.5,
+                  fontWeight: 700,
+                  borderRadius: 999,
+                  padding: "5px 11px",
+                }}
+              >
+                une orange
+              </span>
+            </div>
+            <div style={{ height: 5, borderRadius: 999, background: colors.citrusObject, marginTop: 20 }} />
+          </article>
+
+          <article className="lp-feature-card lp-fragment" style={{ gridColumn: "span 2" }}>
+            <div>
+              <h3 className="lp-fragment-title">Grounded, not generic</h3>
+              <p className="lp-fragment-body">
+                The AI opens with a real question about your photo — always in French, one question at a
+                time.
+              </p>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <span
+                style={{
+                  alignSelf: "flex-start",
+                  maxWidth: "88%",
+                  background: "#F4F0FF",
+                  border: "1px solid #D8D0FF",
+                  color: colors.navy,
+                  borderRadius: 12,
+                  padding: "8px 12px",
+                  fontSize: 12.5,
+                }}
+              >
+                Je vois une orange&nbsp;!
+              </span>
+              <span
+                style={{
+                  alignSelf: "flex-end",
+                  maxWidth: "88%",
+                  background: colors.electric,
+                  color: "#fff",
+                  borderRadius: 12,
+                  padding: "8px 12px",
+                  fontSize: 12.5,
+                  fontWeight: 600,
+                }}
+              >
+                Oui, j&apos;adore ça.
+              </span>
+            </div>
+            <div style={{ height: 5, borderRadius: 999, background: colors.skyAI, marginTop: 20 }} />
+          </article>
+
+          <article className="lp-feature-card lp-fragment" style={{ gridColumn: "span 2" }}>
+            <div>
+              <h3 className="lp-fragment-title">Talk instead of type</h3>
+              <p className="lp-fragment-body">
+                Pick your microphone, tap to record, and hear every reply spoken aloud whenever you want.
+              </p>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 80 }}>
+              <div
+                style={{
+                  width: 52,
+                  height: 52,
+                  borderRadius: "50%",
+                  background: colors.electric,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <div style={{ width: 16, height: 24, borderRadius: 8, background: "#fff" }} />
+              </div>
+            </div>
+            <div style={{ height: 5, borderRadius: 999, background: colors.electric, marginTop: 20 }} />
+          </article>
+
+          <article className="lp-feature-card lp-fragment" style={{ gridColumn: "span 3" }}>
+            <div>
+              <h3 className="lp-fragment-title">Not a red pen — a tap when you want one</h3>
+              <p className="lp-fragment-body">
+                Every message has a “Corriger la grammaire” button. Skip it and keep chatting, or tap it for
+                one focused fix.
+              </p>
+            </div>
+            <div style={{ display: "flex", gap: 14, alignItems: "center", flexWrap: "wrap" }}>
+              <div
+                style={{
+                  borderRadius: 14,
+                  background: "rgba(30, 167, 131, 0.12)",
+                  border: "1px solid rgba(30, 167, 131, 0.35)",
+                  color: colors.mint,
+                  fontWeight: 700,
+                  fontSize: 13.5,
+                  padding: "12px 16px",
+                }}
+              >
+                ✓ Bien&nbsp;!
+              </div>
+              <div
+                style={{
+                  borderRadius: 14,
+                  background: "rgba(185, 74, 72, 0.08)",
+                  border: `1px solid ${colors.rouge}`,
+                  color: colors.rouge,
+                  fontWeight: 700,
+                  fontSize: 13.5,
+                  padding: "12px 16px",
+                }}
+              >
+                ➡ une orange
+              </div>
+            </div>
+            <div style={{ height: 5, borderRadius: 999, background: colors.rouge, marginTop: 20 }} />
+          </article>
+
+          <article className="lp-feature-card lp-fragment" style={{ gridColumn: "span 3" }}>
+            <div>
+              <h3 className="lp-fragment-title">One conversation a day</h3>
+              <p className="lp-fragment-body">
+                Each day&apos;s chat rolls into your Historique automatically when you come back — return
+                daily and the streak badge grows.
+              </p>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <span
+                style={{
+                  background: colors.navy,
+                  color: "#fff",
+                  borderRadius: 999,
+                  padding: "10px 16px",
+                  fontWeight: 700,
+                  fontSize: 14.5,
+                }}
+              >
+                🔥 4
+              </span>
+              <div style={{ display: "flex", gap: 8 }}>
+                {[0, 1, 2, 3].map((i) => (
+                  <span
+                    key={i}
+                    style={{
+                      width: 10,
+                      height: 10,
+                      borderRadius: "50%",
+                      background: i < 3 ? colors.lavenderProgress : colors.hairline,
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+            <div style={{ height: 5, borderRadius: 999, background: colors.lavenderProgress, marginTop: 20 }} />
+          </article>
         </div>
       </section>
 
       {/* CTA band */}
       <section
+        id="cta"
         style={{
-          maxWidth: 1100,
+          maxWidth: PAGE_MAX_WIDTH,
           margin: "0 auto",
-          padding: `${spacing.xl}px ${spacing.lg}px ${spacing.xl * 1.5}px`,
+          padding: `${SECTION_PAD_Y} ${SIDE_PAD}`,
         }}
       >
         <div
           style={{
             borderRadius: borderRadiusXl,
-            padding: "48px 32px",
+            padding: "clamp(48px, 9vw, 72px) 40px",
             textAlign: "center",
             background: colors.electric,
             boxShadow: "0 20px 50px rgba(49, 104, 255, 0.3)",
@@ -301,9 +640,9 @@ export default function LandingPage() {
             style={{
               fontFamily: typography.display.fontFamily,
               fontWeight: 400,
-              fontSize: "clamp(24px, 3vw, 36px)",
+              fontSize: SECTION_TITLE_SIZE,
               color: "#fff",
-              margin: "0 0 12px",
+              margin: "0 0 20px",
             }}
           >
             Ready to start talking?
@@ -311,9 +650,9 @@ export default function LandingPage() {
           <p
             style={{
               fontFamily: typography.body.fontFamily,
-              fontSize: 16,
+              fontSize: "clamp(15px, 3.8vw, 18px)",
               color: "rgba(255,255,255,0.85)",
-              margin: "0 0 28px",
+              margin: "0 0 36px",
             }}
           >
             No sign-up friction. Scan something nearby and start your first conversation.
@@ -321,27 +660,12 @@ export default function LandingPage() {
           <Link
             href="/app"
             className="lp-btn"
-            style={{ background: "#fff", color: colors.electric, padding: "14px 30px" }}
+            style={{ background: "#fff", color: colors.electric, padding: "16px 34px", fontSize: 16 }}
           >
             Launch App
           </Link>
         </div>
       </section>
-
-      {/* Footer */}
-      <footer
-        style={{
-          maxWidth: 1100,
-          margin: "0 auto",
-          padding: `${spacing.lg}px ${spacing.lg}px ${spacing.xl}px`,
-          textAlign: "center",
-          fontFamily: typography.body.fontFamily,
-          fontSize: 13,
-          color: colors.textMuted,
-        }}
-      >
-        VueVocale — built by Varun Narayanan
-      </footer>
     </div>
   );
 }
@@ -354,12 +678,12 @@ function SectionHeading({ eyebrow, title }: { eyebrow: string; title: string }) 
       <span
         style={{
           display: "block",
-          fontSize: 13,
+          fontSize: 14,
           fontWeight: 600,
           letterSpacing: 0.6,
           textTransform: "uppercase",
           color: colors.brass,
-          marginBottom: 8,
+          marginBottom: 12,
         }}
       >
         {eyebrow}
@@ -368,7 +692,7 @@ function SectionHeading({ eyebrow, title }: { eyebrow: string; title: string }) 
         style={{
           fontFamily: typography.display.fontFamily,
           fontWeight: 400,
-          fontSize: "clamp(22px, 3vw, 34px)",
+          fontSize: SECTION_TITLE_SIZE,
           margin: 0,
           color: colors.navy,
         }}
@@ -389,93 +713,277 @@ function PhoneMockup() {
     >
       <div
         style={{
-          width: 280,
-          borderRadius: 36,
+          width: 330,
+          borderRadius: 40,
           background: colors.paper,
           border: `1px solid ${colors.hairline}`,
           boxShadow: "0 30px 60px rgba(17, 27, 63, 0.14)",
-          padding: 14,
+          padding: 18,
         }}
       >
         <div
           style={{
-            display: "flex",
-            justifyContent: "center",
-            marginBottom: 10,
+            borderRadius: 26,
+            height: 212,
+            background: colors.mist,
+            border: `1px solid ${colors.hairline}`,
+            position: "relative",
+            overflow: "hidden",
+            marginBottom: 18,
           }}
         >
           <div
             style={{
-              width: 60,
-              height: 5,
-              borderRadius: 999,
-              background: colors.hairline,
+              position: "absolute",
+              left: 0,
+              right: 0,
+              bottom: 0,
+              height: 78,
+              background: colors.skyAI,
             }}
           />
-        </div>
-
-        <div
-          style={{
-            borderRadius: 20,
-            height: 140,
-            background: "linear-gradient(135deg, #FDE68A, #F97316)",
-            position: "relative",
-            overflow: "hidden",
-            marginBottom: 12,
-          }}
-        >
           <span
             style={{
               position: "absolute",
-              bottom: 10,
-              left: 10,
+              left: 24,
+              bottom: 50,
               background: colors.navy,
-              color: "#fff",
+              color: colors.paper,
               fontFamily: typography.body.fontFamily,
-              fontSize: 13,
+              fontSize: 15,
               fontWeight: 600,
               borderRadius: 999,
-              padding: "5px 10px",
+              padding: "7px 14px",
             }}
           >
-            🍊 orange
+            une orange
           </span>
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          <div
-            className="lp-bubble"
-            style={{
-              alignSelf: "flex-end",
-              maxWidth: "80%",
-              background: colors.electric,
-              color: "#fff",
-              borderRadius: "16px 16px 4px 16px",
-              padding: "9px 13px",
-              fontFamily: typography.body.fontFamily,
-              fontSize: 13.5,
-              animationDelay: "0.1s",
-            }}
-          >
-            C&apos;est sucré et un peu acide, non&nbsp;?
-          </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           <div
             className="lp-bubble"
             style={{
               alignSelf: "flex-start",
-              maxWidth: "85%",
-              background: colors.mist,
+              maxWidth: "88%",
+              background: "#F4F0FF",
+              border: "1px solid #D8D0FF",
               color: colors.navy,
-              borderRadius: "16px 16px 16px 4px",
-              padding: "9px 13px",
+              borderRadius: 20,
+              padding: "12px 17px",
               fontFamily: typography.body.fontFamily,
-              fontSize: 13.5,
+              fontSize: 15,
+              lineHeight: 1.5,
+              animationDelay: "0.1s",
+            }}
+          >
+            Je vois une orange&nbsp;! Tu en manges souvent&nbsp;?
+          </div>
+          <div
+            className="lp-bubble"
+            style={{
+              alignSelf: "flex-end",
+              maxWidth: "82%",
+              background: colors.electric,
+              color: "#fff",
+              borderRadius: 20,
+              padding: "12px 17px",
+              fontFamily: typography.body.fontFamily,
+              fontWeight: 500,
+              fontSize: 16,
               animationDelay: "0.35s",
             }}
           >
-            Exactement&nbsp;! Tu en manges souvent le matin&nbsp;?
+            Presque tous les matins&nbsp;!
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function StepPhonePreview({ stepId }: { stepId: (typeof HOW_IT_WORKS_STEPS)[number]["id"] }) {
+  return (
+    <div style={{ display: "flex", justifyContent: "center" }}>
+      <div
+        style={{
+          width: 240,
+          borderRadius: 32,
+          background: colors.paper,
+          border: `1px solid ${colors.hairline}`,
+          boxShadow: "0 18px 36px rgba(24, 29, 48, 0.12)",
+          padding: 16,
+        }}
+      >
+        <div
+          style={{
+            width: 52,
+            height: 5,
+            borderRadius: 999,
+            background: colors.hairline,
+            margin: "0 auto 16px",
+          }}
+        />
+        {stepId === "scan" && <ScanPreview />}
+        {stepId === "converse" && <ConversePreview />}
+        {stepId === "refine" && <RefinePreview />}
+      </div>
+    </div>
+  );
+}
+
+function ScanPreview() {
+  return (
+    <div>
+      <div
+        style={{
+          borderRadius: 20,
+          height: 120,
+          background: colors.mist,
+          border: `1px solid ${colors.hairline}`,
+          position: "relative",
+          overflow: "hidden",
+          marginBottom: 14,
+        }}
+      >
+        <span
+          style={{
+            position: "absolute",
+            left: 13,
+            bottom: 11,
+            background: colors.navy,
+            color: colors.paper,
+            fontFamily: typography.body.fontFamily,
+            fontSize: 12,
+            fontWeight: 600,
+            borderRadius: 999,
+            padding: "6px 11px",
+          }}
+        >
+          une orange
+        </span>
+      </div>
+      <p
+        style={{
+          fontFamily: typography.body.fontFamily,
+          fontSize: 12,
+          color: colors.textMuted,
+          margin: "0 0 10px",
+        }}
+      >
+        Objet détecté&nbsp;: une orange
+      </p>
+      <span
+        style={{
+          display: "inline-block",
+          background: colors.electric,
+          color: "#fff",
+          fontFamily: typography.body.fontFamily,
+          fontSize: 12,
+          fontWeight: 600,
+          borderRadius: 999,
+          padding: "7px 13px",
+        }}
+      >
+        Oui, parlons-en →
+      </span>
+    </div>
+  );
+}
+
+function ConversePreview() {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <span
+        style={{
+          alignSelf: "flex-start",
+          maxWidth: "90%",
+          background: "#F4F0FF",
+          border: "1px solid #D8D0FF",
+          color: colors.navy,
+          fontFamily: typography.body.fontFamily,
+          fontSize: 13,
+          lineHeight: 1.45,
+          borderRadius: 16,
+          padding: "10px 14px",
+        }}
+      >
+        Je vois une orange&nbsp;! Tu en manges souvent&nbsp;?
+      </span>
+      <span
+        style={{
+          alignSelf: "flex-end",
+          maxWidth: "78%",
+          background: colors.electric,
+          color: "#fff",
+          fontFamily: typography.body.fontFamily,
+          fontWeight: 500,
+          fontSize: 13,
+          borderRadius: 16,
+          padding: "10px 14px",
+        }}
+      >
+        Presque tous les matins&nbsp;!
+      </span>
+    </div>
+  );
+}
+
+function RefinePreview() {
+  return (
+    <div>
+      <span
+        style={{
+          display: "inline-block",
+          maxWidth: "90%",
+          background: colors.electric,
+          color: "#fff",
+          fontFamily: typography.body.fontFamily,
+          fontWeight: 500,
+          fontSize: 13,
+          borderRadius: 16,
+          padding: "10px 14px",
+          marginBottom: 12,
+        }}
+      >
+        Je mange un orange.
+      </span>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "flex-end",
+          marginBottom: 10,
+        }}
+      >
+        <span
+          style={{
+            display: "inline-block",
+            background: colors.paper,
+            border: `1px solid ${colors.hairline}`,
+            color: colors.navy,
+            fontFamily: typography.body.fontFamily,
+            fontSize: 11.5,
+            fontWeight: 600,
+            borderRadius: 999,
+            padding: "6px 11px",
+          }}
+        >
+          Corriger la grammaire
+        </span>
+      </div>
+      <div
+        style={{
+          background: "rgba(185, 74, 72, 0.08)",
+          border: `1px solid ${colors.rouge}`,
+          color: colors.rouge,
+          fontFamily: typography.body.fontFamily,
+          fontSize: 13,
+          fontWeight: 600,
+          borderRadius: 14,
+          padding: "10px 14px",
+        }}
+      >
+        ➡ Je mange une orange.
       </div>
     </div>
   );
