@@ -6,6 +6,7 @@ import { createClient } from "../lib/supabase/client";
 import { colors, typography } from "../theme";
 
 export type AuthedUser = {
+  id: string;
   email: string | null;
   name: string | null;
   avatarUrl: string | null;

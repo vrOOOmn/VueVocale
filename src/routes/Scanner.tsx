@@ -4,19 +4,27 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { IoCamera, IoRepeat, IoWarningOutline } from "react-icons/io5";
 import PhotoPreviewSection from "../components/PhotoPreviewSection";
 import { colors, spacing, borderRadius, typography } from "../theme";
-// import { supabase } from "../lib/supabaseClient";
+import { createClient } from "../lib/supabase/client";
 import { detectAndTranslateFR } from "../lib/vision/detectObject";
+import type { AuthedUser } from "../components/UserMenu";
 
 type Facing = "environment" | "user";
 
 export default function Scanner({
+  user,
   onChat,
 }: {
-  onChat?: (detectedWord: string, imageDataUrl: string) => void;
+  user: AuthedUser;
+  onChat?: (
+    detectedWord: string,
+    imageDataUrl: string,
+    photoStoragePath: string | null,
+  ) => void;
 }) {
   const [facing, setFacing] = useState<Facing>("environment");
   const [streamError, setStreamError] = useState<string | null>(null);
   const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null);
+  const [photoStoragePath, setPhotoStoragePath] = useState<string | null>(null);
   const [permissionGranted, setPermissionGranted] = useState(false);
   const [detectedObject, setDetectedObject] = useState<string | null>(null);
   const [englishObject, setEnglishObject] = useState<string | null>(null);
@@ -169,6 +177,7 @@ export default function Scanner({
     if (!v || !c) return;
 
     setDetectedObject(null);
+    setPhotoStoragePath(null);
     setIsLoading(true);
 
     c.width = v.videoWidth || 1080;
@@ -194,27 +203,34 @@ export default function Scanner({
       cleanupStream();
     }
 
-    // Upload image
-    // c.toBlob(
-    // 	async (blob) => {
-    // 		if (!blob) return;
-    // 		try {
-    // 			const fileName = `photo-${Date.now()}.jpg`;
-    // 			const { error } = await supabase.storage.from("photos").upload(fileName, blob);
-    // 			if (error) console.error("Upload failed:", error.message);
-    // 			const { data: publicData } = supabase.storage.from("photos").getPublicUrl(fileName);
-    // 			await supabase.from("photos").insert([{ photo_url: publicData.publicUrl }]);
-    // 		} catch (err) {
-    // 			console.error("Upload error:", err);
-    // 		}
-    // 	},
-    // 	"image/jpeg",
-    // 	0.9
-    // );
+    // Persist the captured photo to Storage so it survives reload and can be
+    // referenced from the message that gets created once the user confirms.
+    c.toBlob(
+      async (blob) => {
+        if (!blob) return;
+        try {
+          const path = `${user.id}/${crypto.randomUUID()}.jpg`;
+          const supabase = createClient();
+          const { error } = await supabase.storage
+            .from("scan-photos")
+            .upload(path, blob, { contentType: "image/jpeg" });
+          if (error) {
+            console.error("Photo upload failed:", error.message);
+            return;
+          }
+          setPhotoStoragePath(path);
+        } catch (err) {
+          console.error("Photo upload error:", err);
+        }
+      },
+      "image/jpeg",
+      0.9,
+    );
   };
 
   const handleRetakePhoto = () => {
     setPhotoDataUrl(null);
+    setPhotoStoragePath(null);
     startStream();
   };
 
@@ -271,7 +287,7 @@ export default function Scanner({
           englishLabel={englishObject}
           onChat={() => {
             if (onChat && detectedObject && photoDataUrl) {
-              onChat(detectedObject, photoDataUrl);
+              onChat(detectedObject, photoDataUrl, photoStoragePath);
             }
           }}
         />

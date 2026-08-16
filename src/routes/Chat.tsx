@@ -1,54 +1,56 @@
 "use client";
 
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { IoSend } from "react-icons/io5";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { IoSend, IoMic, IoStopSharp, IoTrashOutline } from "react-icons/io5";
 import { colors, spacing, borderRadius, typography } from "../theme";
-// import { supabase } from "../lib/supabaseClient";
 import { generateTextResponse, fixGrammar } from "../lib/primaryAgent";
 import { useRecorder } from "../lib/audio/useRecorder";
-import { IoMic, IoStopSharp, IoVolumeHighSharp, IoVolumeMute, IoEllipsisHorizontal } from "react-icons/io5";
-import { generateTTS } from "../lib/audio/generateTTS";
 import { transcribeSTT } from "../lib/audio/transcribeSTT";
-
-
-type Message = {
-  id: string;
-  text?: string;
-  image?: string;
-  sender: "user" | "bot";
-
-  audioUrl?: string;
-  audioState?: "ready" | "error" | "idle" | "loading";
-
-  grammarFix?: string;
-  grammarStatus?: "idle" | "loading" | "ok" | "fixed" | "error";
-};
+import { useMessageAudioPlayback } from "../lib/audio/useMessageAudioPlayback";
+import { getLocalDateString, computeStreak } from "../lib/dates";
+import {
+  clearConversationMessages,
+  ensureActiveConversation,
+  fetchActiveDates,
+  fetchMessages,
+  insertMessage,
+  updateMessage,
+  type Message,
+} from "../lib/data/conversations";
+import MessageBubble from "../components/MessageBubble";
+import ArchivedDaysPanel from "../components/ArchivedDaysPanel";
+import type { AuthedUser } from "../components/UserMenu";
 
 const ERROR_TEXT = "Oops, error in generating response! Try Again";
-let sessionMessages: Message[] = [];
 
 export default function Chat({
   topic,
   photoDataUrl,
+  photoStoragePath,
+  user,
 }: {
   topic?: string | null;
   photoDataUrl?: string | null;
+  photoStoragePath?: string | null;
+  user: AuthedUser;
 }) {
-  const [messages, setMessages] = useState<Message[]>(sessionMessages);
+  const queryClient = useQueryClient();
+
   const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
   const { recording, start, stop, audioInputs } = useRecorder();
   const [micMenuOpen, setMicMenuOpen] = useState(false);
   const [selectedMicId, setSelectedMicId] = useState("");
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [photoReplyPending, setPhotoReplyPending] = useState(false);
   const micMenuRef = useRef<HTMLDivElement | null>(null);
 
   const textRef = useRef<HTMLTextAreaElement | null>(null);
-  const lastPhotoRef = useRef<string | null>(null); // <-- new guard
-
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [playingId, setPlayingId] = useState<string | null>(null);
+  const lastPhotoRef = useRef<string | null>(null);
 
   const bottomRef = useRef<HTMLDivElement | null>(null);
+
+  const { playingId, togglePlay, mergeAudioState } = useMessageAudioPlayback(user.id);
 
   useEffect(() => {
     const savedMicId = window.localStorage.getItem("vuelocale.selectedMicId");
@@ -80,142 +82,160 @@ export default function Chat({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const { data: activeConversation } = useQuery({
+    queryKey: ["activeConversation"],
+    queryFn: () => ensureActiveConversation(getLocalDateString()),
+    staleTime: Infinity,
+  });
+  const conversationId = activeConversation?.id;
 
-  const buildAgentHistory = (): { role: "user" | "assistant"; content: string }[] =>
-    sessionMessages
+  const {
+    data: messages = [],
+    isPending: messagesPending,
+  } = useQuery({
+    queryKey: ["messages", conversationId],
+    queryFn: () => fetchMessages(conversationId!),
+    enabled: !!conversationId,
+    // We're the sole writer of this cache (every insert/update goes through
+    // appendMessage/patchMessage) — never background-refetch it. Without
+    // this, remounting Chat (e.g. switching back from the Scanner tab)
+    // triggers a stale-data refetch that can resolve after a fresh insert
+    // and silently overwrite it with a pre-insert snapshot.
+    staleTime: Infinity,
+  });
+
+  const displayMessages = mergeAudioState(messages);
+
+  const { data: streak = 0 } = useQuery({
+    queryKey: ["streak"],
+    queryFn: async () => computeStreak(await fetchActiveDates()),
+  });
+
+  const appendMessage = (msg: Message) => {
+    queryClient.setQueryData<Message[]>(["messages", conversationId], (prev) => [
+      ...(prev ?? []),
+      msg,
+    ]);
+  };
+
+  const patchMessage = (id: string, patch: Partial<Message>) => {
+    queryClient.setQueryData<Message[]>(["messages", conversationId], (prev) =>
+      (prev ?? []).map((m) => (m.id === id ? { ...m, ...patch } : m)),
+    );
+  };
+
+  const buildAgentHistory = (
+    msgs: Message[],
+  ): { role: "user" | "assistant"; content: string }[] =>
+    msgs
       .filter((m) => m.text && !m.image)
       .map((m) => ({
         role: (m.sender === "user" ? "user" : "assistant") as "user" | "assistant",
         content: m.text!,
-      })
-  );
+      }));
 
+  const generateAIResponse = async (userMessage: string, historyMsgs: Message[]): Promise<string> => {
+    try {
+      const hasImage = historyMsgs.some((m) => m.image);
 
-  const stopAudio = () => {
-    const a = audioRef.current;
-    if (!a) return;
-    a.pause();
-    a.currentTime = 0;
-    setPlayingId(null);
-  };
+      return await generateTextResponse({
+        history: buildAgentHistory(historyMsgs),
+        userMessage,
+        hasImage,
+      });
+    } catch (e) {
+      console.error(e);
 
-  const togglePlay = async (msg: Message) => {
-    if (playingId && playingId !== msg.id) stopAudio();
-
-    // If tapping same message while it's already playing: pause
-    if (playingId === msg.id) {
-      const a = audioRef.current;
-      if (a) a.pause();
-      setPlayingId(null);
-      return;
-    }
-
-    // If we're already generating TTS for this message, do nothing
-    if (msg.audioState === "loading") return;
-
-    let urlToPlay = msg.audioUrl;
-
-    // Generate TTS once, and immediately use it for playback
-    if (!urlToPlay && msg.audioState === "idle" && msg.text) {
-      commitMessages((prev) =>
-        prev.map((m) => (m.id === msg.id ? { ...m, audioState: "loading" } : m))
-      );
-
-      try {
-        urlToPlay = await generateTTS(msg.text);
-
-        commitMessages((prev) =>
-          prev.map((m) =>
-            m.id === msg.id ? { ...m, audioUrl: urlToPlay, audioState: "ready" } : m
-          )
-        );
-      } catch {
-        commitMessages((prev) =>
-          prev.map((m) => (m.id === msg.id ? { ...m, audioState: "error" } : m))
-        );
-        return;
+      if (e instanceof Error && e.message) {
+        return e.message;
       }
+
+      return ERROR_TEXT;
     }
-
-    if (!urlToPlay) return;
-
-    const a = audioRef.current ?? new Audio();
-    audioRef.current = a;
-
-    a.pause();
-    a.src = urlToPlay;
-    a.currentTime = 0;
-
-    a.onended = () => setPlayingId(null);
-    a.onerror = () => setPlayingId(null);
-
-    a.play()
-      .then(() => setPlayingId(msg.id))
-      .catch(() => setPlayingId(null));
   };
 
+  const sendTextMutation = useMutation({
+    mutationFn: async (text: string) => {
+      if (!conversationId) throw new Error("No active conversation yet");
 
+      const historyBefore =
+        queryClient.getQueryData<Message[]>(["messages", conversationId]) ?? [];
 
+      const userMsg = await insertMessage({
+        conversation_id: conversationId,
+        user_id: user.id,
+        sender: "user",
+        text,
+      });
+      appendMessage(userMsg);
+      queryClient.invalidateQueries({ queryKey: ["streak"] });
 
-  // Keep React state + sessionMessages in sync (avoids stale closures)
-  const commitMessages = (updater: (prev: Message[]) => Message[]) => {
-    setMessages((prev) => {
-      const next = updater(prev);
-      sessionMessages = next;
-      return next;
-    });
-  };
+      const aiResponse = await generateAIResponse(text, historyBefore);
+      const botMsg = await insertMessage({
+        conversation_id: conversationId,
+        user_id: user.id,
+        sender: "bot",
+        text: aiResponse,
+      });
+      appendMessage(botMsg);
+    },
+  });
 
   // --- Scroll to bottom ---
   useLayoutEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, loading]);
-
-  const createBotMessage = (text: string): Message => ({
-    id: crypto.randomUUID(),
-    text,
-    sender: "bot",
-    audioState: "idle",
-  });
-
-
-
+  }, [displayMessages.length, sendTextMutation.isPending, photoReplyPending]);
 
   useLayoutEffect(() => {
     const handleNewPhoto = async () => {
-      if (!photoDataUrl || !topic) return;
-      if (lastPhotoRef.current === photoDataUrl) return; // prevents re-runs
-      lastPhotoRef.current = photoDataUrl; // remember this photo
-
-      const newMsg: Message = {
-        id: crypto.randomUUID(),
-        image: photoDataUrl,
-        sender: "user",
-        grammarStatus: "idle",
-      };
-      commitMessages((prev) => [...prev, newMsg]);
-
+      if (!photoDataUrl || !topic || !conversationId) return;
+      // Wait for the initial messages read to land before writing anything —
+      // otherwise that read can resolve after our insert and overwrite the
+      // cache with the pre-insert (empty) snapshot, silently dropping it.
+      if (messagesPending) return;
+      if (lastPhotoRef.current === photoDataUrl) return;
+      lastPhotoRef.current = photoDataUrl;
 
       try {
-        setLoading(true);
+        const userMsg = await insertMessage({
+          conversation_id: conversationId,
+          user_id: user.id,
+          sender: "user",
+          image_path: photoStoragePath ?? null,
+          object_label: topic,
+        });
+        appendMessage({ ...userMsg, image: userMsg.image ?? photoDataUrl });
+        queryClient.invalidateQueries({ queryKey: ["streak"] });
+
+        setPhotoReplyPending(true);
+
+        const historyBefore =
+          queryClient.getQueryData<Message[]>(["messages", conversationId]) ?? [];
 
         const text = await generateTextResponse({
-          history: buildAgentHistory(),
-          userMessage: `L’utilisateur a envoyé une image de ${topic}.`,
+          history: buildAgentHistory(historyBefore),
+          userMessage: `L'utilisateur a envoyé une image de ${topic}.`,
           hasImage: true,
         });
-
         if (!text) return;
 
-        const botMsg = createBotMessage(text);
-        commitMessages((prev) => [...prev, botMsg]);
+        const botMsg = await insertMessage({
+          conversation_id: conversationId,
+          user_id: user.id,
+          sender: "bot",
+          text,
+        });
+        appendMessage(botMsg);
+      } catch (err) {
+        console.error("Photo handoff error", err);
       } finally {
-        setLoading(false);
+        setPhotoReplyPending(false);
       }
     };
 
     handleNewPhoto();
-  }, [photoDataUrl, topic]); // messages removed safely
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [photoDataUrl, topic, conversationId, messagesPending]);
 
   // --- Handle Enter key ---
   const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -226,76 +246,41 @@ export default function Chat({
   };
 
   const handleAudioMessage = async (audioBlob: Blob) => {
-    
     try {
-      
-      const transcription = await transcribeSTT(audioBlob)
+      const transcription = await transcribeSTT(audioBlob);
       if (!transcription) return;
-      
-      // Add the transcription as the user's message
-      const userMsg: Message = {
-        id: crypto.randomUUID(),
-        text: transcription || "(voice message)",
-        sender: "user",
-        grammarStatus: "idle",
-      };
-      commitMessages((prev) => [...prev, userMsg]);
-      
-      setLoading(true);
-
-      // Step 2: Feed the transcription into your EXISTING ai logic
-      const aiReply = await generateAIResponse(transcription);
-      const botMsg = createBotMessage(aiReply);
-
-      commitMessages((prev) => [...prev, botMsg]);
+      await sendTextMutation.mutateAsync(transcription);
     } catch (error) {
       console.error("Audio message error", error);
-    } finally {
-      setLoading(false);
     }
   };
 
-
   const handleFixGrammar = async (msg: Message) => {
-  // prevent duplicate calls
-    if (!msg.text || msg.grammarStatus === "loading" || msg.grammarStatus === "fixed" || msg.grammarStatus === "ok") {
+    if (
+      !msg.text ||
+      msg.grammarStatus === "loading" ||
+      msg.grammarStatus === "fixed" ||
+      msg.grammarStatus === "ok"
+    ) {
       return;
     }
 
-    // mark loading
-    commitMessages((prev) =>
-      prev.map((m) =>
-        m.id === msg.id ? { ...m, grammarStatus: "loading" } : m
-      )
-    );
+    patchMessage(msg.id, { grammarStatus: "loading" });
 
     try {
       const result = await fixGrammar(msg.text);
 
-      commitMessages((prev) =>
-        prev.map((m) => {
-          if (m.id !== msg.id) return m;
-
-          if (result === "OK") {
-            return { ...m, grammarStatus: "ok" };
-          }
-
-          return {
-            ...m,
-            grammarFix: result,
-            grammarStatus: "fixed",
-          };
-        })
-      );
+      if (result === "OK") {
+        patchMessage(msg.id, { grammarStatus: "ok" });
+        await updateMessage(msg.id, { grammar_status: "ok" });
+      } else {
+        patchMessage(msg.id, { grammarFix: result, grammarStatus: "fixed" });
+        await updateMessage(msg.id, { grammar_status: "fixed", grammar_fix: result });
+      }
     } catch {
-      commitMessages((prev) =>
-        prev.map((m) =>
-          m.id === msg.id ? { ...m, grammarStatus: "error" } : m
-        )
-      );
+      patchMessage(msg.id, { grammarStatus: "error" });
     }
   };
-
 
   const handleMic = async () => {
     try {
@@ -323,189 +308,74 @@ export default function Chat({
     setMicMenuOpen(false);
   };
 
-  // --- Generate Gemini response ---
-  const generateAIResponse = async (userMessage: string): Promise<string> => {
-    try {
-      const hasImage = sessionMessages.some((m) => m.image);
-
-      return await generateTextResponse({
-        history: buildAgentHistory(),
-        userMessage,
-        hasImage,
-      });
-    } catch (e) {
-      console.error(e);
-
-      if (e instanceof Error && e.message) {
-        return e.message;
-      }
-
-      return ERROR_TEXT;
-    }
-  };
-
   // --- Sending user messages ---
   const sendMessage = async () => {
-    
     const text = input.trim();
     if (!text) return;
-    stopAudio()
-    
-    const userMsg: Message = { id: crypto.randomUUID(), text, sender: "user",   grammarStatus: "idle"};
-    commitMessages((prev) => [...prev, userMsg]);
 
     setInput("");
-    setLoading(true);
 
     try {
-      const aiResponse = await generateAIResponse(text);
-      const botMsg = createBotMessage(aiResponse);
-
-      commitMessages((prev) => [...prev, botMsg]);
-      // await supabase.from("chat_messages").insert([userMsg, botMsg]);
+      await sendTextMutation.mutateAsync(text);
     } catch (err) {
       console.error("send error", err);
-    } finally {
-      setLoading(false);
     }
 
     textRef.current?.focus();
   };
 
+  const clearChat = async () => {
+    if (!conversationId || messages.length === 0) return;
+    const confirmed = window.confirm(
+      "Effacer la conversation d'aujourd'hui ? Cette action est irréversible. / Clear today's chat? This can't be undone.",
+    );
+    if (!confirmed) return;
+
+    try {
+      await clearConversationMessages(conversationId);
+      queryClient.setQueryData<Message[]>(["messages", conversationId], []);
+      lastPhotoRef.current = null;
+      queryClient.invalidateQueries({ queryKey: ["streak"] });
+    } catch (err) {
+      console.error("Clear chat error", err);
+    }
+  };
+
   return (
     <main style={styles.container}>
+      <div style={styles.header}>
+        <button
+          type="button"
+          onClick={clearChat}
+          disabled={messages.length === 0}
+          title="Effacer la conversation"
+          style={{
+            ...styles.clearButton,
+            opacity: messages.length === 0 ? 0.4 : 1,
+            cursor: messages.length === 0 ? "default" : "pointer",
+          }}
+        >
+          <IoTrashOutline size={14} />
+        </button>
+        {streak > 0 && <span style={styles.streakBadge}>🔥 {streak}</span>}
+        <button type="button" onClick={() => setHistoryOpen(true)} style={styles.historyButton}>
+          🕘 Historique
+        </button>
+      </div>
+
       <div style={styles.messages}>
-        {messages.map((m, i) => (
-          <div
-            key={i}
-            style={{
-              display: "flex",
-              justifyContent: m.sender === "user" ? "flex-end" : "flex-start",
-              width: "100%",
-            }}
-          >
-            <div
-              style={{
-                ...styles.message,
-                ...(m.sender === "user" ? styles.userMessage : styles.botMessage),
-                padding: m.image ? 0 : "10px 14px", // no padding for image messages
-                background: m.image
-                  ? "transparent" // 👈 remove blue fill for image bubble
-                  : m.sender === "user"
-                  ? "linear-gradient(135deg, #4A90E2, #357ABD)"
-                  : "#fff",
-                borderRadius: borderRadius.lg,
-                maxWidth: m.image ? "min(280px, 70%)" : "75%",
-              }}
-            >
-              {m.image ? (
-                <img
-                  src={m.image}
-                  alt="user upload"
-                  style={{
-                    width: "100%",
-                    height: "auto",
-                    borderRadius: borderRadius.lg,
-                    display: "block",
-                  }}
-                />
-              ) : (
-                <>
-                  <p
-                    style={{
-                      ...typography.message,
-                      margin: 0,
-                      color: m.sender === "user" ? colors.textLight : colors.text,
-                      whiteSpace: "pre-wrap",
-                    }}
-                    
-                  >
-                    {m.text}
-                  </p>
-                  {m.sender === "user" && m.text && (
-                    <div style={{ marginTop: 6, display: "flex", gap: 8 }}>
-                      {m.grammarStatus === "idle" && (
-                        <button
-                          onClick={() => handleFixGrammar(m)}
-                          style={{
-                            fontSize: 12,
-                            background: "transparent",
-                            border: "1px solid rgba(255,255,255,0.4)",
-                            color: "white",
-                            borderRadius: 12,
-                            padding: "2px 8px",
-                            cursor: "pointer",
-                          }}
-                        >
-                          Corriger la grammaire
-                        </button>
-                      )}
-
-                      {m.grammarStatus === "loading" && (
-                        <span style={{ fontSize: 12, opacity: 0.7 }}>Vérification…</span>
-                      )}
-
-                      {m.grammarStatus === "ok" && (
-                        <span style={{ fontSize: 12, opacity: 0.7 }}>✓ Bien !</span>
-                      )}
-                    </div>
-                  )}
-                  {m.grammarStatus === "fixed" && m.grammarFix && (
-                    <div
-                      style={{
-                        marginTop: 6,
-                        padding: "6px 10px",
-                        borderRadius: 10,
-                        background: "rgba(255,255,255,0.15)",
-                        fontSize: 13,
-                        color: "white",
-                        opacity: 0.9,
-                      }}
-                    >
-                      ➡ {m.grammarFix}
-                    </div>
-                  )}
-                  {m.sender === "bot" && (
-                    <div style={{ marginTop: 6 }}>
-                      <button
-                        type="button"
-                        onClick={() => togglePlay(m)}
-                        disabled={m.audioState === "loading"}
-                        style={{
-                          ...styles.playButton,
-                          background: playingId === m.id ? colors.border : colors.secondary,
-                          opacity: m.audioState === "loading" ? 0.8 : 1,
-                          cursor: m.audioState === "loading" ? "default" : "pointer",
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: 18, // icon box width
-                            height: 18, // icon box height
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                          }}
-                        >
-                          {m.audioState === "loading" ? (
-                            <IoEllipsisHorizontal style={{fontSize: 18, border: 4}} color="white" />
-                          ) : playingId === m.id ? (
-                            <IoVolumeMute style={{fontSize: 18, border: 4}} color="white" />
-                          ) : (
-                            <IoVolumeHighSharp style={{fontSize: 18, border: 4}} color="white"/>
-                          )}
-                        
-                        </div>
-                      </button>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          </div>
+        {displayMessages.map((m) => (
+          <MessageBubble
+            key={m.id}
+            message={m}
+            mode="live"
+            isPlaying={playingId === m.id}
+            onTogglePlay={togglePlay}
+            onFixGrammar={handleFixGrammar}
+          />
         ))}
 
-        {loading && (
+        {(sendTextMutation.isPending || photoReplyPending) && (
           <div style={{ ...styles.message, ...styles.botMessage, opacity: 0.7 }}>
             <div className="typing-dots" style={styles.typingDots}>
               <span></span>
@@ -577,6 +447,7 @@ export default function Chat({
         <button
           type="button"
           onClick={handleMic}
+          disabled={!conversationId || messagesPending}
           style={{
             ...styles.micButton,
             background: recording ? "#e74c3c" : "#ffa747",
@@ -584,15 +455,15 @@ export default function Chat({
         >
           <div
             style={{
-              width: 23, // icon box width
-              height: 23, // icon box height
+              width: 23,
+              height: 23,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
             }}
           >
             {recording ? (
-              <IoStopSharp style={{ fontSize: 20, border: 4 }} color="white" />
+              <IoStopSharp style={{ fontSize: 20 }} color="white" />
             ) : (
               <IoMic style={{ fontSize: 28 }} color="white" />
             )}
@@ -601,16 +472,21 @@ export default function Chat({
 
         <button
           type="submit"
-          disabled={!input.trim() || loading}
+          disabled={
+            !input.trim() || sendTextMutation.isPending || !conversationId || messagesPending
+          }
           style={{
             ...styles.sendButton,
-            opacity: !input.trim() || loading ? 0.6 : 1,
+            opacity:
+              !input.trim() || sendTextMutation.isPending || !conversationId || messagesPending
+                ? 0.6
+                : 1,
           }}
         >
           <div
             style={{
-              width: 23, // icon box width
-              height: 23, // icon box height
+              width: 23,
+              height: 23,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -620,6 +496,12 @@ export default function Chat({
           </div>
         </button>
       </form>
+
+      <ArchivedDaysPanel
+        open={historyOpen}
+        onClose={() => setHistoryOpen(false)}
+        userId={user.id}
+      />
     </main>
   );
 }
@@ -632,6 +514,46 @@ const styles: Record<string, React.CSSProperties> = {
     display: "flex",
     flexDirection: "column",
     position: "relative",
+  },
+  header: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    gap: 8,
+    // Right padding clears the fixed account icon (40px circle at
+    // top:16/right:16) so header buttons never sit underneath it.
+    padding: `${spacing.sm}px 64px 0 ${spacing.md}px`,
+  },
+  streakBadge: {
+    fontSize: 12.5,
+    fontWeight: 700,
+    color: colors.secondary,
+    background: "rgba(255, 167, 71, 0.18)",
+    border: "1px solid rgba(255, 167, 71, 0.4)",
+    borderRadius: borderRadius.round,
+    padding: "6px 12px",
+  },
+  historyButton: {
+    fontSize: 12.5,
+    fontWeight: 600,
+    color: colors.secondary,
+    background: "rgba(255,255,255,0.7)",
+    border: "1px solid rgba(148, 163, 184, 0.3)",
+    borderRadius: borderRadius.round,
+    padding: "6px 12px",
+    cursor: "pointer",
+  },
+  clearButton: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: 30,
+    height: 30,
+    color: colors.error,
+    background: "rgba(255,255,255,0.7)",
+    border: "1px solid rgba(148, 163, 184, 0.3)",
+    borderRadius: borderRadius.round,
+    padding: 0,
   },
   messages: {
     flex: 1,
@@ -648,12 +570,6 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: borderRadius.lg,
     maxWidth: "75%",
     animation: "fadeIn 0.3s ease-in",
-  },
-  userMessage: {
-    background: "linear-gradient(135deg, #4A90E2, #357ABD)",
-    color: "white",
-    alignSelf: "flex-end",
-    borderRadius: "18px 18px 4px 18px",
   },
   botMessage: {
     background: "#fff",
@@ -782,21 +698,4 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: "pointer",
     boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
   },
-  micDot: {
-    width: 10,
-    height: 10,
-    background: "white",
-    borderRadius: "50%",
-  },
-  playButton: {
-    width: 35,
-    height: 35,
-    borderRadius: "50%",
-    border: "none",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    cursor: "pointer",
-    boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
-  }
 };
