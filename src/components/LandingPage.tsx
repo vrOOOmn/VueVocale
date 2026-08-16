@@ -7,22 +7,24 @@ import BrandMark from "./BrandMark";
 import { colors, spacing, typography } from "../theme";
 
 // Grounded in the real product (src/routes/Scanner.tsx, Chat.tsx,
-// MessageBubble.tsx) — not marketing fluff. No bounding boxes, no
-// pronunciation score, no fabricated timing: those features don't exist.
+// MessageBubble.tsx): no bounding boxes, no pronunciation score, no
+// auto-playing audio. Each idea is stated once and in one place only —
+// the same claim repeated across step body, highlights and feature card
+// is what made this page read as filler.
 const HOW_IT_WORKS_STEPS = [
   {
     id: "scan",
     number: "01",
     title: "Scan",
-    subtitle: "Snap a photo — get the word instantly",
+    subtitle: "Notice something, take the picture",
     dotColor: colors.citrusObject,
     state: {
-      title: "Scan step active",
-      body: "One photo is enough. VueVocale's vision model names what you're looking at in French and English — no bounding boxes, no live scanning.",
+      title: "Start with something you can see",
+      body: "Point the camera at whatever is nearby and VueVocale gives you its French name. The word is not the lesson. It is what gets you past the empty chat.",
       highlights: [
-        "Identifies the object in your photo",
-        "Names it in French and English",
-        "One tap hands it straight to your AI companion",
+        "The French word and its English meaning",
+        "Your surroundings pick the subject",
+        "One tap carries it into the chat",
       ],
     },
   },
@@ -30,15 +32,15 @@ const HOW_IT_WORKS_STEPS = [
     id: "converse",
     number: "02",
     title: "Converse",
-    subtitle: "Your AI French companion opens the conversation",
+    subtitle: "Talk about it in French",
     dotColor: colors.skyAI,
     state: {
-      title: "Converse step active",
-      body: "Talk it out loud or type — your AI French companion replies in natural spoken French, grounded in what you just scanned, one question at a time.",
+      title: "The photo starts it, your answers steer it",
+      body: "It asks about what you just showed it. Say you eat an orange most mornings and the talk can move to breakfast, then to how your mornings usually go.",
       highlights: [
-        "Speaks every reply aloud in French",
-        "Stays grounded in your photo, not a generic drill",
-        "Answers your voice, not just your typing",
+        "It answers what you said, not a script",
+        "Type it out or say it into the mic",
+        "The subject is free to drift",
       ],
     },
   },
@@ -46,15 +48,15 @@ const HOW_IT_WORKS_STEPS = [
     id: "refine",
     number: "03",
     title: "Refine",
-    subtitle: "Tap for a grammar check, only when you want one",
+    subtitle: "Ask for the correction when you want it",
     dotColor: colors.rouge,
     state: {
-      title: "Refine step active",
-      body: "Correction is opt-in — one button under any message. Never automatic, never interrupts the conversation.",
+      title: "Say it first, fix it after",
+      body: "Nothing is graded as you type and nothing interrupts you. When a sentence bothers you, tap the correction under it and see what you should have said.",
       highlights: [
-        "One tap: “Corriger la grammaire”",
-        "Skip it and keep talking, no penalty",
-        "Never automatic, never a pop-up",
+        "Sits under your message as “Corriger la grammaire”",
+        "Tells you when there was nothing to fix",
+        "Keep talking now, look closer later",
       ],
     },
   },
@@ -67,6 +69,10 @@ const SECTION_PAD_Y = "clamp(56px, 7.5vw, 96px)";
 // The nav is compact by nature, so the gap into the hero should read
 // noticeably tighter than the rhythm between the sections below it.
 const HERO_TOP_PAD = "clamp(8px, 1.2vw, 16px)";
+// "How it works" is the one section that has to be readable in a single
+// desktop viewport (its three-column module is meant to be taken in at a
+// glance), so it runs tighter than the shared rhythm above.
+const HOW_PAD_Y = "clamp(40px, 4.5vw, 56px)";
 // Side margins that grow with viewport width instead of a fixed 24px everywhere.
 const SIDE_PAD = "clamp(24px, 6vw, 80px)";
 // Every section header (How it works / Features / CTA) shares this exact size.
@@ -120,10 +126,10 @@ export default function LandingPage() {
             Method
           </a>
           <a href="#features" className="lp-nav-link">
-            Practice
+            Inside
           </a>
           <a href="#cta" className="lp-nav-link">
-            Progress
+            Start
           </a>
           <Link
             href="/app"
@@ -156,10 +162,10 @@ export default function LandingPage() {
               Method
             </a>
             <a href="#features" className="lp-nav-link" onClick={() => setMobileMenuOpen(false)}>
-              Practice
+              Inside
             </a>
             <a href="#cta" className="lp-nav-link" onClick={() => setMobileMenuOpen(false)}>
-              Progress
+              Start
             </a>
             <Link
               href="/app"
@@ -203,7 +209,7 @@ export default function LandingPage() {
               marginBottom: 32,
             }}
           >
-            PARISIAN AI PRACTICE
+            START WITH WHAT YOU SEE
           </span>
           <h1
             style={{
@@ -215,11 +221,11 @@ export default function LandingPage() {
               color: colors.navy,
             }}
           >
-            Capture the room.
+            Anything around you
             <br />
-            Name it in French.
+            can start a French
             <br />
-            Speak with confidence.
+            conversation.
           </h1>
           <div
             style={{
@@ -240,28 +246,19 @@ export default function LandingPage() {
               maxWidth: 580,
             }}
           >
-            VueVocale turns the objects around you into short French
-            conversations — like chatting with a local at a café abroad,
-            minus the plane ticket. Grammar correction is there when you tap
-            for it, never automatic.
+            You can study French for years and still go quiet when it is
+            your turn to speak. VueVocale gives that moment somewhere to
+            start: point your camera at the orange on your desk and it comes
+            back with <em>une orange</em>, then asks whether you eat them
+            often. You answer, and you are already in a conversation.
           </p>
           <div style={{ display: "flex", alignItems: "center", gap: 28, marginTop: 44, flexWrap: "wrap" }}>
             <Link href="/app" className="lp-btn lp-btn-primary">
               Start speaking
             </Link>
             <a href="#how-it-works" className="lp-btn lp-btn-secondary">
-              See method
+              See how it works
             </a>
-            <span
-              style={{
-                fontFamily: typography.display.fontFamily,
-                fontStyle: "italic",
-                fontSize: 18,
-                color: colors.brass,
-              }}
-            >
-              avec nuance
-            </span>
           </div>
         </div>
 
@@ -275,7 +272,7 @@ export default function LandingPage() {
         style={{
           maxWidth: PAGE_MAX_WIDTH,
           margin: "0 auto",
-          padding: `${SECTION_PAD_Y} ${SIDE_PAD}`,
+          padding: `${HOW_PAD_Y} ${SIDE_PAD}`,
         }}
       >
         <div
@@ -283,11 +280,11 @@ export default function LandingPage() {
             background: colors.paper,
             border: `1px solid ${colors.hairline}`,
             borderRadius: borderRadiusXl,
-            padding: "clamp(32px, 6vw, 56px)",
+            padding: "clamp(28px, 4vw, 40px)",
             boxShadow: "0 16px 42px rgba(24, 29, 48, 0.08)",
           }}
         >
-          <div style={{ maxWidth: 640, marginBottom: 48 }}>
+          <div style={{ maxWidth: 640, marginBottom: 28 }}>
             <span
               style={{
                 display: "block",
@@ -321,8 +318,8 @@ export default function LandingPage() {
                 marginTop: 16,
               }}
             >
-              Three real steps, not a slideshow — pick one to see exactly what your AI French companion
-              does.
+              One conversation, from the moment you notice something to the moment you decide you
+              want the French checked. Pick a step to follow it through.
             </p>
           </div>
 
@@ -349,15 +346,15 @@ export default function LandingPage() {
             <StepPhonePreview stepId={HOW_IT_WORKS_STEPS[activeStep].id} />
 
             <aside
-              aria-label="Live product state"
+              aria-label="Details for the selected step"
               style={{
                 background: colors.navy,
                 borderRadius: 22,
-                padding: 36,
+                padding: 28,
                 color: "#fff",
                 display: "grid",
                 alignContent: "center",
-                gap: 20,
+                gap: 16,
               }}
             >
               <span
@@ -369,7 +366,7 @@ export default function LandingPage() {
                   color: colors.skyAI,
                 }}
               >
-                Live product state
+                In this step
               </span>
               <h3
                 style={{
@@ -435,14 +432,14 @@ export default function LandingPage() {
           padding: `${SECTION_PAD_Y} ${SIDE_PAD}`,
         }}
       >
-        <SectionHeading eyebrow="Inside the app" title="Every feature is something you'll actually tap" />
+        <SectionHeading eyebrow="Inside the app" title="What the conversation actually feels like" />
         <div className="lp-feature-grid" style={{ marginTop: 48 }}>
           <article className="lp-feature-card lp-fragment" style={{ gridColumn: "span 2" }}>
             <div>
-              <h3 className="lp-fragment-title">Snap a photo, get the word</h3>
+              <h3 className="lp-fragment-title">The world gives you the first word</h3>
               <p className="lp-fragment-body">
-                A single photo is enough — no bounding boxes, no live scanning. Just the French word and its
-                English translation.
+                Whatever caught your eye is enough. Take the picture and the vocabulary arrives attached to
+                something you actually looked at, instead of a list somebody handed you.
               </p>
             </div>
             <div
@@ -476,10 +473,10 @@ export default function LandingPage() {
 
           <article className="lp-feature-card lp-fragment" style={{ gridColumn: "span 2" }}>
             <div>
-              <h3 className="lp-fragment-title">Your AI companion, not a script</h3>
+              <h3 className="lp-fragment-title">One word turns into a conversation</h3>
               <p className="lp-fragment-body">
-                It opens with a real, spoken question about your photo — always in French, one question at
-                a time.
+                VueVocale asks about your photo, you answer, and it replies to what you actually said. A few
+                turns later you may be talking about something else entirely.
               </p>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -517,10 +514,10 @@ export default function LandingPage() {
 
           <article className="lp-feature-card lp-fragment" style={{ gridColumn: "span 2" }}>
             <div>
-              <h3 className="lp-fragment-title">Hear your companion talk back</h3>
+              <h3 className="lp-fragment-title">French you hear and say</h3>
               <p className="lp-fragment-body">
-                Pick your microphone, tap to record, and hear every reply spoken aloud in natural French —
-                a real conversation, not a transcript.
+                Type it when you need to think it through, or hold the mic and say it out loud. Tap any
+                reply to hear how the French is supposed to sound.
               </p>
             </div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 80 }}>
@@ -543,10 +540,10 @@ export default function LandingPage() {
 
           <article className="lp-feature-card lp-fragment" style={{ gridColumn: "span 3" }}>
             <div>
-              <h3 className="lp-fragment-title">Not a red pen — a tap when you want one</h3>
+              <h3 className="lp-fragment-title">Mistakes do not end the conversation</h3>
               <p className="lp-fragment-body">
-                Every message has a “Corriger la grammaire” button. Skip it and keep chatting, or tap it for
-                one focused fix.
+                Imperfect French still works here. Keep going, and when a sentence bothers you, the
+                correction is already sitting underneath it waiting to be asked.
               </p>
             </div>
             <div style={{ display: "flex", gap: 14, alignItems: "center", flexWrap: "wrap" }}>
@@ -582,10 +579,10 @@ export default function LandingPage() {
 
           <article className="lp-feature-card lp-fragment" style={{ gridColumn: "span 3" }}>
             <div>
-              <h3 className="lp-fragment-title">One conversation a day</h3>
+              <h3 className="lp-fragment-title">Tomorrow, something else entirely</h3>
               <p className="lp-fragment-body">
-                Each day&apos;s chat rolls into your Historique automatically when you come back — return
-                daily and the streak badge grows.
+                Today it was breakfast. Tomorrow it might be your headphones. Each day&apos;s chat moves
+                into your Historique, so what builds up is a record of what you have talked about.
               </p>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -647,7 +644,7 @@ export default function LandingPage() {
               margin: "0 0 20px",
             }}
           >
-            Ready to start talking?
+            Find something to talk about
           </h2>
           <p
             style={{
@@ -657,7 +654,7 @@ export default function LandingPage() {
               margin: "0 0 36px",
             }}
           >
-            No sign-up friction. Scan something nearby and start your first conversation.
+            Look up from this page. Whatever you notice first is enough to begin.
           </p>
           <Link
             href="/app"
@@ -714,30 +711,21 @@ function PhoneMockup() {
       }}
     >
       <div style={{ position: "relative" }}>
-        {/* Speaker/mic accents — this is a spoken-conversation app, not a
-            texting app, so the phone mockup should read that way at a
-            glance. */}
+        {/* Speaker/mic accents: this is a spoken-conversation app, not a
+            texting app, so the mockup should read that way at a glance.
+            Their size and offsets live in globals.css rather than inline,
+            because on phones they have to shrink and tuck in or they drag
+            the whole page into horizontal scroll, and an inline style would
+            win over that media query. */}
         <IoVolumeHighOutline
-          size={56}
+          size={84}
           color={colors.electric}
-          style={{
-            position: "absolute",
-            top: -30,
-            right: -38,
-            transform: "rotate(8deg)",
-            opacity: 0.8,
-          }}
+          className="lp-mockup-accent lp-mockup-accent-speaker"
         />
         <IoMicOutline
-          size={46}
+          size={69}
           color={colors.electric}
-          style={{
-            position: "absolute",
-            bottom: -18,
-            left: -30,
-            transform: "rotate(-10deg)",
-            opacity: 0.8,
-          }}
+          className="lp-mockup-accent lp-mockup-accent-mic"
         />
         <div
           style={{

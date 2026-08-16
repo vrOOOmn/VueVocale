@@ -517,6 +517,47 @@ textarea:focus {
   }
 }
 
+/* Decorative speaker/mic accents flanking the hero phone mockup — this is
+   a spoken-conversation app, so the mockup should read that way at a
+   glance. They hang outside the phone on desktop, where the hero column
+   has room to spare. */
+.lp-mockup-accent {
+  position: absolute;
+  opacity: 0.8;
+}
+
+.lp-mockup-accent-speaker {
+  top: -44px;
+  right: -52px;
+  transform: rotate(8deg);
+}
+
+.lp-mockup-accent-mic {
+  bottom: -26px;
+  left: -44px;
+  transform: rotate(-10deg);
+}
+
+/* On phones the 330px mockup already spans nearly the whole viewport, so
+   accents hanging this far past it would widen the document and turn on
+   horizontal scrolling for the entire page. Shrink them back and tuck them
+   against the phone's edge instead. */
+@media (max-width: 520px) {
+  .lp-mockup-accent-speaker {
+    width: 56px;
+    height: 56px;
+    top: -26px;
+    right: -12px;
+  }
+
+  .lp-mockup-accent-mic {
+    width: 46px;
+    height: 46px;
+    bottom: -14px;
+    left: -12px;
+  }
+}
+
 /* Hero: text column + phone mockup. */
 .lp-hero-grid {
   display: grid;
