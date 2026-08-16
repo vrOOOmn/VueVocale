@@ -54,7 +54,7 @@ export default function PhotoPreviewSection({
           )}
           <div style={styles.buttonRow}>
             <button className="photo-preview-btn" onClick={onChat} style={styles.primaryBtn}>
-              Oui, parlons-en / Yes, let&apos;s talk
+              Parlons-en / Let&apos;s talk →
             </button>
             <button
               className="photo-preview-btn round-btn"
@@ -82,7 +82,7 @@ const styles: Record<string, React.CSSProperties> = {
     overflow: "hidden",
     aspectRatio: "3 / 4",
     marginBottom: spacing.xxl,
-    border: "1px solid #BDEBFF",
+    border: "10px solid rgba(255, 253, 249, 0.92)",
     flexShrink: 0,
   },
   preview: {

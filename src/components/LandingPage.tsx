@@ -20,9 +20,9 @@ const HOW_IT_WORKS_STEPS = [
     dotColor: colors.citrusObject,
     state: {
       title: "Give the conversation a starting point",
-      body: "Point the camera at something nearby and VueVocale gives you the French word for it. You have a subject, a word, and somewhere to begin.",
+      body: "Point the camera at something nearby and VueVocale gives you the French word for it. You have a word, a topic, and somewhere to begin.",
       highlights: [
-        "French word and English meaning",
+        "French word and English definition",
         "No topic to invent",
         "One tap takes it into the chat",
       ],
@@ -35,8 +35,8 @@ const HOW_IT_WORKS_STEPS = [
     subtitle: "Start talking in French",
     dotColor: colors.skyAI,
     state: {
-      title: "The photo starts it. Your answers take it further.",
-      body: "VueVocale opens with what you scanned, then follows what you say. An orange can lead to breakfast, your morning routine, or somewhere else entirely.",
+      title: "The photo starts it. Then you lead.",
+      body: "A photo of an orange can lead to exchanges about your breakfast, your morning routine, or something else entirely.",
       highlights: [
         "Replies to what you said",
         "Type your answer or say it aloud",
@@ -52,7 +52,7 @@ const HOW_IT_WORKS_STEPS = [
     dotColor: colors.rouge,
     state: {
       title: "Say it first, fix it after",
-      body: "VueVocale does not stop to correct every sentence. Keep talking, and ask for a correction only when you want to look more closely.",
+      body: "VueVocale does not stop to correct every sentence. Check the grammar only when you want to look more closely.",
       highlights: [
         "Correction is always optional",
         "Nothing to fix? It tells you that too",
@@ -142,7 +142,7 @@ export default function LandingPage() {
               fontSize: 16,
             }}
           >
-            Launch
+            Launch App
           </Link>
         </nav>
 
@@ -209,13 +209,13 @@ export default function LandingPage() {
               marginBottom: 32,
             }}
           >
-            CONVERSATION-BASED FRENCH LEARNING
+            ENVIRONMENT-BASED FRENCH LEARNING
           </span>
           <h1
             style={{
               fontFamily: typography.display.fontFamily,
               fontWeight: 400,
-              fontSize: "clamp(24px, 3.75vw, 57px)",
+              fontSize: "clamp(20px, 7vw, 57px)",
               lineHeight: 1.12,
               margin: 0,
               color: colors.navy,
@@ -246,7 +246,7 @@ export default function LandingPage() {
               maxWidth: 580,
             }}
           >
-            You can study French for years and still struggle when it&apos;s time to speak to native. VueVocale turns everyday moments into opportunities to practice what lessons can&apos;t teach: the back-and-forth of a real conversation.
+            You can study French for years and still struggle when it&apos;s time to talk to a native speaker. VueVocale uses AI to turn everyday moments into opportunities to practice what lessons can&apos;t teach: the back-and-forth of real conversation.
           </p>
           <div style={{ display: "flex", alignItems: "center", gap: 28, marginTop: 44, flexWrap: "wrap" }}>
             <Link href="/app" className="lp-btn lp-btn-primary">
@@ -303,7 +303,7 @@ export default function LandingPage() {
                 color: colors.navy,
               }}
             >
-              From a glance to a conversation
+              From a glance to a dialogue
             </h2>
             <p
               style={{
@@ -427,14 +427,13 @@ export default function LandingPage() {
           padding: `${SECTION_PAD_Y} ${SIDE_PAD}`,
         }}
       >
-        <SectionHeading eyebrow="Inside the app" title="What the conve feels like" />
+        <SectionHeading eyebrow="Inside the app" title="What a conversation feels like" />
         <div className="lp-feature-grid" style={{ marginTop: 48 }}>
           <article className="lp-feature-card lp-fragment" style={{ gridColumn: "span 2" }}>
             <div>
               <h3 className="lp-fragment-title">Vocabulary from your own life</h3>
               <p className="lp-fragment-body">
-                The French you learn is attached to someth noticed, instead of a list someone chose for
-                you. Your own day supplies the vocabulary.
+                The French you learn is attached to things you notice every day, not a predetermined list of subjects. Your own day supplies the vocabulary.
               </p>
             </div>
             <div
@@ -468,10 +467,9 @@ export default function LandingPage() {
 
           <article className="lp-feature-card lp-fragment" style={{ gridColumn: "span 2" }}>
             <div>
-              <h3 className="lp-fragment-title">There is no fixed script</h3>
+              <h3 className="lp-fragment-title">An AI partner that responds to you</h3>
               <p className="lp-fragment-body">
-                VueVocale starts with your photo, then responds to what you say. A few turns later, you may be
-                talking about something else entirely.
+                Your conversation partner adapts to what you say and follows the context, like a French friend you can practice with.
               </p>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -509,10 +507,9 @@ export default function LandingPage() {
 
           <article className="lp-feature-card lp-fragment" style={{ gridColumn: "span 2" }}>
             <div>
-              <h3 className="lp-fragment-title">French you hear and say</h3>
+              <h3 className="lp-fragment-title">Speak, listen, or type</h3>
               <p className="lp-fragment-body">
-                Type when you need a moment to think, use the mic when you want to speak, and tap a reply to
-                hear the French aloud.
+                Speak your response into the mic, listen to VueVocale&apos;s human-sounding replies, or type when that feels easier.
               </p>
             </div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 80 }}>
@@ -574,10 +571,10 @@ export default function LandingPage() {
 
           <article className="lp-feature-card lp-fragment" style={{ gridColumn: "span 3" }}>
             <div>
-              <h3 className="lp-fragment-title">A re using French</h3>
+              <h3 className="lp-fragment-title">A record of the French you use</h3>
               <p className="lp-fragment-body">
-                Today&apos;s chat moves into your Historique when the day ends. Over time, you build a record
-                of the things y talked about in French.
+                Today&apos;s chat moves into your Historique when the day ends. Over time, you build a bank
+                of words and topics you discussed in French.
               </p>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -897,7 +894,7 @@ function ScanPreview() {
           padding: "7px 13px",
         }}
       >
-        Oui, parlons-en →
+        Parlons-en / Let&apos;s talk →
       </span>
     </div>
   );
