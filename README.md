@@ -1,5 +1,7 @@
 # **VueVocale**
 
+**Live:** [www.vuevocale.app](https://www.vuevocale.app)
+
 VueVocale is an interactive French learning app designed to help intermediate learners build real conversational fluency through **spoken interaction, visual context, and AI-powered dialogue**.
 
 Rather than focusing on vocabulary lists or written exercises, VueVocale centers learning around **speaking naturally about the world around you**.
@@ -21,7 +23,9 @@ Built on **Next.js 15 (App Router)**, deployed on Vercel, with **Supabase** for 
 ```
 src/
 ├── app/
-│   ├── page.tsx                # Public landing page
+│   ├── page.tsx                # Public landing page (renders components/LandingPage.tsx)
+│   ├── layout.tsx               # Root layout — fonts, viewport meta tag, providers
+│   ├── providers.tsx             # React Query client provider
 │   ├── login/                  # Google OAuth sign-in (Supabase Auth)
 │   ├── auth/callback/          # OAuth code-exchange route
 │   ├── app/page.tsx            # Gated entry point — server-fetches the user, renders <App>
@@ -39,16 +43,22 @@ src/
 │   ├── Scanner.tsx              # Camera capture + object detection
 │   └── Chat.tsx                 # Conversation UI (text + voice), daily session model
 ├── components/
+│   ├── LandingPage.tsx          # Public marketing page
+│   ├── BrandMark.tsx            # Shared logo+wordmark (landing nav, Scanner header)
 │   ├── MessageBubble.tsx        # Shared message rendering (live + read-only)
 │   ├── ArchivedDaysPanel.tsx    # Read-only history of past days' conversations
+│   ├── ArchivedDayCard.tsx      # Single archived-day summary card
 │   ├── PhotoPreviewSection.tsx  # Captured-photo confirm/retake
 │   └── UserMenu.tsx             # Account menu, sign out
 └── lib/
     ├── supabase/                # Browser / server / middleware Supabase clients
     ├── data/conversations.ts    # Supabase-backed data layer (messages, conversations)
     ├── conversations/archiveConversation.ts  # Day-end LLM summary generation
-    ├── audio/                   # Recording, STT/TTS clients, playback hook
-    └── vision/detectObject.ts   # /api/vision client
+    ├── primaryAgent.ts          # Client-side wrappers for /api/chat and /api/grammar
+    ├── audio/                   # Recording (with mic device picker), STT/TTS clients, playback hook
+    ├── vision/detectObject.ts   # /api/vision client
+    ├── api/openaiRateLimit.ts   # Shared 429 handling reused by every OpenAI-backed route
+    └── dates.ts                 # Local-date helpers, streak calculation
 
 supabase/migrations/             # Numbered, idempotent SQL migrations (source of truth for schema)
 ```
@@ -101,11 +111,12 @@ The Chat tab is a casual, French-only dialogue with an AI companion centered on 
 
 ## **🧰 Tech Stack**
 
-* **Framework:** Next.js 15 (App Router) + TypeScript
-* **Auth & Data:** Supabase (Auth, Postgres, Storage), React Query for client-side data state
-* **AI Platform:** OpenAI APIs
-* **Audio:** Browser Media APIs for recording and playback
-* **Deployment:** Vercel
+* **Framework:** Next.js 15 (App Router) + React 19 + TypeScript
+* **Auth & Data:** Supabase (`@supabase/ssr`, Auth + Postgres + Storage), TanStack React Query for client-side data/cache state
+* **AI Platform:** OpenAI (`openai` SDK) — see AI-Specifics below for the model per task
+* **Audio:** Browser Media APIs (`MediaRecorder`, device enumeration for the mic picker) for recording and playback
+* **UI:** react-icons, `@fontsource` for self-hosted DM Serif Display / Inter
+* **Deployment:** Vercel, custom domain (`www.vuevocale.app`)
 
 ---
 
