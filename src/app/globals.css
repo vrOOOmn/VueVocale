@@ -685,7 +685,7 @@ textarea:focus {
    so .scan-intro gets its own, wider, desktop-only value. */
 .scan-frame,
 .scan-intro {
-  width: clamp(18rem, 88vw, 30rem);
+  width: 88vw;
 }
 
 @media (min-width: 768px) {
@@ -695,7 +695,7 @@ textarea:focus {
   }
 
   .scan-intro {
-    width: 34rem;
+    width: 38rem;
   }
 }
 
@@ -711,8 +711,4 @@ textarea:focus {
     display: block;
   }
 }
-
-/* Single source of truth for "the tab bar's own internal padding" so the
-   Scanner page's outer horizontal padding can match it exactly instead of
-   two independently-tuned numbers drifting apart. */
 

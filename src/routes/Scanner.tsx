@@ -301,12 +301,11 @@ export default function Scanner({
         </div>
         <div style={styles.introTextColumn}>
           <span className="scan-intro-eyebrow" style={styles.introEyebrow}>
-            Mode scanner
+            Scanner Mode
           </span>
-          <p style={styles.introTitle}>Find something to talk about.</p>
+          <p style={styles.introTitle}>Scan a nearby object</p>
           <span style={styles.introSubtitle}>
-            Point your camera at an object. VueVocale finds the French word
-            and starts a conversation about it.
+            Capture something in your surroundings that intrigues you. Then launch into conversation with your French companion.
           </span>
         </div>
       </div>
