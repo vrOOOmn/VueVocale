@@ -5,11 +5,9 @@ import { IoCamera, IoChatbubble } from "react-icons/io5";
 import { colors } from "./theme";
 import Scanner from "./routes/Scanner";
 import Chat from "./routes/Chat";
-import ClassAccessGateClient from "./components/ClassAccessGateClient";
+import UserMenu, { type AuthedUser } from "./components/UserMenu";
 
-export default function App() {
-  const [gateVisible, setGateVisible] = useState(true);
-
+export default function App({ user }: { user: AuthedUser }) {
   const [activeTab, setActiveTab] = useState<"scanner" | "chat">("scanner");
   const [chatContext, setChatContext] = useState<{
     image?: string;
@@ -23,6 +21,7 @@ export default function App() {
 
   return (
     <>
+      <UserMenu user={user} />
       <div
         style={{
           minHeight: "100svh", // ✅ allow page to grow and scroll
@@ -91,9 +90,6 @@ export default function App() {
           />
         </nav>
       </div>
-      {gateVisible && (
-        <ClassAccessGateClient onAuthorized={() => setGateVisible(false)} />
-      )}
     </>
   );
 }
