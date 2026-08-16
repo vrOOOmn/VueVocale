@@ -297,17 +297,17 @@ export default function Scanner({
 
       <div className="scan-intro" style={styles.introCard}>
         <span className="scan-intro-eyebrow" style={styles.introEyebrow}>
-          Mode scanner
+        Mode scanner
         </span>
         <div style={styles.introHeaderRow}>
           <div style={styles.introIconChip}>
-            <IoLocateOutline size={22} color={colors.electric} />
+              <IoLocateOutline size={23} color={colors.electric} />
           </div>
           <h2 style={styles.introTitle}>Find something to talk about.</h2>
         </div>
         <p style={styles.introSubtitle}>
-          Point your camera at an object. VueVocale finds the French word and
-          starts a conversation about it.
+        Point your camera at an object. VueVocale finds the French word and
+        starts a conversation about it.
         </p>
       </div>
 
@@ -379,14 +379,14 @@ const styles: Record<string, React.CSSProperties> = {
     // the camera box's bottom edge (and its capture button) ends up
     // permanently hidden under the nav once the camera is large enough to
     // reach the bottom of the viewport, which happens routinely on desktop.
-    paddingBottom: 110,
+    paddingBottom: 112,
     gap: "24px",
     background: "transparent",
   },
   brandMark: {
     position: "fixed" as const,
     top: 16,
-    left: "var(--scan-nav-padding)",
+    left: 16,
     zIndex: 100,
     display: "flex",
     alignItems: "center",
@@ -404,26 +404,31 @@ const styles: Record<string, React.CSSProperties> = {
   introCard: {
     display: "flex",
     flexDirection: "column" as const,
-    gap: 8,
+    justifyContent: "center",
+    gap: 0,
     background: colors.paper,
     border: `1px solid ${colors.hairline}`,
     borderRadius: borderRadius.xl,
-    padding: "22px 22px",
+    padding: spacing.md,
   },
   introHeaderRow: {
     display: "flex",
+    flexDirection: "row" as const,
+    justifyContent: "flex-start",
     alignItems: "center",
-    gap: 14,
+    gap: spacing.md,
+    border: "1px solid"
   },
   introIconChip: {
-    width: 44,
-    height: 44,
+    width: 47,
+    height: 47,
     flexShrink: 0,
     borderRadius: borderRadius.md,
     background: "rgba(49, 104, 255, 0.12)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
+
   },
   introEyebrow: {
     fontSize: 11,
@@ -431,30 +436,33 @@ const styles: Record<string, React.CSSProperties> = {
     letterSpacing: "0.08em",
     textTransform: "uppercase" as const,
     color: colors.brass,
+    paddingLeft: spacing.md + 47,
+    border: "1px solid"
   },
   introTitle: {
     fontSize: "clamp(1.15rem, 4.4vw, 1.4rem)",
     fontWeight: 700,
     color: colors.navy,
-    margin: 0,
   },
   introSubtitle: {
     fontSize: "clamp(0.9rem, 3.6vw, 1rem)",
     color: colors.textMuted,
     lineHeight: 1.55,
+    paddingLeft: spacing.md + 47,
+    border: "1px solid",
   },
   cameraBox: {
     // Width comes from the .scan-frame class (shared with
     // PhotoPreviewSection, shrinks on desktop) — not set here, since an
     // inline style would silently win over the class's media query.
     position: "relative" as const,
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.xl,
     overflow: "hidden",
     aspectRatio: "3 / 4",
     flexShrink: 0,
     marginBottom: spacing.xxl,
     background: "#EAF8FF",
-    border: "1px solid #BDEBFF",
+    border: "9px solid rgba(255, 253, 249, 0.92)",
   },
 
   video: {

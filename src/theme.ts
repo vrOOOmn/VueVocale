@@ -56,7 +56,7 @@ export const typography = {
   // Brand and landing hero moments only.
   display: {
     fontFamily: displayFamily,
-    fontSize: 56,
+    fontSize: 50,
     fontWeight: 400 as const,
     lineHeight: 1.15,
   },

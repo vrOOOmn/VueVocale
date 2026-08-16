@@ -28,6 +28,8 @@
   --radius-lg: 18px;
   --radius-xl: 28px;
   --radius-round: 9999px;
+
+  --internal-element-pad: 9px;
 }
 
 * {
@@ -713,12 +715,4 @@ textarea:focus {
 /* Single source of truth for "the tab bar's own internal padding" so the
    Scanner page's outer horizontal padding can match it exactly instead of
    two independently-tuned numbers drifting apart. */
-:root {
-  --scan-nav-padding: 9px;
-}
 
-@media (min-width: 768px) {
-  :root {
-    --scan-nav-padding: 6px;
-  }
-}
