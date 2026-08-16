@@ -50,6 +50,11 @@ export default function Chat({
   const [selectedMicId, setSelectedMicId] = useState("");
   const [historyOpen, setHistoryOpen] = useState(false);
   const [photoReplyPending, setPhotoReplyPending] = useState(false);
+  // Bridges the gap between tapping "talk about it" and that photo's
+  // message actually landing in the cache. Cleared the moment it does (or
+  // if the insert fails), so the message list — not this — is what the
+  // header reads from for the rest of the session. See contextLabel below.
+  const [scanTopic, setScanTopic] = useState<string | null>(null);
   const micMenuRef = useRef<HTMLDivElement | null>(null);
 
   const textRef = useRef<HTMLTextAreaElement | null>(null);
@@ -113,12 +118,15 @@ export default function Chat({
 
   const displayMessages = mergeAudioState(messages);
 
-  // `topic` only reflects a fresh scan→chat handoff this session — it's
-  // empty after a reload even though the conversation still has a subject.
-  // Fall back to the most recent persisted object_label so the context pill
-  // survives a refresh.
+  // The header names the subject the conversation is actually on, so it
+  // reads off the newest object-labelled message rather than the handoff
+  // prop. `topic` is set once at scan→chat and then never changes for the
+  // life of this mount, so letting it win outright pinned the pill to a
+  // subject the conversation had moved past — most visibly after clearing
+  // the chat, where every photo is gone but the pill kept naming one.
+  // scanTopic covers only the brief pre-insert window (see above).
   const persistedTopic = [...messages].reverse().find((m) => m.objectLabel)?.objectLabel;
-  const contextLabel = topic || persistedTopic;
+  const contextLabel = scanTopic ?? persistedTopic;
 
   const { data: streak = 0 } = useQuery({
     queryKey: ["streak"],
@@ -247,6 +255,9 @@ export default function Chat({
   useLayoutEffect(() => {
     const handleNewPhoto = async () => {
       if (!photoDataUrl || !topic || !conversationId) return;
+      // Name the new subject in the header straight away, before the insert
+      // (or even the initial read) has resolved.
+      setScanTopic(topic);
       // Wait for the initial messages read to land before writing anything —
       // otherwise that read can resolve after our insert and overwrite the
       // cache with the pre-insert (empty) snapshot, silently dropping it.
@@ -263,6 +274,8 @@ export default function Chat({
           object_label: topic,
         });
         appendMessage({ ...userMsg, image: userMsg.image ?? photoDataUrl });
+        // The message now carries object_label, so the list can take over.
+        setScanTopic(null);
         queryClient.invalidateQueries({ queryKey: ["streak"] });
 
         setPhotoReplyPending(true);
@@ -286,6 +299,9 @@ export default function Chat({
         appendMessage(botMsg);
       } catch (err) {
         console.error("Photo handoff error", err);
+        // Nothing persisted, so don't leave the header naming a subject the
+        // conversation has no record of.
+        setScanTopic(null);
       } finally {
         setPhotoReplyPending(false);
       }
@@ -393,6 +409,7 @@ export default function Chat({
       await clearConversationMessages(conversationId);
       queryClient.setQueryData<Message[]>(["messages", conversationId], []);
       lastPhotoRef.current = null;
+      setScanTopic(null);
       queryClient.invalidateQueries({ queryKey: ["streak"] });
     } catch (err) {
       console.error("Clear chat error", err);
