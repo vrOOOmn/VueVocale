@@ -296,19 +296,19 @@ export default function Scanner({
       </div>
 
       <div className="scan-intro" style={styles.introCard}>
-        <span className="scan-intro-eyebrow" style={styles.introEyebrow}>
-        Mode scanner
-        </span>
-        <div style={styles.introHeaderRow}>
-          <div style={styles.introIconChip}>
-              <IoLocateOutline size={23} color={colors.electric} />
-          </div>
-          <h2 style={styles.introTitle}>Find something to talk about.</h2>
+        <div style={styles.introIconChip}>
+          <IoLocateOutline size={23} color={colors.electric} />
         </div>
-        <p style={styles.introSubtitle}>
-        Point your camera at an object. VueVocale finds the French word and
-        starts a conversation about it.
-        </p>
+        <div style={styles.introTextColumn}>
+          <span className="scan-intro-eyebrow" style={styles.introEyebrow}>
+            Mode scanner
+          </span>
+          <p style={styles.introTitle}>Find something to talk about.</p>
+          <span style={styles.introSubtitle}>
+            Point your camera at an object. VueVocale finds the French word
+            and starts a conversation about it.
+          </span>
+        </div>
       </div>
 
       {photoDataUrl ? (
@@ -369,8 +369,8 @@ const styles: Record<string, React.CSSProperties> = {
     // Matches the tab bar's own internal padding (--scan-nav-padding) so
     // the page's outer inset and the nav's inset read as one consistent
     // margin, per the reference mockup.
-    paddingLeft: "var(--scan-nav-padding)",
-    paddingRight: "var(--scan-nav-padding)",
+    paddingLeft: "var(--internal-element-pad)",
+    paddingRight: "var(--internal-element-pad)",
     // Clears the fixed brandMark (top:16 + ~32px tall) above it, same idea
     // as Chat's header clearance on .chat-messages.
     paddingTop: 72,
@@ -403,21 +403,13 @@ const styles: Record<string, React.CSSProperties> = {
   },
   introCard: {
     display: "flex",
-    flexDirection: "column" as const,
-    justifyContent: "center",
-    gap: 0,
+    flexDirection: "row" as const,
+    alignItems: "center",
+    gap: spacing.md,
     background: colors.paper,
     border: `1px solid ${colors.hairline}`,
     borderRadius: borderRadius.xl,
     padding: spacing.md,
-  },
-  introHeaderRow: {
-    display: "flex",
-    flexDirection: "row" as const,
-    justifyContent: "flex-start",
-    alignItems: "center",
-    gap: spacing.md,
-    border: "1px solid"
   },
   introIconChip: {
     width: 47,
@@ -428,7 +420,12 @@ const styles: Record<string, React.CSSProperties> = {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-
+  },
+  introTextColumn: {
+    display: "flex",
+    flexDirection: "column" as const,
+    gap: 4,
+    minWidth: 0,
   },
   introEyebrow: {
     fontSize: 11,
@@ -436,20 +433,18 @@ const styles: Record<string, React.CSSProperties> = {
     letterSpacing: "0.08em",
     textTransform: "uppercase" as const,
     color: colors.brass,
-    paddingLeft: spacing.md + 47,
-    border: "1px solid"
   },
   introTitle: {
+    margin: 0, // <p> has a browser default block margin — reset it.
     fontSize: "clamp(1.15rem, 4.4vw, 1.4rem)",
     fontWeight: 700,
     color: colors.navy,
   },
   introSubtitle: {
+    display: "block",
     fontSize: "clamp(0.9rem, 3.6vw, 1rem)",
     color: colors.textMuted,
     lineHeight: 1.55,
-    paddingLeft: spacing.md + 47,
-    border: "1px solid",
   },
   cameraBox: {
     // Width comes from the .scan-frame class (shared with
