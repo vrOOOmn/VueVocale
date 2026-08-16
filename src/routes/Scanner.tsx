@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import Image from "next/image";
 import { IoCamera, IoLocateOutline, IoRepeat, IoWarningOutline } from "react-icons/io5";
+import BrandMark from "../components/BrandMark";
 import PhotoPreviewSection from "../components/PhotoPreviewSection";
-import { colors, spacing, borderRadius, typography } from "../theme";
+import { colors, spacing, borderRadius, typography, shadows } from "../theme";
 import { createClient } from "../lib/supabase/client";
 import { detectAndTranslateFR } from "../lib/vision/detectObject";
 import type { AuthedUser } from "../components/UserMenu";
@@ -290,10 +290,7 @@ export default function Scanner({
     <div style={styles.container}>
       {/* Fixed like UserMenu's top-right avatar, so the brand mark stays
           put instead of scrolling away with the page on tall content. */}
-      <div style={styles.brandMark}>
-        <Image src="/vuevocale.svg" alt="VueVocale logo" width={32} height={32} style={styles.logo} />
-        <span style={styles.brandTitle}>VueVocale</span>
-      </div>
+      <BrandMark logoSize={32} style={styles.brandMark} textStyle={styles.brandTitle} />
 
       <div className="scan-intro" style={styles.introCard}>
         <div style={styles.introIconChip}>
@@ -387,13 +384,6 @@ const styles: Record<string, React.CSSProperties> = {
     top: 16,
     left: 16,
     zIndex: 100,
-    display: "flex",
-    alignItems: "center",
-    gap: 10,
-  },
-  logo: {
-    width: 32,
-    height: 32,
   },
   brandTitle: {
     fontSize: 21,
@@ -409,6 +399,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: `1px solid ${colors.hairline}`,
     borderRadius: borderRadius.xl,
     padding: spacing.md,
+    boxShadow: shadows.card,
   },
   introIconChip: {
     width: 47,

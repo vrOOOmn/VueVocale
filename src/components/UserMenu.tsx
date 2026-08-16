@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "../lib/supabase/client";
-import { colors, typography } from "../theme";
+import { colors, typography, shadows } from "../theme";
 
 export type AuthedUser = {
   id: string;
@@ -71,8 +71,9 @@ export default function UserMenu({ user }: { user: AuthedUser }) {
             right: 0,
             minWidth: 200,
             background: colors.paper,
+            border: `1px solid ${colors.hairline}`,
             borderRadius: 16,
-            boxShadow: "0 12px 30px rgba(0,0,0,0.12)",
+            boxShadow: shadows.overlay,
             padding: 12,
             display: "flex",
             flexDirection: "column",

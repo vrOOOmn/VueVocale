@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { IoCloseOutline, IoMenuOutline } from "react-icons/io5";
+import BrandMark from "./BrandMark";
 import { colors, spacing, typography } from "../theme";
 
 // Grounded in the real product (src/routes/Scanner.tsx, Chat.tsx,
@@ -102,19 +102,16 @@ export default function LandingPage() {
           justifyContent: "space-between",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <Image src="/vuevocale.svg" alt="" width={34} height={34} priority />
-          <span
-            className="lp-brand"
-            style={{
-              fontFamily: typography.header.fontFamily,
-              fontWeight: 700,
-              color: colors.navy,
-            }}
-          >
-            VueVocale
-          </span>
-        </div>
+        <BrandMark
+          logoSize={34}
+          style={{ gap: 12 }}
+          textClassName="lp-brand"
+          textStyle={{
+            fontFamily: typography.header.fontFamily,
+            fontWeight: 700,
+            color: colors.navy,
+          }}
+        />
         <nav className="lp-nav-links">
           <a href="#how-it-works" className="lp-nav-link">
             Method
@@ -240,9 +237,10 @@ export default function LandingPage() {
               maxWidth: 580,
             }}
           >
-            VueVocale turns the objects around you into short, guided
-            conversations with instant pronunciation feedback. It feels
-            polished, but it behaves like a serious AI learning tool.
+            VueVocale turns the objects around you into short French
+            conversations — like chatting with a local at a café abroad,
+            minus the plane ticket. Grammar correction is there when you tap
+            for it, never automatic.
           </p>
           <div style={{ display: "flex", alignItems: "center", gap: 28, marginTop: 44, flexWrap: "wrap" }}>
             <Link href="/app" className="lp-btn lp-btn-primary">

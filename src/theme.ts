@@ -17,6 +17,7 @@ export const colors = {
   mint: "#1EA783", // success
   mist: "#EEF3F8", // AI/bot response surface
   hairline: "#D9D1C4", // 1px borders/rules
+  hairlineTranslucent: "rgba(217, 209, 196, 0.5)", // hairline, for borders on frosted/translucent-white surfaces (glass pills over photos/scrolling content) where the opaque value reads too heavy
 
   textMuted: "#687080", // body / secondary copy
   textLabel: "#171A23", // small semibold labels
@@ -47,6 +48,16 @@ export const borderRadius = {
   lg: 18,
   xl: 28,
   round: 9999,
+};
+
+// Two elevation tiers, applied consistently across every white/paper card
+// and pill in the app instead of each one carrying its own bespoke value.
+export const shadows = {
+  // Resting elevation for inline cards and pills.
+  card: "0 8px 20px rgba(17, 27, 63, 0.08)",
+  // Stronger elevation for anything floating above other content: modals,
+  // dropdowns, slide-in panels.
+  overlay: "0 20px 50px rgba(17, 27, 63, 0.16)",
 };
 
 const displayFamily = `'DM Serif Display', Georgia, serif`;

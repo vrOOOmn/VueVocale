@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { IoCamera, IoChatbubble } from "react-icons/io5";
-import { colors } from "./theme";
+import { colors, shadows } from "./theme";
 import Scanner from "./routes/Scanner";
 import Chat from "./routes/Chat";
 import UserMenu, { type AuthedUser } from "./components/UserMenu";
@@ -130,8 +130,9 @@ export default function App({ user }: { user: AuthedUser }) {
             width: "min(90vw, 50em)",
             background: "rgba(255, 253, 249, 0.92)",
             backdropFilter: "blur(16px)",
+            border: `1px solid ${colors.hairlineTranslucent}`,
             borderRadius: 28,
-            boxShadow: "0 6px 20px rgba(17, 27, 63, 0.08)",
+            boxShadow: shadows.card,
             height: 68,
             display: "flex",
             alignItems: "center",

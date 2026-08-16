@@ -10,6 +10,7 @@
   --color-brass: #b98a3d;
   --color-rouge: #b94a48;
   --color-hairline: #d9d1c4;
+  --color-hairline-translucent: rgba(217, 209, 196, 0.5);
   --color-text-muted: #687080;
   --color-text-light: #ffffff;
   --color-citrus: #f6b44b;
@@ -30,6 +31,11 @@
   --radius-round: 9999px;
 
   --internal-element-pad: 9px;
+
+  /* Two elevation tiers, applied consistently across every white/paper
+     card and pill instead of each one carrying its own bespoke value. */
+  --shadow-card: 0 8px 20px rgba(17, 27, 63, 0.08);
+  --shadow-overlay: 0 20px 50px rgba(17, 27, 63, 0.16);
 }
 
 * {
@@ -161,11 +167,12 @@ textarea:focus {
 .archived-panel {
   width: min(560px, 100%);
   background: var(--color-paper);
+  border: 1px solid var(--color-hairline);
   border-radius: 0 0 28px 28px;
   max-height: 85vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-overlay);
   outline: none;
   animation: archivedPanelDropIn 0.25s ease-out;
 }
@@ -287,7 +294,7 @@ textarea:focus {
   background: var(--color-paper);
   color: var(--color-navy);
   border: 1px solid var(--color-hairline);
-  box-shadow: none;
+  box-shadow: var(--shadow-card);
 }
 
 .lp-btn-secondary:hover {
@@ -311,6 +318,7 @@ textarea:focus {
   border: 1px solid var(--color-hairline);
   border-radius: var(--radius-xl);
   padding: 24px;
+  box-shadow: var(--shadow-card);
   transition:
     transform 0.2s ease,
     box-shadow 0.2s ease;
@@ -405,6 +413,7 @@ textarea:focus {
   border-radius: 16px;
   padding: 20px 22px;
   cursor: pointer;
+  box-shadow: var(--shadow-card);
   transition:
     transform 0.2s ease,
     box-shadow 0.2s ease,
@@ -544,6 +553,7 @@ textarea:focus {
   border-radius: var(--radius-md);
   background: var(--color-paper);
   border: 1px solid var(--color-hairline);
+  box-shadow: var(--shadow-card);
   color: var(--color-navy);
 }
 
@@ -561,7 +571,7 @@ textarea:focus {
   background: var(--color-paper);
   border: 1px solid var(--color-hairline);
   border-radius: var(--radius-lg);
-  box-shadow: 0 16px 32px rgba(17, 27, 63, 0.14);
+  box-shadow: var(--shadow-overlay);
   z-index: 20;
 }
 

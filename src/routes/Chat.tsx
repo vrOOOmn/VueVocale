@@ -10,7 +10,7 @@ import {
   IoTrashOutline,
   IoWarningOutline,
 } from "react-icons/io5";
-import { colors, spacing, borderRadius, typography } from "../theme";
+import { colors, spacing, borderRadius, typography, shadows } from "../theme";
 import { generateTextResponse, fixGrammar } from "../lib/primaryAgent";
 import { useRecorder } from "../lib/audio/useRecorder";
 import { transcribeSTT } from "../lib/audio/transcribeSTT";
@@ -661,10 +661,10 @@ const styles: Record<string, React.CSSProperties> = {
     color: colors.navy,
     background: "rgba(255,255,255,0.85)",
     backdropFilter: "blur(12px)",
-    border: "1px solid rgba(0,0,0,0.06)",
+    border: `1px solid ${colors.hairlineTranslucent}`,
     borderRadius: borderRadius.round,
     padding: "10px 18px",
-    boxShadow: "0 8px 20px rgba(17, 27, 63, 0.08)",
+    boxShadow: shadows.card,
     whiteSpace: "nowrap",
     overflow: "hidden",
     textOverflow: "ellipsis",
@@ -704,10 +704,10 @@ const styles: Record<string, React.CSSProperties> = {
     color: colors.navy,
     background: "rgba(255,255,255,0.85)",
     backdropFilter: "blur(12px)",
-    border: "1px solid rgba(0,0,0,0.06)",
+    border: `1px solid ${colors.hairlineTranslucent}`,
     borderRadius: borderRadius.round,
     padding: "10px 18px",
-    boxShadow: "0 8px 20px rgba(17, 27, 63, 0.08)",
+    boxShadow: shadows.card,
     cursor: "pointer",
   },
   clearButton: {
@@ -719,9 +719,9 @@ const styles: Record<string, React.CSSProperties> = {
     color: colors.rouge,
     background: "rgba(255,255,255,0.85)",
     backdropFilter: "blur(12px)",
-    border: "1px solid rgba(0,0,0,0.06)",
+    border: `1px solid ${colors.hairlineTranslucent}`,
     borderRadius: borderRadius.round,
-    boxShadow: "0 8px 20px rgba(17, 27, 63, 0.08)",
+    boxShadow: shadows.card,
     padding: 0,
   },
   messages: {
@@ -798,9 +798,9 @@ const styles: Record<string, React.CSSProperties> = {
     padding: "8px 10px 8px 16px",
     background: "rgba(255,255,255,0.85)",
     backdropFilter: "blur(12px)",
-    border: "1px solid rgba(0,0,0,0.06)",
+    border: `1px solid ${colors.hairlineTranslucent}`,
     borderRadius: 28,
-    boxShadow: "0 8px 24px rgba(0,0,0,0.06)",
+    boxShadow: shadows.card,
     zIndex: 100,
   },
   textInput: {
@@ -826,7 +826,7 @@ const styles: Record<string, React.CSSProperties> = {
   micPickerButton: {
     height: 44,
     borderRadius: 20,
-    border: "1px solid rgba(59,107,243,0.16)",
+    border: `1px solid ${colors.hairlineTranslucent}`,
     background: "rgba(255,255,255,0.92)",
     color: colors.navy,
     display: "flex",
@@ -838,7 +838,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 12,
     fontWeight: 600,
     cursor: "pointer",
-    boxShadow: "0 2px 6px rgba(0,0,0,0.06)",
+    boxShadow: shadows.card,
   },
   micPickerLabel: {
     maxWidth: 76,
@@ -862,8 +862,8 @@ const styles: Record<string, React.CSSProperties> = {
     padding: 6,
     borderRadius: 16,
     background: "rgba(255,255,255,0.98)",
-    border: "1px solid rgba(0,0,0,0.08)",
-    boxShadow: "0 12px 32px rgba(0,0,0,0.14)",
+    border: `1px solid ${colors.hairline}`,
+    boxShadow: shadows.overlay,
     zIndex: 120,
   },
   micDropdownItem: {

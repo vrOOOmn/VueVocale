@@ -1,6 +1,6 @@
 import React from "react";
 import { IoReloadOutline, IoWarningOutline } from "react-icons/io5";
-import { colors, spacing, borderRadius, typography } from "../theme";
+import { colors, spacing, borderRadius, typography, shadows } from "../theme";
 
 type Props = {
   photoDataUrl: string;
@@ -154,12 +154,14 @@ const styles: Record<string, React.CSSProperties> = {
     gap: 6,
     alignSelf: "flex-start",
     background: "rgba(255,255,255,0.92)",
+    border: `1px solid ${colors.hairlineTranslucent}`,
     color: colors.navy,
     fontFamily: typography.body.fontFamily,
     fontSize: 12,
     fontWeight: 600,
     borderRadius: borderRadius.md,
     padding: "6px 10px",
+    boxShadow: shadows.card,
   },
   buttonRow: {
     display: "flex",
