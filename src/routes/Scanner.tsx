@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import Image from "next/image";
 import { IoCamera, IoRepeat, IoWarningOutline } from "react-icons/io5";
 import PhotoPreviewSection from "../components/PhotoPreviewSection";
 import { colors, spacing, borderRadius, typography } from "../theme";
@@ -29,6 +30,7 @@ export default function Scanner({
   const [detectedObject, setDetectedObject] = useState<string | null>(null);
   const [englishObject, setEnglishObject] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [photoUploadFailed, setPhotoUploadFailed] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -178,6 +180,7 @@ export default function Scanner({
 
     setDetectedObject(null);
     setPhotoStoragePath(null);
+    setPhotoUploadFailed(false);
     setIsLoading(true);
 
     c.width = v.videoWidth || 1080;
@@ -187,27 +190,47 @@ export default function Scanner({
     ctx.drawImage(v, 0, 0, c.width, c.height);
 
     const dataUrl = c.toDataURL("image/jpeg", 0.9);
+    let detected = false;
     try {
       const base64Image = dataUrl.split(",")[1];
 
       const { english, french } = await detectAndTranslateFR(base64Image);
 
+      if (!french) {
+        // Nothing recognizable in the frame — treat like any other
+        // detection failure rather than showing a photo with no label and
+        // no way to retake it.
+        throw new Error("No object recognized in photo");
+      }
+
       setEnglishObject(english);
       setDetectedObject(french);
       setPhotoDataUrl(dataUrl);
+      detected = true;
     } catch (err) {
       console.error("Vision scan error:", err);
       setStreamError("Erreur: échec de la détection de l'objet.");
     } finally {
       setIsLoading(false);
-      cleanupStream();
+      if (detected) {
+        cleanupStream();
+      } else {
+        // Resume the live camera instead of leaving a stopped stream with
+        // no photo and no controls to retry.
+        await startStream();
+      }
     }
+
+    if (!detected) return;
 
     // Persist the captured photo to Storage so it survives reload and can be
     // referenced from the message that gets created once the user confirms.
     c.toBlob(
       async (blob) => {
-        if (!blob) return;
+        if (!blob) {
+          setPhotoUploadFailed(true);
+          return;
+        }
         try {
           const path = `${user.id}/${crypto.randomUUID()}.jpg`;
           const supabase = createClient();
@@ -216,11 +239,13 @@ export default function Scanner({
             .upload(path, blob, { contentType: "image/jpeg" });
           if (error) {
             console.error("Photo upload failed:", error.message);
+            setPhotoUploadFailed(true);
             return;
           }
           setPhotoStoragePath(path);
         } catch (err) {
           console.error("Photo upload error:", err);
+          setPhotoUploadFailed(true);
         }
       },
       "image/jpeg",
@@ -231,6 +256,7 @@ export default function Scanner({
   const handleRetakePhoto = () => {
     setPhotoDataUrl(null);
     setPhotoStoragePath(null);
+    setPhotoUploadFailed(false);
     startStream();
   };
 
@@ -248,8 +274,8 @@ export default function Scanner({
 
   if (isLoading) {
     return (
-      <div style={styles.loadingScreen}>
-        <div style={{ fontSize: "2.5rem", marginBottom: spacing.md }}>🔍</div>
+      <div style={styles.loadingScreen} role="status" aria-live="polite">
+        <div className="spin-loader" style={{ marginBottom: spacing.md }} />
         <p style={{ ...typography.body, margin: 0, fontSize: "2.2rem" }}>
           <em>Analyse et traduction de l’image…</em>
         </p>
@@ -265,18 +291,17 @@ export default function Scanner({
       {/* Hero section moved inside */}
       <div style={styles.hero}>
         <div style={styles.heroHeader}>
-          <img src="/vuevocale.svg" alt="VueVocale logo" style={styles.logo} />
+          <Image src="/vuevocale.svg" alt="VueVocale logo" width={38} height={38} style={styles.logo} />
           <h1 style={styles.title}>VueVocale</h1>
         </div>
 
-        <p style={styles.subtitle}>
-          A conversational French learning companion
-        </p>
-        <p style={styles.description}>
-          VueVocale helps you level up your French speaking skills by engaging
-          in spontaneous conversations about the world around you. Capture an
-          object, and your AI companion will start chatting with you naturally!
-        </p>
+        <div style={styles.introCard}>
+          <h2 style={styles.introTitle}>Find something to talk about.</h2>
+          <p style={styles.introSubtitle}>
+            Point your camera at an object. VueVocale finds the French word
+            and starts a conversation about it.
+          </p>
+        </div>
       </div>
 
       {photoDataUrl ? (
@@ -285,6 +310,7 @@ export default function Scanner({
           handleRetakePhoto={handleRetakePhoto}
           detectedLabel={detectedObject}
           englishLabel={englishObject}
+          uploadFailed={photoUploadFailed}
           onChat={() => {
             if (onChat && detectedObject && photoDataUrl) {
               onChat(detectedObject, photoDataUrl, photoStoragePath);
@@ -333,58 +359,66 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: "column" as const,
     alignItems: "center",
     justifyContent: "flex-start",
-    padding: "5px 5px",
+    // Symmetric side padding matching Chat's header inset, and enough top
+    // clearance to roughly line up with the fixed account avatar (top:16).
+    padding: "20px 16px",
     gap: "24px",
-    // border: '4px solid ' + '#000',
     background: "transparent",
   },
   hero: {
-    textAlign: "center" as const,
-    // border: '4px solid ' + '#000',
+    textAlign: "left" as const,
     width: "clamp(15rem, 80vw, 50rem)",
+    display: "flex",
+    flexDirection: "column" as const,
+    gap: 18,
   },
   heroHeader: {
     display: "flex",
     alignItems: "center",
-    justifyContent: "center",
-    gap: "min(5%, 20px)",
-    padding: ".8em",
-    // border: '4px solid ' + '#000',
+    justifyContent: "flex-start",
+    gap: 12,
   },
   logo: {
-    width: "min(13vw, 4.3rem)",
-    height: "auto",
+    width: 38,
+    height: 38,
   },
   title: {
-    fontSize: "min(9vw, 3.1rem)",
+    fontSize: 25,
     fontWeight: 700,
-    color: colors.electric,
+    color: colors.navy,
     margin: 0, // reset
   },
-  subtitle: {
-    fontSize: "clamp(.9rem, 3.6vw, 1.1rem)",
-    color: colors.textMuted,
-    fontStyle: "italic",
-    marginTop: 4,
+  introCard: {
+    background: colors.paper,
+    border: `1px solid ${colors.hairline}`,
+    borderRadius: borderRadius.xl,
+    padding: "22px 22px",
   },
-  description: {
-    fontSize: "clamp(1.0rem, 4vw, 1.2rem)",
+  introTitle: {
+    fontSize: "clamp(1.15rem, 4.4vw, 1.4rem)",
+    fontWeight: 700,
+    color: colors.navy,
+    margin: 0,
+  },
+  introSubtitle: {
+    fontSize: "clamp(0.9rem, 3.6vw, 1rem)",
     color: colors.textMuted,
-    marginTop: 10,
-    lineHeight: 1.6,
-    backgroundColor: colors.paper,
-    padding: 14,
-    borderRadius: 16,
+    marginTop: 8,
+    lineHeight: 1.55,
   },
   cameraBox: {
-    width: "clamp(15rem, 70vw, 23rem)",
+    // Noticeably bigger — the old clamp left a lot of dead space below the
+    // camera on tall phone viewports since height only ever derived from
+    // this width via the aspect ratio.
+    width: "clamp(18rem, 88vw, 30rem)",
     position: "relative" as const,
     borderRadius: borderRadius.lg,
     overflow: "hidden",
     aspectRatio: "3 / 4",
     flexShrink: 0,
-    marginBottom: "min(8rem, 100px)",
-    // border: '4px solid ' + '#000',
+    marginBottom: spacing.xxl,
+    background: "#EAF8FF",
+    border: "1px solid #BDEBFF",
   },
 
   video: {

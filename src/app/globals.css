@@ -147,6 +147,98 @@ textarea:focus {
   animation-delay: -0.16s;
 }
 
+.archived-panel-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(17, 27, 63, 0.4);
+  display: flex;
+  justify-content: center;
+}
+
+.archived-panel {
+  width: min(560px, 100%);
+  background: var(--color-paper);
+  border-radius: 0 0 28px 28px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+  outline: none;
+  animation: archivedPanelDropIn 0.25s ease-out;
+}
+
+@keyframes archivedPanelDropIn {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Above phone widths, a centered box that only occupies the top third of
+   the screen reads as a stray floating card, not a history panel. A
+   right-anchored, full-height drawer matches the "28px panels" design rule
+   without pretending to be a full-screen modal on a desktop-sized viewport. */
+@media (min-width: 768px) {
+  .archived-panel-backdrop {
+    justify-content: flex-end;
+  }
+
+  .archived-panel {
+    width: 420px;
+    max-width: 420px;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 28px 0 0 28px;
+    animation: archivedPanelSlideIn 0.25s ease-out;
+  }
+}
+
+@keyframes archivedPanelSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes skeletonPulse {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.skeleton {
+  background: rgba(17, 27, 63, 0.08);
+  animation: skeletonPulse 1.4s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spin-loader {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(17, 27, 63, 0.12);
+  border-top-color: var(--color-electric);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -506,5 +598,29 @@ textarea:focus {
 
   .lp-nav-toggle {
     display: inline-flex;
+  }
+}
+
+/* Chat header/input-bar: on narrow phones the Historique label and the mic
+   picker's device-name label are the biggest fixed-width space users of the
+   header/input row — drop them below ~480px so the textarea and the
+   Contexte pill actually have room, keep icons/carets so the controls are
+   still identifiable and tappable. */
+.chat-header-label {
+  display: none;
+}
+
+.mic-picker-btn {
+  min-width: 40px;
+}
+
+@media (min-width: 480px) {
+  .chat-header-label {
+    display: inline;
+  }
+
+  .mic-picker-btn {
+    min-width: 116px;
+    justify-content: space-between;
   }
 }

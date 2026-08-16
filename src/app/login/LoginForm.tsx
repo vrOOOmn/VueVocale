@@ -14,9 +14,11 @@ export default function LoginForm({
   error?: string;
 }) {
   const [loading, setLoading] = useState(false);
+  const [clientError, setClientError] = useState<string | null>(null);
 
   const handleGoogleSignIn = async () => {
     setLoading(true);
+    setClientError(null);
     const supabase = createClient();
     const redirectTo = `${window.location.origin}/auth/callback${
       next ? `?next=${encodeURIComponent(next)}` : ""
@@ -27,8 +29,11 @@ export default function LoginForm({
     });
     if (signInError) {
       setLoading(false);
+      setClientError(signInError.message);
     }
   };
+
+  const displayError = clientError || error;
 
   return (
     <div
@@ -102,7 +107,7 @@ export default function LoginForm({
           {loading ? "Redirecting…" : "Continue with Google"}
         </button>
 
-        {error && (
+        {displayError && (
           <p
             style={{
               marginTop: 16,
@@ -111,7 +116,7 @@ export default function LoginForm({
               fontFamily: typography.body.fontFamily,
             }}
           >
-            Something went wrong signing you in. Please try again.
+            {displayError}
           </p>
         )}
       </div>

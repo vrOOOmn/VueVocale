@@ -2,7 +2,14 @@
 
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { IoSend, IoMic, IoStopSharp, IoTrashOutline } from "react-icons/io5";
+import {
+  IoSend,
+  IoMic,
+  IoMicOutline,
+  IoStopSharp,
+  IoTrashOutline,
+  IoWarningOutline,
+} from "react-icons/io5";
 import { colors, spacing, borderRadius, typography } from "../theme";
 import { generateTextResponse, fixGrammar } from "../lib/primaryAgent";
 import { useRecorder } from "../lib/audio/useRecorder";
@@ -106,6 +113,13 @@ export default function Chat({
 
   const displayMessages = mergeAudioState(messages);
 
+  // `topic` only reflects a fresh scan→chat handoff this session — it's
+  // empty after a reload even though the conversation still has a subject.
+  // Fall back to the most recent persisted object_label so the context pill
+  // survives a refresh.
+  const persistedTopic = [...messages].reverse().find((m) => m.objectLabel)?.objectLabel;
+  const contextLabel = topic || persistedTopic;
+
   const { data: streak = 0 } = useQuery({
     queryKey: ["streak"],
     queryFn: async () => computeStreak(await fetchActiveDates()),
@@ -134,26 +148,6 @@ export default function Chat({
         content: m.text!,
       }));
 
-  const generateAIResponse = async (userMessage: string, historyMsgs: Message[]): Promise<string> => {
-    try {
-      const hasImage = historyMsgs.some((m) => m.image);
-
-      return await generateTextResponse({
-        history: buildAgentHistory(historyMsgs),
-        userMessage,
-        hasImage,
-      });
-    } catch (e) {
-      console.error(e);
-
-      if (e instanceof Error && e.message) {
-        return e.message;
-      }
-
-      return ERROR_TEXT;
-    }
-  };
-
   const sendTextMutation = useMutation({
     mutationFn: async (text: string) => {
       if (!conversationId) throw new Error("No active conversation yet");
@@ -170,7 +164,46 @@ export default function Chat({
       appendMessage(userMsg);
       queryClient.invalidateQueries({ queryKey: ["streak"] });
 
-      const aiResponse = await generateAIResponse(text, historyBefore);
+      // Deliberately not caught here — a failure surfaces as a distinct
+      // error card (see retryReplyMutation) instead of being stringified
+      // into a fake bot message. Persisting the error text as a real "bot"
+      // message would also poison future AI context, since buildAgentHistory
+      // feeds every past bot message back in as assistant turns.
+      const aiResponse = await generateTextResponse({
+        history: buildAgentHistory(historyBefore),
+        userMessage: text,
+        hasImage: historyBefore.some((m) => m.image),
+      });
+      const botMsg = await insertMessage({
+        conversation_id: conversationId,
+        user_id: user.id,
+        sender: "bot",
+        text: aiResponse,
+      });
+      appendMessage(botMsg);
+    },
+  });
+
+  // Retries only the AI-reply half of a failed send — the user's message
+  // already persisted successfully, so re-running the full send would
+  // duplicate it. Reads the latest cached message list to find the most
+  // recent user turn to reply to.
+  const retryReplyMutation = useMutation({
+    mutationFn: async () => {
+      if (!conversationId) throw new Error("No active conversation yet");
+
+      const currentMsgs =
+        queryClient.getQueryData<Message[]>(["messages", conversationId]) ?? [];
+      const lastUserMsg = [...currentMsgs].reverse().find((m) => m.sender === "user" && m.text);
+      if (!lastUserMsg?.text) throw new Error("Nothing to retry");
+
+      const historyBefore = currentMsgs.filter((m) => m.id !== lastUserMsg.id);
+
+      const aiResponse = await generateTextResponse({
+        history: buildAgentHistory(historyBefore),
+        userMessage: lastUserMsg.text,
+        hasImage: historyBefore.some((m) => m.image),
+      });
       const botMsg = await insertMessage({
         conversation_id: conversationId,
         user_id: user.id,
@@ -344,38 +377,59 @@ export default function Chat({
   return (
     <main style={styles.container}>
       <div style={styles.header}>
-        <button
-          type="button"
-          onClick={clearChat}
-          disabled={messages.length === 0}
-          title="Effacer la conversation"
-          style={{
-            ...styles.clearButton,
-            opacity: messages.length === 0 ? 0.4 : 1,
-            cursor: messages.length === 0 ? "default" : "pointer",
-          }}
-        >
-          <IoTrashOutline size={14} />
-        </button>
-        {streak > 0 && <span style={styles.streakBadge}>🔥 {streak}</span>}
-        <button type="button" onClick={() => setHistoryOpen(true)} style={styles.historyButton}>
-          🕘 Historique
-        </button>
+        <div style={styles.headerLeft}>
+          {contextLabel && <span style={styles.contextPill}>Contexte · {contextLabel}</span>}
+        </div>
+        <div style={styles.headerCenter}>
+          <button
+            type="button"
+            onClick={clearChat}
+            disabled={messages.length === 0}
+            title="Effacer la conversation"
+            aria-label="Effacer la conversation / Clear conversation"
+            style={{
+              ...styles.clearButton,
+              opacity: messages.length === 0 ? 0.4 : 1,
+              cursor: messages.length === 0 ? "default" : "pointer",
+            }}
+          >
+            <IoTrashOutline size={16} />
+          </button>
+          <button
+            type="button"
+            onClick={() => setHistoryOpen(true)}
+            aria-label="Historique / History"
+            style={styles.historyButton}
+          >
+            🕘 <span className="chat-header-label">Historique</span>
+          </button>
+        </div>
+        <div style={styles.headerRight}>
+          {streak > 0 && <span style={styles.streakBadge}>🔥 {streak}</span>}
+        </div>
       </div>
 
       <div style={styles.messages}>
-        {displayMessages.map((m) => (
-          <MessageBubble
-            key={m.id}
-            message={m}
-            mode="live"
-            isPlaying={playingId === m.id}
-            onTogglePlay={togglePlay}
-            onFixGrammar={handleFixGrammar}
-          />
-        ))}
+        {messagesPending ? (
+          <>
+            <div className="skeleton" style={styles.skeletonBot} />
+            <div className="skeleton" style={styles.skeletonUser} />
+            <div className="skeleton" style={{ ...styles.skeletonBot, width: "50%" }} />
+          </>
+        ) : (
+          displayMessages.map((m) => (
+            <MessageBubble
+              key={m.id}
+              message={m}
+              mode="live"
+              isPlaying={playingId === m.id}
+              onTogglePlay={togglePlay}
+              onFixGrammar={handleFixGrammar}
+            />
+          ))
+        )}
 
-        {(sendTextMutation.isPending || photoReplyPending) && (
+        {(sendTextMutation.isPending || photoReplyPending || retryReplyMutation.isPending) && (
           <div style={{ ...styles.message, ...styles.botMessage, opacity: 0.7 }}>
             <div className="typing-dots" style={styles.typingDots}>
               <span></span>
@@ -384,6 +438,28 @@ export default function Chat({
             </div>
           </div>
         )}
+
+        {(sendTextMutation.isError || retryReplyMutation.isError) &&
+          !retryReplyMutation.isPending && (
+            <div style={styles.errorCard} role="alert">
+              <IoWarningOutline size={16} color={colors.rouge} style={{ flexShrink: 0 }} />
+              <span style={{ flex: 1 }}>
+                {(() => {
+                  const err = retryReplyMutation.isError
+                    ? retryReplyMutation.error
+                    : sendTextMutation.error;
+                  return err instanceof Error && err.message ? err.message : ERROR_TEXT;
+                })()}
+              </span>
+              <button
+                type="button"
+                onClick={() => retryReplyMutation.mutate()}
+                style={styles.errorRetryButton}
+              >
+                Réessayer / Retry
+              </button>
+            </div>
+          )}
         <div ref={bottomRef} />
       </div>
 
@@ -409,10 +485,17 @@ export default function Chat({
             onClick={() => setMicMenuOpen((open) => !open)}
             disabled={recording}
             title={`Selected mic: ${selectedMicLabel}`}
+            aria-label={`Choisir le micro / Choose microphone — ${selectedMicLabel}`}
+            className="mic-picker-btn"
             style={styles.micPickerButton}
           >
-            <span style={styles.micPickerLabel}>{selectedMicLabel}</span>
-            <span style={styles.micPickerCaret}>▾</span>
+            <IoMicOutline size={16} style={{ flexShrink: 0 }} />
+            <span className="chat-header-label" style={styles.micPickerLabel}>
+              {selectedMicLabel}
+            </span>
+            <span className="chat-header-label" style={styles.micPickerCaret}>
+              ▾
+            </span>
           </button>
 
           {micMenuOpen && (
@@ -448,6 +531,11 @@ export default function Chat({
           type="button"
           onClick={handleMic}
           disabled={!conversationId || messagesPending}
+          aria-label={
+            recording
+              ? "Arrêter l'enregistrement / Stop recording"
+              : "Démarrer l'enregistrement / Start recording"
+          }
           style={{
             ...styles.micButton,
             // "Blue means action or listening" — an active recording is
@@ -478,6 +566,7 @@ export default function Chat({
           disabled={
             !input.trim() || sendTextMutation.isPending || !conversationId || messagesPending
           }
+          aria-label="Envoyer / Send"
           style={{
             ...styles.sendButton,
             opacity:
@@ -519,49 +608,101 @@ const styles: Record<string, React.CSSProperties> = {
     position: "relative",
   },
   header: {
-    display: "flex",
+    // Fixed like the input bar below — a normal in-flow header can end up
+    // scrolling away with the message list on mobile browsers where the
+    // 100%-height flex containment doesn't reliably hold (100svh/inner-scroll
+    // quirks), even though it looks contained in desktop devtools.
+    position: "fixed",
+    top: 0,
+    left: 0,
+    right: 0,
+    display: "grid",
+    // minmax(0, 1fr), not plain 1fr — a plain 1fr track's automatic minimum
+    // is its content's min-content size, which for nowrap text is its full
+    // width, so the Contexte pill was overflowing into the center column
+    // instead of actually shrinking. minmax(0, 1fr) forces the track's
+    // floor to 0 so the ellipsis/overflow rules below can actually apply.
+    gridTemplateColumns: "minmax(0, 1fr) auto minmax(0, 1fr)",
     alignItems: "center",
-    justifyContent: "flex-end",
     gap: 8,
     // Right padding clears the fixed account icon (40px circle at
     // top:16/right:16) so header buttons never sit underneath it.
-    padding: `${spacing.sm}px 64px 0 ${spacing.md}px`,
+    padding: `${spacing.md}px 64px ${spacing.sm}px ${spacing.md}px`,
+    zIndex: 100,
   },
-  streakBadge: {
-    fontSize: 12.5,
-    fontWeight: 700,
-    color: colors.navy,
-    background: "rgba(184, 134, 58, 0.18)",
-    border: "1px solid rgba(184, 134, 58, 0.4)",
-    borderRadius: borderRadius.round,
-    padding: "6px 12px",
+  headerLeft: {
+    display: "flex",
+    justifySelf: "start",
+    minWidth: 0,
+    overflow: "hidden",
   },
-  historyButton: {
-    fontSize: 12.5,
+  headerCenter: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    justifySelf: "center",
+  },
+  headerRight: {
+    display: "flex",
+    justifySelf: "end",
+  },
+  contextPill: {
+    fontSize: 13.5,
     fontWeight: 600,
     color: colors.navy,
-    background: "rgba(255,255,255,0.7)",
-    border: `1px solid ${colors.hairline}`,
+    background: "rgba(255,255,255,0.85)",
+    backdropFilter: "blur(12px)",
+    border: "1px solid rgba(0,0,0,0.06)",
     borderRadius: borderRadius.round,
-    padding: "6px 12px",
+    padding: "10px 18px",
+    boxShadow: "0 8px 20px rgba(17, 27, 63, 0.08)",
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    maxWidth: "100%",
+  },
+  streakBadge: {
+    display: "flex",
+    alignItems: "center",
+    fontSize: 13.5,
+    fontWeight: 800,
+    color: "#fff",
+    background: colors.brass,
+    borderRadius: borderRadius.round,
+    padding: "10px 16px",
+    boxShadow: "0 8px 20px rgba(184, 134, 58, 0.35)",
+  },
+  historyButton: {
+    fontSize: 13.5,
+    fontWeight: 600,
+    color: colors.navy,
+    background: "rgba(255,255,255,0.85)",
+    backdropFilter: "blur(12px)",
+    border: "1px solid rgba(0,0,0,0.06)",
+    borderRadius: borderRadius.round,
+    padding: "10px 18px",
+    boxShadow: "0 8px 20px rgba(17, 27, 63, 0.08)",
     cursor: "pointer",
   },
   clearButton: {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    width: 30,
-    height: 30,
+    width: 38,
+    height: 38,
     color: colors.rouge,
-    background: "rgba(255,255,255,0.7)",
-    border: `1px solid ${colors.hairline}`,
+    background: "rgba(255,255,255,0.85)",
+    backdropFilter: "blur(12px)",
+    border: "1px solid rgba(0,0,0,0.06)",
     borderRadius: borderRadius.round,
+    boxShadow: "0 8px 20px rgba(17, 27, 63, 0.08)",
     padding: 0,
   },
   messages: {
     flex: 1,
     overflowY: "auto",
     padding: spacing.md,
+    paddingTop: 88,
     paddingBottom: 160,
     display: "flex",
     flexDirection: "column",
@@ -575,9 +716,48 @@ const styles: Record<string, React.CSSProperties> = {
     animation: "fadeIn 0.3s ease-in",
   },
   botMessage: {
-    background: "#fff",
+    background: "#F4F0FF",
+    border: "1px solid #D8D0FF",
     alignSelf: "flex-start",
     borderRadius: "18px 18px 18px 4px",
+  },
+  errorCard: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    alignSelf: "flex-start",
+    maxWidth: "85%",
+    padding: "10px 14px",
+    borderRadius: borderRadius.lg,
+    background: "rgba(185, 74, 72, 0.08)",
+    border: `1px solid ${colors.rouge}`,
+    color: colors.rouge,
+    fontSize: 13,
+    fontWeight: 600,
+    animation: "fadeIn 0.3s ease-in",
+  },
+  errorRetryButton: {
+    flexShrink: 0,
+    background: "transparent",
+    border: `1px solid ${colors.rouge}`,
+    color: colors.rouge,
+    borderRadius: borderRadius.round,
+    padding: "6px 12px",
+    fontSize: 12,
+    fontWeight: 700,
+    cursor: "pointer",
+  },
+  skeletonBot: {
+    height: 44,
+    width: "62%",
+    borderRadius: "18px 18px 18px 4px",
+    alignSelf: "flex-start",
+  },
+  skeletonUser: {
+    height: 36,
+    width: "42%",
+    borderRadius: "18px 18px 4px 18px",
+    alignSelf: "flex-end",
   },
   inputContainer: {
     position: "fixed",
@@ -618,15 +798,14 @@ const styles: Record<string, React.CSSProperties> = {
   },
   micPickerButton: {
     height: 44,
-    minWidth: 116,
     borderRadius: 20,
     border: "1px solid rgba(59,107,243,0.16)",
     background: "rgba(255,255,255,0.92)",
     color: colors.navy,
     display: "flex",
     alignItems: "center",
-    justifyContent: "space-between",
-    gap: 8,
+    justifyContent: "center",
+    gap: 6,
     padding: "0 12px",
     marginRight: 8,
     fontSize: 12,
@@ -672,8 +851,8 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: "pointer",
   },
   sendButton: {
-    width: 44,
-    height: 44,
+    width: 48,
+    height: 48,
     borderRadius: "50%",
     border: "none",
     background: colors.electric,
@@ -681,7 +860,7 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: "center",
     justifyContent: "center",
     cursor: "pointer",
-    boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+    boxShadow: "0 4px 12px rgba(49, 104, 255, 0.3)",
   },
   typingDots: {
     display: "flex",
@@ -691,14 +870,14 @@ const styles: Record<string, React.CSSProperties> = {
     padding: "6px 8px",
   },
   micButton: {
-    width: 44,
-    height: 44,
+    width: 48,
+    height: 48,
     borderRadius: "50%",
     border: "none",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     cursor: "pointer",
-    boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+    boxShadow: "0 4px 12px rgba(17, 27, 63, 0.18)",
   },
 };

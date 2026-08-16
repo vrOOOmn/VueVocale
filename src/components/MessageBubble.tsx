@@ -39,17 +39,30 @@ export default function MessageBubble({
     >
       <div
         style={{
+          maxWidth: m.image ? "min(280px, 70%)" : "75%",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: m.sender === "user" ? "flex-end" : "flex-start",
+        }}
+      >
+      <div
+        style={{
           padding: m.image ? 0 : "10px 14px",
           background: m.image
             ? "transparent"
             : m.sender === "user"
             ? colors.electric
-            : colors.paper,
+            : "#F4F0FF",
+          border: m.image || m.sender === "user" ? "none" : "1px solid #D8D0FF",
           borderRadius: borderRadius.lg,
-          maxWidth: m.image ? "min(280px, 70%)" : "75%",
+          width: "100%",
         }}
       >
         {m.image ? (
+          // Plain <img>, deliberately not next/image: this is either a
+          // freshly-captured data: URL or a signed Supabase Storage URL, and
+          // the storage host isn't in next.config's image remotePatterns, so
+          // next/image would just fail to load it as-is.
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={m.image}
@@ -83,6 +96,8 @@ export default function MessageBubble({
                       alignSelf: "flex-start",
                       fontSize: 12,
                       background: "transparent",
+                      // Literal white, not a token — this sits on the electric
+                      // user bubble, not the page background.
                       border: "1px solid rgba(255,255,255,0.4)",
                       color: "white",
                       borderRadius: 12,
@@ -95,35 +110,18 @@ export default function MessageBubble({
                 )}
 
                 {mode === "live" && m.grammarStatus === "loading" && (
-                  <span style={{ fontSize: 12, opacity: 0.7 }}>Vérification…</span>
+                  <span style={{ fontSize: 12, color: "white", opacity: 0.7 }}>
+                    Vérification…
+                  </span>
                 )}
 
                 {m.grammarStatus === "error" && (
+                  // Rouge lightened for contrast on the electric bubble, not a
+                  // missing token.
                   <span style={{ fontSize: 11.5, color: "#FFD9D6" }}>
                     Échec de la vérification.
                   </span>
                 )}
-
-                {m.grammarStatus === "ok" && (
-                  <span style={{ fontSize: 12, opacity: 0.7 }}>✓ Bien !</span>
-                )}
-              </div>
-            )}
-
-            {m.grammarStatus === "fixed" && m.grammarFix && (
-              // Rouge only corrects — this is the one element on screen that
-              // actually is a correction, so it's the one place rouge shows up.
-              <div
-                style={{
-                  marginTop: 6,
-                  padding: "6px 10px",
-                  borderRadius: 10,
-                  background: "rgba(185, 74, 72, 0.25)",
-                  fontSize: 13,
-                  color: "white",
-                }}
-              >
-                ➡ {m.grammarFix}
               </div>
             )}
 
@@ -133,6 +131,15 @@ export default function MessageBubble({
                   type="button"
                   onClick={() => onTogglePlay(m)}
                   disabled={m.audioState === "loading"}
+                  aria-label={
+                    m.audioState === "loading"
+                      ? "Chargement de l'audio / Loading audio"
+                      : m.audioState === "error"
+                      ? "Erreur audio / Audio error"
+                      : isPlaying
+                      ? "Mettre en pause / Pause"
+                      : "Écouter / Listen"
+                  }
                   style={{
                     width: 35,
                     height: 35,
@@ -176,6 +183,45 @@ export default function MessageBubble({
             )}
           </>
         )}
+      </div>
+
+      {m.grammarStatus === "fixed" && m.grammarFix && (
+        // Rouge only corrects — this is the one element on screen that
+        // actually is a correction, so it's the one place rouge shows up.
+        <div
+          style={{
+            marginTop: 6,
+            padding: "10px 14px",
+            borderRadius: borderRadius.md,
+            background: "rgba(185, 74, 72, 0.08)",
+            border: `1px solid ${colors.rouge}`,
+            fontSize: 13,
+            color: colors.rouge,
+            fontWeight: 600,
+          }}
+        >
+          ➡ {m.grammarFix}
+        </div>
+      )}
+
+      {m.grammarStatus === "ok" && (
+        // Same shape as the correction card above — green instead of rouge,
+        // since nothing needed fixing.
+        <div
+          style={{
+            marginTop: 6,
+            padding: "10px 14px",
+            borderRadius: borderRadius.md,
+            background: "rgba(30, 167, 131, 0.08)",
+            border: `1px solid ${colors.mint}`,
+            fontSize: 13,
+            color: colors.mint,
+            fontWeight: 600,
+          }}
+        >
+          ✓ Bien !
+        </div>
+      )}
       </div>
     </div>
   );

@@ -20,6 +20,17 @@ export default function App({ user }: { user: AuthedUser }) {
     setActiveTab("scanner");
   };
 
+  const handleTabListKeyDown = (e: React.KeyboardEvent<HTMLElement>) => {
+    if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+    e.preventDefault();
+    const next = activeTab === "scanner" ? "chat" : "scanner";
+    if (next === "scanner") handleSwitchToScanner();
+    else setActiveTab("chat");
+    requestAnimationFrame(() => {
+      document.getElementById(`tab-${next}`)?.focus();
+    });
+  };
+
   return (
     <>
       <UserMenu user={user} />
@@ -42,28 +53,35 @@ export default function App({ user }: { user: AuthedUser }) {
             overflow: "visible",
           }}
         >
-          {activeTab === "scanner" && (
-            <Scanner
-              user={user}
-              onChat={(detectedWord, imageDataUrl, storagePath) => {
-                setChatContext({ label: detectedWord, image: imageDataUrl, storagePath });
-                setActiveTab("chat");
-              }}
-            />
-          )}
+          <div role="tabpanel" id="panel-scanner" aria-labelledby="tab-scanner" hidden={activeTab !== "scanner"}>
+            {activeTab === "scanner" && (
+              <Scanner
+                user={user}
+                onChat={(detectedWord, imageDataUrl, storagePath) => {
+                  setChatContext({ label: detectedWord, image: imageDataUrl, storagePath });
+                  setActiveTab("chat");
+                }}
+              />
+            )}
+          </div>
 
-          {activeTab === "chat" && (
-            <Chat
-              topic={chatContext.label}
-              photoDataUrl={chatContext.image}
-              photoStoragePath={chatContext.storagePath}
-              user={user}
-            />
-          )}
+          <div role="tabpanel" id="panel-chat" aria-labelledby="tab-chat" hidden={activeTab !== "chat"}>
+            {activeTab === "chat" && (
+              <Chat
+                topic={chatContext.label}
+                photoDataUrl={chatContext.image}
+                photoStoragePath={chatContext.storagePath}
+                user={user}
+              />
+            )}
+          </div>
         </main>
 
         {/* --- Bottom Navigation --- */}
         <nav
+          role="tablist"
+          aria-label="Navigation principale"
+          onKeyDown={handleTabListKeyDown}
           style={{
             position: "fixed",
             bottom: 0,
@@ -83,12 +101,16 @@ export default function App({ user }: { user: AuthedUser }) {
           }}
         >
           <TabButton
+            id="tab-scanner"
+            controls="panel-scanner"
             icon={<IoCamera size={22} />}
             label="Scanner"
             active={activeTab === "scanner"}
             onClick={handleSwitchToScanner}
           />
           <TabButton
+            id="tab-chat"
+            controls="panel-chat"
             icon={<IoChatbubble size={22} />}
             label="Chat"
             active={activeTab === "chat"}
@@ -101,11 +123,15 @@ export default function App({ user }: { user: AuthedUser }) {
 }
 
 function TabButton({
+  id,
+  controls,
   icon,
   label,
   active,
   onClick,
 }: {
+  id: string;
+  controls: string;
   icon: React.ReactNode;
   label: string;
   active: boolean;
@@ -113,10 +139,15 @@ function TabButton({
 }) {
   return (
     <button
+      id={id}
+      role="tab"
+      aria-selected={active}
+      aria-controls={controls}
+      tabIndex={active ? 0 : -1}
       onClick={onClick}
       style={{
         background: active ? colors.electric : "transparent",
-        color: active ? "#fff" : colors.electric,
+        color: active ? colors.textLight : colors.electric,
         border: "none",
         borderRadius: 16,
         padding: "10px 18px",

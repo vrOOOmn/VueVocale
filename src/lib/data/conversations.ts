@@ -9,6 +9,7 @@ export type Message = {
   audioState?: "ready" | "error" | "idle" | "loading";
   grammarFix?: string;
   grammarStatus?: "idle" | "loading" | "ok" | "fixed" | "error";
+  objectLabel?: string;
 };
 
 export type ArchivedConversation = {
@@ -28,6 +29,7 @@ type MessageRow = {
   audio_path: string | null;
   grammar_status: "idle" | "ok" | "fixed" | "error";
   grammar_fix: string | null;
+  object_label: string | null;
 };
 
 const SIGNED_URL_TTL_SECONDS = 3600;
@@ -86,6 +88,7 @@ function mapRow(
     audioState: audioUrl ? "ready" : "idle",
     grammarFix: row.grammar_fix ?? undefined,
     grammarStatus: row.grammar_status,
+    objectLabel: row.object_label ?? undefined,
   };
 }
 
@@ -93,7 +96,7 @@ export async function fetchMessages(conversationId: string): Promise<Message[]> 
   const supabase = createClient();
   const { data, error } = await supabase
     .from("messages")
-    .select("id, sender, text, image_path, audio_path, grammar_status, grammar_fix")
+    .select("id, sender, text, image_path, audio_path, grammar_status, grammar_fix, object_label")
     .eq("conversation_id", conversationId)
     .order("seq", { ascending: true });
 
@@ -124,7 +127,7 @@ export async function insertMessage(row: {
   const { data, error } = await supabase
     .from("messages")
     .insert(row)
-    .select("id, sender, text, image_path, audio_path, grammar_status, grammar_fix")
+    .select("id, sender, text, image_path, audio_path, grammar_status, grammar_fix, object_label")
     .single();
 
   if (error || !data) throw error ?? new Error("Insert returned no row");
