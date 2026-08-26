@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { IoCamera, IoLocateOutline, IoRepeat, IoWarningOutline } from "react-icons/io5";
+import HeaderFrost from "../components/HeaderFrost";
 import BrandMark from "../components/BrandMark";
 import PhotoPreviewSection from "../components/PhotoPreviewSection";
 import { colors, spacing, borderRadius, typography, shadows } from "../theme";
@@ -288,6 +289,11 @@ export default function Scanner({
 
   return (
     <div style={styles.container}>
+      {/* Same frosted band as Chat's header. Scanner has no header element of
+          its own — just these two fixed marks over scrolling content — so the
+          frost stands alone as a fixed band rather than a child of one. */}
+      <HeaderFrost fixed />
+
       {/* Fixed like UserMenu's top-right avatar, so the brand mark stays
           put instead of scrolling away with the page on tall content. */}
       <BrandMark logoSize={32} style={styles.brandMark} textStyle={styles.brandTitle} />

@@ -50,7 +50,13 @@ export default function App({ user }: { user: AuthedUser }) {
           background: colors.ivory,
           color: colors.navy,
           overflowY: activeTab === "scanner" ? "auto" : "hidden", // ✅ scroll only scanner
-          WebkitOverflowScrolling: "touch",
+          // No -webkit-overflow-scrolling:touch here. It is a no-op on iOS 13+
+          // (momentum scrolling is the default), but it still creates a
+          // stacking context on this box — which trapped every z-index inside
+          // it, including ArchivedDaysPanel's 200. The account avatar sits
+          // outside this box at z-index 100 and so painted *over* the whole
+          // panel, hiding its close button. Desktop browsers ignore the
+          // property entirely, which is why it only ever broke on a phone.
         }}
       >
         <main

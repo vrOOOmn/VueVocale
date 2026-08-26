@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "../lib/supabase/client";
 import { colors, typography, shadows } from "../theme";
@@ -17,8 +17,40 @@ export default function UserMenu({ user }: { user: AuthedUser }) {
   const [open, setOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
 
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  // Google's avatar CDN does not always serve these — it 403s often enough
+  // that the button was rendering a broken-image glyph where the account
+  // picture should be. Falling back to the initial makes a failed load
+  // indistinguishable from having no picture at all.
+  const [avatarFailed, setAvatarFailed] = useState(false);
+  const showAvatar = !!user.avatarUrl && !avatarFailed;
+
   const label = user.name || user.email || "Account";
   const initial = label.charAt(0).toUpperCase();
+
+  // Without these the only way out of the menu is the avatar button itself —
+  // every other dismissal gesture a dropdown is expected to honour (tapping
+  // the page behind it, Escape) did nothing. pointerdown, not click, so the
+  // menu is gone before whatever was tapped behind it reacts.
+  useEffect(() => {
+    if (!open) return;
+
+    const handlePointerDown = (e: PointerEvent) => {
+      if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open]);
+
+  useEffect(() => setAvatarFailed(false), [user.avatarUrl]);
 
   const handleSignOut = async () => {
     setSigningOut(true);
@@ -29,16 +61,20 @@ export default function UserMenu({ user }: { user: AuthedUser }) {
   };
 
   return (
-    <div style={{ position: "fixed", top: 16, right: 16, zIndex: 100 }}>
+    // zIndex above the chat header (100): the header now paints a background
+    // scrim across its full width, including the strip this avatar sits in.
+    <div ref={rootRef} style={{ position: "fixed", top: 16, right: 16, zIndex: 110 }}>
       <button
         onClick={() => setOpen((v) => !v)}
         aria-label="Account menu"
+        aria-expanded={open}
+        aria-haspopup="menu"
         style={{
           width: 40,
           height: 40,
           borderRadius: "50%",
           border: `1px solid ${colors.hairline}`,
-          background: user.avatarUrl ? "transparent" : colors.electric,
+          background: showAvatar ? "transparent" : colors.electric,
           padding: 0,
           overflow: "hidden",
           display: "flex",
@@ -47,14 +83,18 @@ export default function UserMenu({ user }: { user: AuthedUser }) {
           boxShadow: "0 4px 14px rgba(0,0,0,0.08)",
         }}
       >
-        {user.avatarUrl ? (
+        {showAvatar ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={user.avatarUrl}
+            src={user.avatarUrl!}
             alt=""
             width={40}
             height={40}
             style={{ objectFit: "cover" }}
+            // Google's avatar host 403s requests that carry a Referer, which
+            // is the usual reason these fail in the first place.
+            referrerPolicy="no-referrer"
+            onError={() => setAvatarFailed(true)}
           />
         ) : (
           <span style={{ color: "#fff", fontWeight: 700, fontSize: 15 }}>

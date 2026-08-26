@@ -32,6 +32,10 @@
 
   --internal-element-pad: 9px;
 
+  /* Height of the on-screen keyboard, published by Chat's visualViewport
+     listener. 0 on desktop and whenever the keyboard is dismissed. */
+  --kb-inset: 0px;
+
   /* Two elevation tiers, applied consistently across every white/paper
      card and pill instead of each one carrying its own bespoke value. */
   --shadow-card: 0 8px 20px rgba(17, 27, 63, 0.08);
@@ -164,17 +168,62 @@ textarea:focus {
   justify-content: center;
 }
 
+/* On phones this is a full-screen sheet, not a card that drops partway down
+   the screen. The partial sheet put its header row hard against the top edge
+   — under the status bar / notch on a real phone — and left a strip of live
+   chat visible below it, so it read as a stuck overlay rather than a screen
+   you are in and can leave. Full height + safe-area insets fixes both. */
 .archived-panel {
-  width: min(560px, 100%);
+  width: 100%;
+  height: 100dvh;
+  max-height: 100dvh;
   background: var(--color-paper);
-  border: 1px solid var(--color-hairline);
-  border-radius: 0 0 28px 28px;
-  max-height: 85vh;
+  border: none;
+  border-radius: 0;
   display: flex;
   flex-direction: column;
   box-shadow: var(--shadow-overlay);
   outline: none;
   animation: archivedPanelDropIn 0.25s ease-out;
+}
+
+.archived-panel-head {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  padding: 12px 12px 12px 20px;
+  padding-top: calc(12px + env(safe-area-inset-top));
+  border-bottom: 1px solid var(--color-hairline);
+}
+
+.archived-panel-body {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  padding-bottom: calc(20px + env(safe-area-inset-bottom));
+}
+
+/* 44px, not a bare 20px glyph with 4px of padding — the close control is the
+   only way out of a full-screen sheet, so it gets a real tap target and a
+   surface that makes it read as a button. */
+.archived-panel-iconbtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-round);
+  background: transparent;
+  cursor: pointer;
+}
+
+.archived-panel-close {
+  background: var(--color-limestone);
 }
 
 @keyframes archivedPanelDropIn {
@@ -200,10 +249,19 @@ textarea:focus {
   .archived-panel {
     width: 420px;
     max-width: 420px;
-    height: 100vh;
-    max-height: 100vh;
+    height: 100dvh;
+    max-height: 100dvh;
+    border: 1px solid var(--color-hairline);
     border-radius: 28px 0 0 28px;
     animation: archivedPanelSlideIn 0.25s ease-out;
+  }
+
+  .archived-panel-head {
+    padding: 16px 16px 16px 24px;
+  }
+
+  .archived-panel-close {
+    background: transparent;
   }
 }
 
@@ -573,6 +631,68 @@ textarea:focus {
   }
 }
 
+/* --- Hero proportions ---
+   Every one of these values was tuned against the desktop column and simply
+   carried over to a 375px phone, where the same numbers land very
+   differently: a 13px all-caps eyebrow with 18px of side padding stops being
+   a label and becomes a full-bleed banner, 40px/32px of air around a 1px
+   rule becomes a 72px dead band in the middle of the fold, and the heading
+   ends up barely 1.6x the body copy instead of the near-3x it has on
+   desktop. The mobile branch below re-proportions all four. */
+.lp-hero-eyebrow {
+  font-size: 13px;
+  padding: 9px 18px;
+  margin-bottom: 32px;
+}
+
+.lp-hero-title {
+  font-size: clamp(32px, 7vw, 57px);
+}
+
+.lp-hero-rule {
+  width: 100%;
+  max-width: 500px;
+  margin: 40px 0 32px;
+}
+
+.lp-hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  margin-top: 44px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 600px) {
+  .lp-hero-eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.6px;
+    padding: 7px 12px;
+    margin-bottom: 20px;
+  }
+
+  /* The hard line breaks are composed for the desktop measure. At phone
+     widths they fight the (now larger) type instead of shaping it, so let
+     the text wrap to the column it actually has. */
+  .lp-hero-title br {
+    display: none;
+  }
+
+  .lp-hero-rule {
+    max-width: 180px;
+    margin: 24px 0 22px;
+  }
+
+  .lp-hero-actions {
+    /* Two buttons whose widths happen to differ by 20px look like a mistake
+       when they are stacked. Full-width makes the stack deliberate. */
+    gap: 12px;
+    margin-top: 30px;
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
 /* Nav: link row on desktop, hamburger + dropdown panel on mobile. */
 .lp-nav-links {
   display: flex;
@@ -703,6 +823,89 @@ textarea:focus {
      instead of actually shrinking. */
   grid-template-columns: minmax(0, 1fr) auto auto minmax(0, 1fr);
   grid-template-areas: "context delete historique streak";
+  /* No fill of its own — the separation from the scrolling content below is
+     the job of <HeaderFrost>, rendered as this header's first child. */
+  background: transparent;
+}
+
+/* --- Progressive frost (see components/HeaderFrost.tsx) ---
+   Four stacked backdrop-filter layers, blur doubling each time, each masked
+   to a band starting higher than the last. The blurs compound where the
+   bands overlap, which is what produces a genuine gradient of frost rather
+   than a blurred rectangle with an edge on it. Percentages read from the
+   bottom (0%) up (100%). */
+.header-frost {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  /* Just past the header's own edge — enough overhang for the frost to
+     finish dissolving rather than stopping dead under the controls, but not
+     so much that it bleeds onto the content below and reads as a smear. */
+  height: calc(100% + 20px);
+  pointer-events: none;
+  /* -1, not auto: a positioned element paints in a later layer than its
+     non-positioned in-flow siblings, so at z-index auto this band sat *over*
+     the header's own pills and frosted them into illegible ghosts. Negative
+     puts it behind them while keeping it inside .chat-header's stacking
+     context, and the content scrolling past outside that context is still
+     part of the backdrop these layers blur. */
+  z-index: -1;
+  /* A whisper of ivory on the same ramp as the blur. Blur alone leaves the
+     colour of whatever is behind it (message bubbles are saturated blue and
+     violet), which navy text still has to sit on top of. */
+  background: linear-gradient(
+    to top,
+    rgba(250, 244, 234, 0) 0%,
+    rgba(250, 244, 234, 0.5) 55%,
+    rgba(250, 244, 234, 0.72) 100%
+  );
+}
+
+.header-frost > span {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+
+.header-frost > span:nth-child(1) {
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+  -webkit-mask-image: linear-gradient(to top, transparent 0%, #000 18%, #000 100%);
+  mask-image: linear-gradient(to top, transparent 0%, #000 18%, #000 100%);
+}
+
+.header-frost > span:nth-child(2) {
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  -webkit-mask-image: linear-gradient(to top, transparent 20%, #000 42%, #000 100%);
+  mask-image: linear-gradient(to top, transparent 20%, #000 42%, #000 100%);
+}
+
+.header-frost > span:nth-child(3) {
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  -webkit-mask-image: linear-gradient(to top, transparent 42%, #000 64%, #000 100%);
+  mask-image: linear-gradient(to top, transparent 42%, #000 64%, #000 100%);
+}
+
+.header-frost > span:nth-child(4) {
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  -webkit-mask-image: linear-gradient(to top, transparent 62%, #000 84%, #000 100%);
+  mask-image: linear-gradient(to top, transparent 62%, #000 84%, #000 100%);
+}
+
+/* Scanner has no header element to hang the frost inside — just a fixed
+   brand mark and account avatar floating over scrolling content — so there
+   it stands on its own as a fixed band. Below both of those in the stack
+   (BrandMark 100, UserMenu 110) and above the page content. */
+.header-frost--fixed {
+  position: fixed;
+  /* The account avatar is the deepest thing in Scanner's top band: 40px tall
+     at top:16, so 56px — plus the same 20px of overhang Chat's header gets. */
+  height: 76px;
+  z-index: 90;
 }
 
 @media (max-width: 767px) {
@@ -719,12 +922,18 @@ textarea:focus {
 /* Clearance for the fixed .chat-header above — taller on mobile where the
    header wraps to two rows. */
 .chat-messages {
+  /* Clears the fixed header (~66px on one row here) plus the frost's
+     20px overhang below it. */
   padding-top: 88px;
+  /* 160px clears the input bar and the tab bar beneath it; --kb-inset adds
+     however far the keyboard has pushed the input bar up. */
+  padding-bottom: calc(160px + var(--kb-inset));
 }
 
 @media (max-width: 767px) {
   .chat-messages {
-    padding-top: 140px;
+    /* Two header rows here, so ~120px, plus the frost's 20px overhang. */
+    padding-top: 144px;
   }
 }
 
