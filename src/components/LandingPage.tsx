@@ -196,51 +196,48 @@ export default function LandingPage() {
         <div className="lp-hero-grid">
         <div>
           <span
+            className="lp-hero-eyebrow"
             style={{
               display: "inline-block",
               fontFamily: typography.header.fontFamily,
-              fontSize: 13,
               fontWeight: 600,
               letterSpacing: 0.4,
               color: colors.paper,
               background: colors.navy,
               borderRadius: 8,
-              padding: "9px 18px",
-              marginBottom: 32,
             }}
           >
             ENVIRONMENT-BASED FRENCH LEARNING
           </span>
           <h1
+            className="lp-hero-title"
             style={{
               fontFamily: typography.display.fontFamily,
               fontWeight: 400,
-              fontSize: "clamp(20px, 7vw, 57px)",
               lineHeight: 1.12,
               margin: 0,
               color: colors.navy,
             }}
           >
-            Turn what&apos;s around you
+            {/* Explicit spaces, because JSX drops the newline-whitespace around
+                these breaks — and the mobile rules hide the breaks so the text
+                can wrap to the narrower column. Without the spaces the lines
+                weld together ("youinto a conversationin French"). */}
+            Turn what&apos;s around you{" "}
             <br />
-            into a conversation
+            into a conversation{" "}
             <br />
             in French.
           </h1>
           <div
-            style={{
-              width: "100%",
-              maxWidth: 500,
-              height: 1,
-              background: colors.brass,
-              margin: "40px 0 32px",
-            }}
+            className="lp-hero-rule"
+            style={{ height: 1, background: colors.brass }}
           />
           <p
             style={{
               fontFamily: typography.body.fontFamily,
-              fontSize: "clamp(15px, 4vw, 20px)",
-              lineHeight: 1.65,
+              fontSize: "clamp(16px, 4vw, 20px)",
+              lineHeight: 1.6,
               color: "#4F5B6F",
               margin: 0,
               maxWidth: 580,
@@ -248,7 +245,7 @@ export default function LandingPage() {
           >
             You can study French for years and still struggle when it&apos;s time to talk to a native speaker. VueVocale uses AI to turn everyday moments into opportunities to practice what lessons can&apos;t teach: the back-and-forth of real conversation.
           </p>
-          <div style={{ display: "flex", alignItems: "center", gap: 28, marginTop: 44, flexWrap: "wrap" }}>
+          <div className="lp-hero-actions">
             <Link href="/app" className="lp-btn lp-btn-primary">
               Start speaking
             </Link>

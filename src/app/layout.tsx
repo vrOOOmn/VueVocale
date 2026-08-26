@@ -19,6 +19,10 @@ export const metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  // Chromium honours this by shrinking the layout viewport when the on-screen
+  // keyboard opens, so fixed chrome lands above it for free. Safari ignores
+  // it — Chat's visualViewport listener (--kb-inset) covers that case.
+  interactiveWidget: "resizes-content",
 };
 
 export default function RootLayout({

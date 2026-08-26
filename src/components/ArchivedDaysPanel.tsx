@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useQuery } from "@tanstack/react-query";
 import { IoClose, IoChevronBack } from "react-icons/io5";
 import { colors, spacing, borderRadius, typography } from "../theme";
@@ -24,8 +25,11 @@ export default function ArchivedDaysPanel({
   userId: string;
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
   const panelRef = useRef<HTMLDivElement | null>(null);
   const previouslyFocused = useRef<HTMLElement | null>(null);
+
+  useEffect(() => setMounted(true), []);
 
   // Move focus into the panel on open, and restore it to whatever triggered
   // the panel on close — standard dialog focus-management behavior.
@@ -89,11 +93,15 @@ export default function ArchivedDaysPanel({
 
   const { playingId, togglePlay, mergeAudioState } = useMessageAudioPlayback(userId);
 
-  if (!open) return null;
+  if (!open || !mounted) return null;
 
   const selectedConversation = archived.find((c) => c.id === selectedId);
 
-  return (
+  // Portalled to <body> rather than rendered in place: as a modal it has to
+  // out-paint the fixed chrome around it (account avatar, tab bar, input
+  // bar), and nesting it inside the app shell left its stacking order at the
+  // mercy of whatever context an ancestor happened to create.
+  return createPortal(
     <div
       className="archived-panel-backdrop"
       onClick={() => (selectedId ? setSelectedId(null) : onClose())}
@@ -109,23 +117,15 @@ export default function ArchivedDaysPanel({
       >
         {selectedId ? (
           <>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                padding: `${spacing.md}px ${spacing.lg}px`,
-                borderBottom: `1px solid ${colors.hairline}`,
-              }}
-            >
+            <div className="archived-panel-head" style={{ gap: 8 }}>
               <button
                 onClick={() => setSelectedId(null)}
                 aria-label="Retour / Back"
-                style={{ background: "transparent", border: "none", cursor: "pointer", padding: 4 }}
+                className="archived-panel-iconbtn"
               >
                 <IoChevronBack size={20} color={colors.navy} />
               </button>
-              <div style={{ display: "flex", flexDirection: "column" }}>
+              <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
                 <span
                   style={{
                     fontFamily: typography.header.fontFamily,
@@ -143,16 +143,7 @@ export default function ArchivedDaysPanel({
               </div>
             </div>
 
-            <div
-              style={{
-                flex: 1,
-                overflowY: "auto",
-                padding: spacing.md,
-                display: "flex",
-                flexDirection: "column",
-                gap: spacing.md,
-              }}
-            >
+            <div className="archived-panel-body" style={{ gap: spacing.md }}>
               {transcriptPending ? (
                 <>
                   <div
@@ -183,20 +174,12 @@ export default function ArchivedDaysPanel({
           </>
         ) : (
           <>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                padding: `${spacing.md}px ${spacing.lg}px`,
-                borderBottom: `1px solid ${colors.hairline}`,
-              }}
-            >
+            <div className="archived-panel-head" style={{ justifyContent: "space-between" }}>
               <span
                 style={{
                   fontFamily: typography.header.fontFamily,
                   fontWeight: 700,
-                  fontSize: 16,
+                  fontSize: 17,
                   color: colors.navy,
                 }}
               >
@@ -205,22 +188,13 @@ export default function ArchivedDaysPanel({
               <button
                 onClick={onClose}
                 aria-label="Fermer / Close"
-                style={{ background: "transparent", border: "none", cursor: "pointer", padding: 4 }}
+                className="archived-panel-iconbtn archived-panel-close"
               >
                 <IoClose size={20} color={colors.navy} />
               </button>
             </div>
 
-            <div
-              style={{
-                flex: 1,
-                overflowY: "auto",
-                padding: spacing.lg,
-                display: "flex",
-                flexDirection: "column",
-                gap: spacing.sm,
-              }}
-            >
+            <div className="archived-panel-body" style={{ gap: spacing.sm }}>
               {archivedPending ? (
                 <>
                   <div className="skeleton" style={{ height: 78, borderRadius: borderRadius.lg }} />
@@ -252,6 +226,7 @@ export default function ArchivedDaysPanel({
           </>
         )}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

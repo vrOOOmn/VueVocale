@@ -27,6 +27,7 @@ import {
 } from "../lib/data/conversations";
 import MessageBubble from "../components/MessageBubble";
 import ArchivedDaysPanel from "../components/ArchivedDaysPanel";
+import HeaderFrost from "../components/HeaderFrost";
 import type { AuthedUser } from "../components/UserMenu";
 
 const ERROR_TEXT = "Oops, error in generating response! Try Again";
@@ -56,6 +57,11 @@ export default function Chat({
   // header reads from for the rest of the session. See contextLabel below.
   const [scanTopic, setScanTopic] = useState<string | null>(null);
   const micMenuRef = useRef<HTMLDivElement | null>(null);
+  // The input bar shares its row with the mic picker, the mic button and
+  // send, which on a phone leaves the field about 140px wide — far too
+  // narrow for the full bilingual placeholder. Starts false so the first
+  // client render matches the server's, then corrects on mount.
+  const [isNarrow, setIsNarrow] = useState(false);
 
   const textRef = useRef<HTMLTextAreaElement | null>(null);
   const lastPhotoRef = useRef<string | null>(null);
@@ -63,6 +69,55 @@ export default function Chat({
   const messagesContainerRef = useRef<HTMLDivElement | null>(null);
 
   const { playingId, togglePlay, mergeAudioState } = useMessageAudioPlayback(user.id);
+
+  // The on-screen keyboard shrinks the *visual* viewport without touching the
+  // layout viewport, so position:fixed chrome stays pinned underneath it and
+  // Safari compensates by scrolling the whole page to reveal the focused
+  // field — which is what yanked the message list out of view mid-typing and
+  // read as the screen zooming in. Publishing the keyboard's height as
+  // --kb-inset lets the input bar dock directly above it and the message list
+  // reserve room for it, so the newest messages stay on screen instead.
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    if (!viewport) return;
+
+    const root = document.documentElement;
+    let lastInset = -1;
+
+    const apply = () => {
+      const inset = Math.max(
+        0,
+        Math.round(window.innerHeight - (viewport.height + viewport.offsetTop)),
+      );
+      if (inset === lastInset) return;
+      lastInset = inset;
+      root.style.setProperty("--kb-inset", `${inset}px`);
+
+      // The list just lost (or regained) `inset` pixels of height; without
+      // this the conversation stays anchored where it was and the newest
+      // messages end up behind the keyboard.
+      const container = messagesContainerRef.current;
+      if (container) container.scrollTop = container.scrollHeight;
+    };
+
+    viewport.addEventListener("resize", apply);
+    viewport.addEventListener("scroll", apply);
+    apply();
+
+    return () => {
+      viewport.removeEventListener("resize", apply);
+      viewport.removeEventListener("scroll", apply);
+      root.style.removeProperty("--kb-inset");
+    };
+  }, []);
+
+  useEffect(() => {
+    const query = window.matchMedia("(max-width: 600px)");
+    const apply = () => setIsNarrow(query.matches);
+    apply();
+    query.addEventListener("change", apply);
+    return () => query.removeEventListener("change", apply);
+  }, []);
 
   useEffect(() => {
     const savedMicId = window.localStorage.getItem("vuelocale.selectedMicId");
@@ -127,6 +182,12 @@ export default function Chat({
   // scanTopic covers only the brief pre-insert window (see above).
   const persistedTopic = [...messages].reverse().find((m) => m.objectLabel)?.objectLabel;
   const contextLabel = scanTopic ?? persistedTopic;
+  // The pill is the header's left anchor, not an optional garnish. Dropping
+  // it whenever nothing had been scanned left the delete/streak/Historique
+  // controls floating over bare scrolling message bubbles with no header
+  // composition to sit in, so a text-only chat looked broken. Type the
+  // conversation instead: a scanned subject, or an explicit "free chat".
+  const hasScanContext = !!contextLabel;
 
   const { data: streak = 0 } = useQuery({
     queryKey: ["streak"],
@@ -419,13 +480,19 @@ export default function Chat({
   return (
     <main style={styles.container}>
       <div className="chat-header">
+        {/* First child so it paints behind every control in this header. */}
+        <HeaderFrost />
+
         <div style={{ ...styles.headerLeft, gridArea: "context" }}>
-          {contextLabel && (
-            <span style={styles.contextPill}>
-              <span style={styles.liveDot} />
-              Contexte · {contextLabel}
-            </span>
-          )}
+          <span style={styles.contextPill}>
+            <span
+              style={{
+                ...styles.liveDot,
+                ...(hasScanContext ? null : styles.idleDot),
+              }}
+            />
+            {hasScanContext ? `Contexte · ${contextLabel}` : "Conversation libre"}
+          </span>
         </div>
 
         <button
@@ -518,15 +585,30 @@ export default function Chat({
         }}
         style={styles.inputContainer}
       >
-        <textarea
-          ref={textRef}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={onKeyDown}
-          placeholder="Type a message / Écris un message…"
-          rows={1}
-          style={styles.textInput}
-        />
+        {/* The placeholder is drawn as an overlay rather than being the
+            textarea's own: a native placeholder wraps to a second line when
+            it outruns the field, and a one-row textarea then clips it
+            mid-word. A span can ellipsise instead, at any width. */}
+        <div style={styles.textFieldWrap}>
+          <textarea
+            ref={textRef}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={onKeyDown}
+            aria-label="Écrivez un message / Type a message"
+            rows={1}
+            style={styles.textInput}
+          />
+          {!input && (
+            <span aria-hidden="true" style={styles.textPlaceholder}>
+              {/* The bilingual pairing only fits once the field has room for
+                  it; on a phone it drops to a single French verb rather than
+                  being ellipsised into nonsense. */}
+              {isNarrow ? "Écrire…" : "Écrivez un message / Type a message…"}
+            </span>
+          )}
+        </div>
+
         <div ref={micMenuRef} style={styles.micControlGroup}>
           <button
             type="button"
@@ -657,13 +739,15 @@ const styles: Record<string, React.CSSProperties> = {
   },
   headerLeft: {
     display: "flex",
-    justifySelf: "start",
+    // stretch, not start: justify-self:start sizes a grid item to its own
+    // max-content and lets it overflow its track, so at narrow widths the
+    // pill ran straight over the delete button instead of ellipsising. The
+    // pill still sits left — this is a flex container and that is already
+    // the default alignment for its single child.
+    justifySelf: "stretch",
     minWidth: 0,
-    // Deliberately no overflow:hidden here — box-shadow is part of the
-    // pill's own rendered box, and clipping this wrapper clipped the
-    // shadow too, leaving a hard rectangular seam around the pill instead
-    // of a smooth fade. minWidth:0 alone is what the grid track needs to
-    // shrink correctly; contextPill's own overflow:hidden handles ellipsis.
+    // minWidth:0 (not overflow:hidden) is what the grid track needs in order
+    // to actually shrink; contextPill's own overflow:hidden handles ellipsis.
   },
   headerRight: {
     display: "flex",
@@ -677,15 +761,17 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 600,
     color: colors.navy,
     background: "rgba(255,255,255,0.85)",
-    backdropFilter: "blur(12px)",
     border: `1px solid ${colors.hairlineTranslucent}`,
     borderRadius: borderRadius.round,
     padding: "10px 18px",
-    boxShadow: shadows.card,
     whiteSpace: "nowrap",
     overflow: "hidden",
     textOverflow: "ellipsis",
     maxWidth: "100%",
+    // No boxShadow/backdropFilter: the header's own frost band (HeaderFrost)
+    // provides the separation from the content scrolling underneath. Stacking
+    // a drop shadow and a second blur per pill on top of it was what made the
+    // header read as cluttered.
   },
   liveDot: {
     width: 7,
@@ -694,6 +780,12 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: "50%",
     background: colors.mint,
     boxShadow: `0 0 0 3px rgba(30, 167, 131, 0.18)`,
+  },
+  // Same pill, quieter dot: "no photo behind this conversation yet" is a
+  // real state, not a success state, so it doesn't get the mint live dot.
+  idleDot: {
+    background: colors.hairline,
+    boxShadow: `0 0 0 3px rgba(217, 209, 196, 0.28)`,
   },
   streakBadge: {
     display: "flex",
@@ -704,7 +796,6 @@ const styles: Record<string, React.CSSProperties> = {
     background: colors.brass,
     borderRadius: borderRadius.round,
     padding: "10px 16px",
-    boxShadow: "0 8px 20px rgba(184, 134, 58, 0.35)",
   },
   historyButton: {
     // Grid items stretch to fill their area by default — historique's area
@@ -720,12 +811,14 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 600,
     color: colors.navy,
     background: "rgba(255,255,255,0.85)",
-    backdropFilter: "blur(12px)",
     border: `1px solid ${colors.hairlineTranslucent}`,
     borderRadius: borderRadius.round,
     padding: "10px 18px",
-    boxShadow: shadows.card,
     cursor: "pointer",
+    // No boxShadow/backdropFilter: the header's own frost band (HeaderFrost)
+    // provides the separation from the content scrolling underneath. Stacking
+    // a drop shadow and a second blur per pill on top of it was what made the
+    // header read as cluttered.
   },
   clearButton: {
     display: "flex",
@@ -735,20 +828,24 @@ const styles: Record<string, React.CSSProperties> = {
     height: 38,
     color: colors.rouge,
     background: "rgba(255,255,255,0.85)",
-    backdropFilter: "blur(12px)",
     border: `1px solid ${colors.hairlineTranslucent}`,
     borderRadius: borderRadius.round,
-    boxShadow: shadows.card,
     padding: 0,
+    // No boxShadow/backdropFilter: the header's own frost band (HeaderFrost)
+    // provides the separation from the content scrolling underneath. Stacking
+    // a drop shadow and a second blur per pill on top of it was what made the
+    // header read as cluttered.
   },
   messages: {
     flex: 1,
     overflowY: "auto",
-    padding: spacing.md,
-    // paddingTop is set in CSS (.chat-messages) — it has to be taller on
-    // mobile where the header wraps to two rows (Contexte/delete/streak,
-    // then a full-width Historique row) versus desktop's single row.
-    paddingBottom: 160,
+    // Side padding only — the vertical padding lives in CSS (.chat-messages)
+    // because it is media-query and keyboard dependent. It has to be set as
+    // longhands here: a `padding` shorthand inline expands to all four
+    // longhands and silently beat the stylesheet's padding-top, which is why
+    // the header clearance the CSS asks for never actually applied.
+    paddingLeft: spacing.md,
+    paddingRight: spacing.md,
     display: "flex",
     flexDirection: "column",
     gap: spacing.md,
@@ -805,7 +902,10 @@ const styles: Record<string, React.CSSProperties> = {
   },
   inputContainer: {
     position: "fixed",
-    bottom: 85,
+    // Rides up with the keyboard. The tab bar below stays at bottom:0 and is
+    // simply covered by the keyboard, which is the right outcome — there is
+    // nothing to navigate to mid-sentence.
+    bottom: "calc(85px + var(--kb-inset))",
     left: "50%",
     transform: "translateX(-50%)",
     width: "clamp(280px, 90%, 720px)",
@@ -820,8 +920,30 @@ const styles: Record<string, React.CSSProperties> = {
     boxShadow: shadows.card,
     zIndex: 100,
   },
+  textFieldWrap: {
+    position: "relative",
+    flex: 1,
+    minWidth: 0,
+    display: "flex",
+  },
+  textPlaceholder: {
+    position: "absolute",
+    left: 14,
+    right: 4,
+    top: "50%",
+    transform: "translateY(-50%)",
+    pointerEvents: "none",
+    color: colors.textMuted,
+    fontSize: 16,
+    fontFamily: typography.message.fontFamily,
+    lineHeight: 1.4,
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+  },
   textInput: {
     flex: 1,
+    minWidth: 0,
     resize: "none",
     minHeight: 36,
     maxHeight: 120,
@@ -829,7 +951,9 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: 20,
     border: "none",
     background: "transparent",
-    fontSize: 15,
+    // 16px is a hard floor, not a style choice: iOS Safari auto-zooms the
+    // whole page on focus for anything smaller.
+    fontSize: 16,
     fontFamily: typography.message.fontFamily,
     lineHeight: 1.4,
     outline: "none",
