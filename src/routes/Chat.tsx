@@ -45,7 +45,15 @@ export default function Chat({
   const queryClient = useQueryClient();
 
   const [input, setInput] = useState("");
-  const { recording, start, stop, audioInputs } = useRecorder();
+  const {
+    recording,
+    start,
+    stop,
+    audioInputs,
+    defaultInputLabel,
+    activeDeviceId,
+    deviceFallback,
+  } = useRecorder();
   const [micMenuOpen, setMicMenuOpen] = useState(false);
   const [selectedMicId, setSelectedMicId] = useState("");
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -66,9 +74,18 @@ export default function Chat({
 
   useEffect(() => {
     const savedMicId = window.localStorage.getItem("vuelocale.selectedMicId");
-    if (savedMicId) {
-      setSelectedMicId(savedMicId);
+    if (!savedMicId) return;
+
+    // Anyone who picked the old "Default - …" or "Communications" row has an
+    // alias id saved. Those rows no longer exist, so without this they would
+    // come back to a picker reading "Saved mic unavailable". The alias meant
+    // "follow the system" anyway, which is exactly what "" does.
+    if (savedMicId === "default" || savedMicId === "communications") {
+      setSelectedMicId("");
+      return;
     }
+
+    setSelectedMicId(savedMicId);
   }, []);
 
   useEffect(() => {
@@ -79,6 +96,19 @@ export default function Chat({
 
     window.localStorage.setItem("vuelocale.selectedMicId", selectedMicId);
   }, [selectedMicId]);
+
+  // Point the picker at whatever the browser actually opened. Only when a
+  // specific device was asked for: leaving "Browser default" selected is a
+  // standing instruction to follow the system, not a claim about which
+  // microphone is live right now, so resolving it to a concrete device would
+  // throw that instruction away.
+  useEffect(() => {
+    if (!activeDeviceId || !selectedMicId) return;
+    if (activeDeviceId === selectedMicId) return;
+    if (!audioInputs.some((device) => device.deviceId === activeDeviceId)) return;
+
+    setSelectedMicId(activeDeviceId);
+  }, [activeDeviceId, selectedMicId, audioInputs]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -548,6 +578,13 @@ export default function Chat({
 
           {micMenuOpen && (
             <div style={styles.micDropdown}>
+              {deviceFallback && (
+                <p style={styles.micDropdownNotice}>
+                  Le micro choisi n&apos;a pas pu être ouvert ({deviceFallback}) —
+                  micro système utilisé. / Selected mic could not be opened;
+                  using the system one.
+                </p>
+              )}
               <button
                 type="button"
                 onClick={() => chooseMic("")}
@@ -557,6 +594,9 @@ export default function Chat({
                 }}
               >
                 Browser default
+                {defaultInputLabel && (
+                  <span style={styles.micDropdownHint}> — {defaultInputLabel}</span>
+                )}
               </button>
               {audioInputs.map((device) => (
                 <button
@@ -870,7 +910,10 @@ const styles: Record<string, React.CSSProperties> = {
   },
   micDropdown: {
     position: "absolute",
-    left: 0,
+    // Anchored to its right edge, not its left: this control sits near the
+    // right end of the input bar, so a 220px panel opening rightwards ran
+    // straight off the side of the screen on a phone.
+    right: 0,
     bottom: "calc(100% + 8px)",
     minWidth: 220,
     maxWidth: 280,
@@ -882,6 +925,21 @@ const styles: Record<string, React.CSSProperties> = {
     border: `1px solid ${colors.hairline}`,
     boxShadow: shadows.overlay,
     zIndex: 120,
+  },
+  micDropdownNotice: {
+    margin: "2px 4px 6px",
+    padding: "8px 10px",
+    borderRadius: 12,
+    background: "rgba(185, 74, 72, 0.08)",
+    border: `1px solid ${colors.rouge}`,
+    color: colors.rouge,
+    fontSize: 11.5,
+    fontWeight: 600,
+    lineHeight: 1.35,
+  },
+  micDropdownHint: {
+    color: colors.textMuted,
+    fontWeight: 500,
   },
   micDropdownItem: {
     width: "100%",
