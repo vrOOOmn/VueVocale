@@ -36,7 +36,7 @@ export async function POST(request: Request) {
     } as const;
 
     const resp = await openai.responses.create({
-      model: "gpt-4.1-nano",
+      model: "gpt-6-luna",
       input: [
         {
           role: "user",

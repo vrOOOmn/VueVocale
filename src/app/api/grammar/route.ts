@@ -58,7 +58,7 @@ export async function POST(request: Request) {
     const { text } = await request.json();
 
     const response = await openai.responses.create({
-      model: "gpt-4.1-nano",
+      model: "gpt-6-luna",
       input: [
         GRAMMAR_FIX_INSTRUCTION,
         { role: "user", content: normalizeForGrammarCheck(text) },

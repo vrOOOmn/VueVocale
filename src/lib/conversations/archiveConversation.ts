@@ -64,7 +64,7 @@ export async function archiveConversation(
       } as const;
 
       const resp = await openai.responses.create({
-        model: "gpt-4.1-nano",
+        model: "gpt-6-luna",
         input: [
           { role: "developer", content: SUMMARY_INSTRUCTION },
           { role: "user", content: transcript },

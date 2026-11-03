@@ -34,7 +34,7 @@ export async function POST(request: Request) {
     const { history, userMessage, hasImage } = await request.json();
 
     const response = await openai.responses.create({
-      model: "gpt-4.1-nano",
+      model: "gpt-6-luna",
       input: [
         BASE_AGENT_INSTRUCTION,
         ...(hasImage ? [IMAGE_INSTRUCTION] : []),
