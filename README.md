@@ -30,11 +30,11 @@ src/
 │   ├── auth/callback/          # OAuth code-exchange route
 │   ├── app/page.tsx            # Gated entry point — server-fetches the user, renders <App>
 │   └── api/                    # Route handlers (OpenAI calls live server-side only)
-│       ├── chat/                     # Text conversation (gpt-4.1-nano)
-│       ├── grammar/                  # Grammar check (gpt-4.1-nano)
+│       ├── chat/                     # Text conversation (gpt-6-luna)
+│       ├── grammar/                  # Grammar check (gpt-6-luna)
 │       ├── stt/                      # Speech → text (gpt-4o-mini-transcribe)
 │       ├── tts/                      # Text → speech (gpt-4o-mini-tts)
-│       ├── vision/                   # Object detection + translation (gpt-4.1-nano, multimodal)
+│       ├── vision/                   # Object detection + translation (gpt-6-luna, multimodal)
 │       └── conversations/ensure-active/  # Day-rollover + LLM-summarized archival
 ├── middleware.ts                # Supabase session refresh, protects /app
 ├── App.tsx                      # Tab container (Scanner / Chat) + user menu
@@ -147,7 +147,7 @@ npm run dev
 
 ### **Vision (Object Identification \+ Translation)**
 
-* **Model:** `gpt-4.1-nano` (multimodal)
+* **Model:** `gpt-6-luna` (multimodal)
 * **Input:**
   * Single user-captured image
   * Low-detail image processing
@@ -175,7 +175,7 @@ Text-based Conversation Model
 Text-to-Speech (TTS)
 
 * **STT:** `gpt-4o-mini-transcribe`
-* **Conversation:** `gpt-4.1-nano`
+* **Conversation:** `gpt-6-luna`
 * **TTS:** `gpt-4o-mini-tts`
 
 Each stage is handled by a model specialized for that task, allowing speech recognition, reasoning, and audio generation to be optimized independently. All conversational reasoning happens in text, keeping behavior predictable and consistent across typed and spoken input, while speech is treated strictly as an input and output layer, making the system more cost-efficient than a real-time multimodal API by invoking audio models only when needed and relying on a lightweight text model for most interactions.
@@ -208,7 +208,7 @@ Audio output is designed to sound like casual, supportive spoken French rather t
 
 ### **Grammar Validation**
 
-* **Model:** `gpt-4.1-nano`
+* **Model:** `gpt-6-luna`
 * **Invocation:** Explicit user action
 * **Evaluation rules:**
   * Input treated as spoken French
