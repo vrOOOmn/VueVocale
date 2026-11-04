@@ -32,7 +32,7 @@ src/
 │   └── api/                    # Route handlers (OpenAI calls live server-side only)
 │       ├── chat/                     # Text conversation (gpt-6-luna)
 │       ├── grammar/                  # Grammar check (gpt-6-luna)
-│       ├── stt/                      # Speech → text (gpt-4o-mini-transcribe)
+│       ├── stt/                      # Speech → text (gpt-transcribe)
 │       ├── tts/                      # Text → speech (gpt-4o-mini-tts)
 │       ├── vision/                   # Object detection + translation (gpt-6-luna, multimodal)
 │       └── conversations/ensure-active/  # Day-rollover + LLM-summarized archival
@@ -174,7 +174,7 @@ Text-based Conversation Model
 
 Text-to-Speech (TTS)
 
-* **STT:** `gpt-4o-mini-transcribe`
+* **STT:** `gpt-transcribe`
 * **Conversation:** `gpt-6-luna`
 * **TTS:** `gpt-4o-mini-tts`
 
@@ -184,7 +184,7 @@ Each stage is handled by a model specialized for that task, allowing speech reco
 
 ### **Speech-to-Text (STT)**
 
-* **Model:** `gpt-4o-mini-transcribe`
+* **Model:** `gpt-transcribe`
 * **Input:** Browser-recorded audio (`webm`)
 * **Language:** French
 * **Behavior:** Exact transcription only, no additions or rephrasing

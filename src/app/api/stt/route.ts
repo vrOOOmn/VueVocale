@@ -22,7 +22,7 @@ export async function POST(request: Request) {
 
     const transcription = await openai.audio.transcriptions.create({
       file,
-      model: "gpt-4o-mini-transcribe",
+      model: "gpt-transcribe",
       language: "fr",
       prompt: "Transcris exactement ce qui est dit en français. N’ajoute rien.",
     });
